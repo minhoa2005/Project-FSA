@@ -19,7 +19,7 @@ export default function LoginForm({ action }) {
                         <CardDescription>Enter your email and password to login</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <form action={action}>
+                        <form id="login-form" action={action}>
                             <div className="flex flex-col gap-6">
                                 <div className="grid gap-2">
                                     <Label htmlFor="email">Email</Label>
@@ -46,7 +46,7 @@ export default function LoginForm({ action }) {
                         </form>
                     </CardContent>
                     <CardFooter className="flex flex-col gap-2">
-                        <Button type="submit" className="w-full">
+                        <Button type="submit" form="login-form" className="w-full cursor-pointer">
                             Login
                         </Button>
                         <Button className="w-full" variant="outline">
