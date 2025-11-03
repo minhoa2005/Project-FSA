@@ -1,10 +1,10 @@
 import sql from "mssql";
 
 const dbConfig = {
-    user: 'sa',
-    password: '123',
-    server: 'localhost',
-    database: 'Hospital_Project',
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    server: process.env.DB_SERVER,
+    database: process.env.DB_NAME,
     options: {
         trustServerCertificate: true,
         encrypt: false,
@@ -17,6 +17,7 @@ const connectDB = async () => {
     try {
         if (!pool) {
             pool = await sql.connect(dbConfig);
+            console.log('Database Connected')
         }
         return pool;
     }
@@ -24,5 +25,7 @@ const connectDB = async () => {
         console.log('Database connection error: ', error);
     }
 }
+
+connectDB();
 
 export { sql, connectDB };
