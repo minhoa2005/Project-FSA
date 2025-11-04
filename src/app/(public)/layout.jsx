@@ -1,4 +1,4 @@
-import PublicRoute from "@/components/auth/PublicRoute";
+import PublicRoute from "@/components/permission/PublicRoute";
 import Header from "@/components/layout/Header";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 

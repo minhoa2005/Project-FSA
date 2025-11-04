@@ -1,4 +1,4 @@
-import PrivateRoute from '@/components/auth/PrivateRoute'
+import PrivateRoute from '@/components/permission/PrivateRoute'
 import Header from '@/components/layout/Header'
 import { ThemeProvider } from '@/components/theme/ThemeProvider'
 import React from 'react'

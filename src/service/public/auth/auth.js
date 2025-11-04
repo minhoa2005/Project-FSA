@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import bcrypt from "bcryptjs";
 import { connectDB, sql } from "@/config/db";
 import { cookies } from "next/headers";
-import { cookieName, getCookie, setCookie } from "@/config/cookie";
+import { cookieName, deleteCookie, getCookie, setCookie } from "@/config/cookie";
 import { signToken, verifyToken } from "@/config/jwt";
 import { sign } from "jsonwebtoken";
 
@@ -45,13 +45,12 @@ WHERE
             role: user.role
         }
         const token = signToken(payload);
-        await setCookie(cookieName, token);
+        await setCookie(token);
         return { success: true, message: "Login successful" };
     } catch (error) {
         console.error(error);
         return { success: false, message: "Login failed" };
     }
-    console.log(email, password)
 }
 
 const handleRegister = async (data) => {
@@ -93,14 +92,26 @@ const handleRegister = async (data) => {
     }
 }
 
+const logout = async () => {
+    await deleteCookie();
+}
+
 const authMe = async () => {
-    const token = getCookie();
+    const token = await getCookie();
+    console.log("Token in authMe:", token);
     const decodedToken = verifyToken(token);
+    console.log("Decoded Token in authMe:", decodedToken);
     if (decodedToken) {
-        return { success: true, data: decodedToken };
+        return {
+            success: true, data: {
+                id: decodedToken.id,
+                email: decodedToken.email,
+                role: decodedToken.role
+            }
+        };
     } else {
         return { success: false, message: "Unauthorized" };
     }
 }
 
-export { handleLogin, handleRegister, authMe }
+export { handleLogin, handleRegister, authMe, logout };

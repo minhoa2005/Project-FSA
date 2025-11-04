@@ -1,5 +1,5 @@
 "use client"
-import React from 'react'
+import React, { use, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../ui/card'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
@@ -8,7 +8,10 @@ import { useUser } from '@/context/AuthContext'
 import { toast } from 'sonner'
 
 export default function LoginForm({ action }) {
-    const { setUser, setAuthen, setLoading } = useUser();
+    const { setUser, setAuthen, setLoading, loading } = useUser();
+    useEffect(() => {
+        if (loading) return;
+    }, [loading])
     const handleSubmit = async (e) => {
         try {
             e.preventDefault();

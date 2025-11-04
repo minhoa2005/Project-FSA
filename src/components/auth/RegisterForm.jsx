@@ -66,7 +66,7 @@ export default function RegisterForm({ action }) {
                         <Button className="w-full" variant="outline" type="submit" form="register-form">
                             Register
                         </Button>
-                        <p>Already have an account? <a href="#" className="text-blue-500 hover:underline">Login</a></p>
+                        <p>Already have an account? <a href="/login" className="text-blue-500 hover:underline">Login</a></p>
                     </CardFooter>
                 </Card>
             </div>
