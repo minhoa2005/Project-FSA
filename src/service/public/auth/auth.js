@@ -57,6 +57,7 @@ const handleRegister = async (data) => {
     const email = data.get('email');
     const password = data.get('password');
     const confirmPassword = data.get('confirmPassword');
+    const fullName = data.get('fullName');
     const transaction = new sql.Transaction(pool);
     if (password !== confirmPassword) {
         return { success: false, message: "Passwords do not match" };
@@ -78,8 +79,8 @@ const handleRegister = async (data) => {
         const updateRoleResult = await pool.request().input('email', email).query(
             `INSERT INTO AccountRole(accountId, roleId) VALUES((SELECT id FROM Account WHERE email = @email), 2)`
         );
-        const addUserProfileResult = await pool.request().input('email', email).query(
-            `INSERT INTO UserProfile(accountId) VALUES((SELECT id FROM Account WHERE email = @email))`
+        const addUserProfileResult = await pool.request().input('email', email).input('fullName', fullName).query(
+            `INSERT INTO UserProfile(accountId, fullName) VALUES((SELECT id FROM Account WHERE email = @email), @fullName)`
         );
         if (result.rowsAffected[0] > 0 && updateRoleResult.rowsAffected[0] > 0 && addUserProfileResult.rowsAffected[0] > 0) {
             await transaction.commit();
