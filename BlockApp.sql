@@ -53,6 +53,7 @@ GO
 
 CREATE TABLE UserProfile (
     id INT IDENTITY(1,1) PRIMARY KEY,
+    accountId INT NOT NULL UNIQUE FOREIGN KEY REFERENCES Account(id),
     fullName VARCHAR(100) NOT NULL,
     phoneNumber VARCHAR(15),
     dob DATE,
