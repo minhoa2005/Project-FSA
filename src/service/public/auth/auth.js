@@ -78,7 +78,10 @@ const handleRegister = async (data) => {
         const updateRoleResult = await pool.request().input('email', email).query(
             `INSERT INTO AccountRole(accountId, roleId) VALUES((SELECT id FROM Account WHERE email = @email), 2)`
         );
-        if (result.rowsAffected[0] > 0 && updateRoleResult.rowsAffected[0] > 0) {
+        const addUserProfileResult = await pool.request().input('email', email).query(
+            `INSERT INTO UserProfile(accountId) VALUES((SELECT id FROM Account WHERE email = @email))`
+        );
+        if (result.rowsAffected[0] > 0 && updateRoleResult.rowsAffected[0] > 0 && addUserProfileResult.rowsAffected[0] > 0) {
             await transaction.commit();
             return { success: true, message: "Registration successful" };
         } else {
