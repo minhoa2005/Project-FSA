@@ -17,7 +17,7 @@ CREATE TABLE Role (
 GO
 
 INSERT INTO Role (roleName)
-VALUES ('user'), ('admin');
+VALUES ('Admin'), ('User');
 GO
 
 CREATE TABLE Account (
