@@ -5,8 +5,10 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { toast } from 'sonner';
+import { useRouter } from 'next/navigation';
 
 export default function RegisterForm({ action }) {
+    const router = useRouter();
     const handleSubmit = async (e) => {
         e.preventDefault();
         const formData = new FormData(e.target);
@@ -14,10 +16,13 @@ export default function RegisterForm({ action }) {
             const response = await action(formData);
             if (response.success) {
                 toast.success('Registration successful! Please log in.', { duration: 4000 });
+                router.push('/login');
             } else {
                 toast.error(response.message || 'Registration failed. Please try again.', { duration: 4000 });
+                router.push('/register');
             }
         } catch (error) {
+            toast.error('An unexpected error occurred. Please try again later.', { duration: 4000 });
             console.error(error);
         }
     };
@@ -34,7 +39,7 @@ export default function RegisterForm({ action }) {
                         <CardDescription>Enter your email and password to login</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <form id="login-form" onSubmit={handleSubmit}>
+                        <form id="register-form" onSubmit={handleSubmit}>
                             <div className="flex flex-col gap-6">
                                 <div className="grid gap-2">
                                     <Label htmlFor="email">Email</Label>
@@ -58,7 +63,7 @@ export default function RegisterForm({ action }) {
                         </form>
                     </CardContent>
                     <CardFooter className="flex flex-col gap-2">
-                        <Button className="w-full" variant="outline">
+                        <Button className="w-full" variant="outline" type="submit" form="register-form">
                             Register
                         </Button>
                         <p>Already have an account? <a href="#" className="text-blue-500 hover:underline">Login</a></p>

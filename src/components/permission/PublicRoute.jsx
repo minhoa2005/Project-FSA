@@ -8,8 +8,8 @@ export default function PublicRoute({ children }) {
     const { user, loading, authen } = useUser();
     useEffect(() => {
         if (loading) return;
-        if (!authen) {
-            router.push('/login');
+        if (authen) {
+            router.push('/');
         }
     }, [loading, authen]);
     return (

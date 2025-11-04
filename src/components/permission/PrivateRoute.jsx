@@ -11,13 +11,12 @@ export default function PrivateRoute({ children, allowedRoles = [] }) {
         if (!authen) {
             router.push('/login');
         }
-        else if (authen && !allowedRoles.includes(user.role)) {
+        else if (authen && !allowedRoles.includes(user?.role)) {
             router.push('/');
         }
     }, [authen, loading, router, allowedRoles, user]);
     if (loading) return <div>Loading...</div>;
     if (!authen) return null;
-    if (allowedRoles && !hasRole(allowedRoles)) return null;
     return (
         <div>
             {children}

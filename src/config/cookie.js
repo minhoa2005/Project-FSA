@@ -9,19 +9,19 @@ const setting = {
 }
 
 const setCookie = async (value, options = {}) => {
-    const cookie = cookies();
+    const cookie = await cookies();
     const cookieOptions = { ...setting, ...options };
-    await cookie.set(cookieName, value, cookieOptions);
+    cookie.set(cookieName, value, cookieOptions);
 }
 
-const getCookie = () => {
-    const cookie = cookies();
+const getCookie = async () => {
+    const cookie = await cookies();
     return cookie.get(cookieName)?.value || null;
 }
 
 const deleteCookie = async () => {
-    const cookie = cookies();
-    await cookie.delete(cookieName, { path: "/" });
+    const cookie = await cookies();
+    cookie.delete(cookieName, { path: "/" });
 }
 
 export { setCookie, getCookie, deleteCookie, cookieName };

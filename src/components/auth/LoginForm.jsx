@@ -21,7 +21,7 @@ export default function LoginForm({ action }) {
                 toast.error(response.message || 'Login failed. Please try again.', { duration: 4000 });
             }
         } catch (error) {
-            toast.error('An unexpected error occurred. Please try again later.', { duration: 4000 });
+            toast.error(error.message || 'An unexpected error occurred. Please try again later.', { duration: 4000 });
             console.error(error);
         }
     }
@@ -69,7 +69,9 @@ export default function LoginForm({ action }) {
                         <Button type="submit" form="login-form" className="w-full cursor-pointer">
                             Login
                         </Button>
-                        <Button className="w-full" variant="outline">
+                        <Button className="w-full" variant="outline" onClick={() => {
+                            window.location.href = '/register';
+                        }}>
                             Register
                         </Button>
                     </CardFooter>
