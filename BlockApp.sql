@@ -6,10 +6,18 @@ GO
 USE ProjectFSA;
 GO
 
+IF OBJECT_ID('Role', 'U') IS NOT NULL
+    DROP TABLE Role;
+GO
+
 CREATE TABLE Role (
     id INT IDENTITY(1,1) PRIMARY KEY,
     roleName VARCHAR(50) UNIQUE NOT NULL
 );
+GO
+
+INSERT INTO Role (roleName)
+VALUES ('user'), ('admin');
 GO
 
 CREATE TABLE Account (
