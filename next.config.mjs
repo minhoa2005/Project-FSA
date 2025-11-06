@@ -20,6 +20,10 @@ const nextConfig = {
     ]
   },
 
+  experimental: {
+    authInterrupts: true,
+  },
+
 
   // async rewrites() {
   //   return [

@@ -47,7 +47,7 @@ WHERE
         }
         const token = signToken(payload);
         await setCookie(token);
-        return { success: true, message: "Login successful" };
+        return { success: true, message: "Login successful", user };
     } catch (error) {
         console.error(error);
         return { success: false, message: "Login failed" };
@@ -244,6 +244,7 @@ const resetPassword = async (data) => {
             update Account set password = @password where id = @userId
             `
         );
+        console.log(updatedPassword.rowsAffected[0][0]);
         if (updatedPassword.rowsAffected[0] > 0) {
             await deleteCustomCookie('recovery_data');
             return {
