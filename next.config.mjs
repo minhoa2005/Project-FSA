@@ -4,7 +4,7 @@ const nextConfig = {
   async headers() {
     return [
       {
-        source: '/api/:path*',
+        source: '/:path*',
         headers: [
           {
             key: 'Access-Control-Allow-Methods',
@@ -20,14 +20,15 @@ const nextConfig = {
     ]
   },
 
-  async rewrites() {
-    return [
-      {
-        source: '/api/:path*',
-        destination: 'http://localhost:3000/api/:path*',
-      }
-    ]
-  },
+
+  // async rewrites() {
+  //   return [
+  //     {
+  //       source: '/api/:path*',
+  //       destination: 'http://localhost:3000/api/:path*',
+  //     }
+  //   ]
+  // },
   reactCompiler: true,
 
 };

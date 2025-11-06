@@ -1,6 +1,12 @@
 "use client";
 import { useTheme } from "next-themes"
 import { Toaster as Sonner } from "sonner"
+import {
+  CheckCircle2,
+  XCircle,
+  AlertTriangle,
+  Info,
+} from "lucide-react"
 
 const Toaster = ({
   ...props

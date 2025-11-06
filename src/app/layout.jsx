@@ -11,7 +11,7 @@ export default async function Layout({ children }) {
                 <AuthContext authMe={authMe} logout={logout}>
                     {children}
                 </AuthContext>
-                <Toaster richColors position="bottom-right" />
+                <Toaster position="bottom-right" />
             </body >
         </html >
     )

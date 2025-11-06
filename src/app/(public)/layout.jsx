@@ -6,9 +6,9 @@ import { ThemeProvider } from "@/components/theme/ThemeProvider";
 export default function layout({ children }) {
     return (
         <PublicRoute>
-            <ThemeProvider theme={'light'} forceTheme={'light'}>
+            <div className="light">
                 {children}
-            </ThemeProvider>
+            </div>
         </PublicRoute>
     )
 }

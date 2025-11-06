@@ -57,7 +57,7 @@ export default function LoginForm({ action }) {
                                     <div className="flex items-center">
                                         <Label htmlFor="password">Password</Label>
                                         <a
-                                            href="#"
+                                            href="/recovery"
                                             className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
                                         >
                                             Forgot your password?
