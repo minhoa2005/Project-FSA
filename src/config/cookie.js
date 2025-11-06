@@ -16,6 +16,22 @@ const setCookie = async (value, options = {}) => {
     cookie.set(cookieName, value, cookieOptions);
 }
 
+const setCustomCookie = async (name, value, options = {}) => {
+    const cookie = await cookies();
+    const cookieOptions = { ...setting, ...options };
+    cookie.set(name, value, cookieOptions);
+}
+
+const getCustomCookie = async (name) => {
+    const cookie = await cookies();
+    return cookie.get(name)?.value || null;
+}
+
+const deleteCustomCookie = async (name) => {
+    const cookie = await cookies();
+    cookie.delete(name, { path: "/" });
+}
+
 const getCookie = async () => {
     const cookie = await cookies();
     return cookie.get(cookieName)?.value || null;
@@ -26,4 +42,4 @@ const deleteCookie = async () => {
     cookie.delete(cookieName, { path: "/" });
 }
 
-export { setCookie, getCookie, deleteCookie, cookieName };
+export { setCookie, getCookie, deleteCookie, cookieName, setCustomCookie, getCustomCookie, deleteCustomCookie };
