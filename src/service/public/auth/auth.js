@@ -244,6 +244,7 @@ const resetPassword = async (data) => {
             update Account set password = @password where id = @userId
             `
         );
+        console.log(updatedPassword.rowsAffected[0][0]);
         if (updatedPassword.rowsAffected[0] > 0) {
             await deleteCustomCookie('recovery_data');
             return {
