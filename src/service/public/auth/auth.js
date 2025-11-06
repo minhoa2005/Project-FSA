@@ -47,7 +47,7 @@ WHERE
         }
         const token = signToken(payload);
         await setCookie(token);
-        return { success: true, message: "Login successful" };
+        return { success: true, message: "Login successful", user };
     } catch (error) {
         console.error(error);
         return { success: false, message: "Login failed" };

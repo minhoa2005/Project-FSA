@@ -7,10 +7,7 @@ export default function layout({ children }) {
     return (
         <div>
             <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-                <PrivateRoute allowedRoles={['User', 'Admin']}>
-                    <Header />
-                    {children}
-                </PrivateRoute>
+                {children}
             </ThemeProvider>
         </div>
     )

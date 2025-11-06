@@ -9,7 +9,12 @@ export default function PublicRoute({ children }) {
     useEffect(() => {
         if (loading) return;
         if (authen) {
-            router.push('/');
+            if (user?.role === 'Admin') {
+                router.push('/admin');
+            }
+            else {
+                router.push('/')
+            }
         }
     }, [loading, authen]);
     return (

@@ -1,6 +1,6 @@
 "use client"
 import { useUser } from '@/context/AuthContext'
-import { useRouter } from 'next/navigation';
+import { unauthorized, useRouter } from 'next/navigation';
 import React, { useEffect } from 'react'
 
 export default function PrivateRoute({ children, allowedRoles = [] }) {
@@ -11,11 +11,10 @@ export default function PrivateRoute({ children, allowedRoles = [] }) {
         if (!authen) {
             router.push('/login');
         }
-        else if (authen && !allowedRoles.includes(user?.role)) {
-            router.push('/');
+        if (user?.role && user && allowedRoles.length > 0 && !allowedRoles.includes(user?.role)) {
+            unauthorized();
         }
     }, [authen, loading, router, allowedRoles, user]);
-    if (!authen) return null;
     return (
         <div>
             {children}
