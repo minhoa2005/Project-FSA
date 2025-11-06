@@ -35,7 +35,7 @@ export default function GetOTPForm({ submit }) {
         <div className='flex min-h-screen items-center justify-center'>
             <Card className='w-full max-w-md mx-auto'>
                 <CardHeader>
-                    <CardTitle>Recover Password</CardTitle>
+                    <CardTitle>Recover Account</CardTitle>
                     <CardDescription>Enter your email to get OTP</CardDescription>
                 </CardHeader>
                 <CardContent>

@@ -5,11 +5,13 @@ import React from 'react'
 
 export default function layout({ children }) {
     return (
-        <div className='light'>
-            <PrivateRoute allowedRoles={['User', 'Admin']}>
-                <Header />
-                {children}
-            </PrivateRoute>
+        <div>
+            <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+                <PrivateRoute allowedRoles={['User', 'Admin']}>
+                    <Header />
+                    {children}
+                </PrivateRoute>
+            </ThemeProvider>
         </div>
     )
 }

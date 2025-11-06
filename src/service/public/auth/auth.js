@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import bcrypt from "bcryptjs";
 import { connectDB, sql } from "@/config/db";
 import { cookies } from "next/headers";
-import { cookieName, deleteCookie, getCookie, setCookie, setCustomCookie } from "@/config/cookie";
+import { cookieName, deleteCookie, deleteCustomCookie, getCookie, getCustomCookie, setCookie, setCustomCookie } from "@/config/cookie";
 import { optionalToken, signToken, verifyToken } from "@/config/jwt";
 import { sign } from "jsonwebtoken";
 import { sendOTP } from "@/config/emailService";
@@ -170,6 +170,95 @@ const sendOTPWithEmail = async (data) => {
             message: "Failed to send OTP"
         }
     }
+};
+
+const verifyOTP = async (data) => {
+    const otp = data.get('otp');
+    const cookie = await getCustomCookie('recovery_data');
+    if (!cookie) {
+        return {
+            success: false,
+            message: "OTP expired"
+        }
+    }
+    const decoded = verifyToken(cookie);
+    if (!decoded) {
+        return {
+            success: false,
+            message: "Invalid OTP token"
+        }
+    }
+    if (decoded.otp !== otp) {
+        return {
+            success: false,
+            message: "Invalid OTP"
+        }
+    }
+    const time = new Date(Date.now());
+    const updateOtp = await pool.request().input('otp', otp).input('userId', decoded.id).input('time', time).query(
+        `
+        UPDATE OTP SET used = 1 WHERE otp = @otp AND userId = @userId AND expireAt > @time AND used = 0
+        `
+    );
+    if (updateOtp.rowsAffected[0] <= 0) {
+        return {
+            success: false,
+            message: "OTP is already used or expired"
+        }
+    }
+    const newToken = optionalToken({ id: decoded.id, otp: decoded.otp, verified: true }, '5m');
+    await setCustomCookie('recovery_data', newToken, { maxAge: 5 * 60 });
+    return {
+        success: true,
+        message: "OTP verified successfully"
+    }
 }
 
-export { handleLogin, handleRegister, authMe, logout, sendOTPWithEmail };
+const resetPassword = async (data) => {
+    const newPassword = data.get('password');
+    const cookie = await getCustomCookie(`recovery_data`);
+    if (!cookie) {
+        return {
+            success: false,
+            message: "Recovery session expired"
+        }
+    }
+    const decoded = verifyToken(cookie);
+    if (!decoded) {
+        return {
+            success: false,
+            message: "Invalid recovery token"
+        }
+    }
+    if (!decoded.verified) {
+        return {
+            success: false,
+            message: "OTP not verified"
+        }
+    }
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+    try {
+        const updatedPassword = await pool.request().input('userId', decoded.id).input('password', hashedPassword).query(
+            `
+            update Account set password = @password where id = @userId
+            `
+        );
+        if (updatedPassword.rowsAffected[0] > 0) {
+            await deleteCustomCookie('recovery_data');
+            return {
+                success: true,
+                message: "Password reset successfully"
+            }
+        }
+    }
+    catch (error) {
+        console.error(error);
+        return {
+            success: false,
+            message: "Failed to reset password"
+        }
+    }
+}
+
+export { handleLogin, handleRegister, authMe, logout, sendOTPWithEmail, verifyOTP, resetPassword };
