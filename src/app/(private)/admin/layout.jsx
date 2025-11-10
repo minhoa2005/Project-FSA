@@ -1,3 +1,4 @@
+import AdminHeader from '@/components/layout/AdminHeader';
 import { AppSidebar } from '@/components/layout/AppSidebar';
 import PrivateRoute from '@/components/permission/PrivateRoute';
 import { Separator } from '@/components/ui/separator';
@@ -10,9 +11,10 @@ import React from 'react'
 export default async function layout({ children }) {
     return (
         <PrivateRoute allowedRoles={['Admin']}>
-            <SidebarProvider defaultOpen>
+            <SidebarProvider >
                 <AppSidebar />
                 <SidebarInset>
+                    <AdminHeader />
                     {children}
                 </SidebarInset>
             </SidebarProvider>

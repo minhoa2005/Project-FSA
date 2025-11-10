@@ -27,7 +27,7 @@ import LogOutComponent from "./LogOut";
 const items = [
   {
     title: "Dashboard",
-    url: "#",
+    url: "/admin",
     icon: LayoutDashboardIcon,
   },
   {
@@ -37,7 +37,7 @@ const items = [
   },
   {
     title: "User Management",
-    url: "#",
+    url: "/admin/user",
     icon: User2Icon,
   },
 ]
@@ -134,9 +134,9 @@ export async function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter>
+      {/* <SidebarFooter>
         <SidebarTrigger className="-ml-1" />
-      </SidebarFooter>
+      </SidebarFooter> */}
     </Sidebar>
 
   )
