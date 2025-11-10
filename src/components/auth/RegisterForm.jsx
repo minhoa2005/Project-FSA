@@ -6,6 +6,7 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
+import { handleRegister } from '@/service/public/auth/auth';
 
 export default function RegisterForm({ action }) {
     const router = useRouter();
@@ -13,7 +14,7 @@ export default function RegisterForm({ action }) {
         e.preventDefault();
         const formData = new FormData(e.target);
         try {
-            const response = await action(formData);
+            const response = await handleRegister(formData);
             if (response.success) {
                 toast.success('Registration successful! Please log in.', { duration: 4000 });
                 router.push('/login');

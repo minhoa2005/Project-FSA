@@ -14,7 +14,6 @@ export default async function layout({ children }) {
             <SidebarProvider >
                 <AppSidebar />
                 <SidebarInset>
-                    <AdminHeader />
                     {children}
                 </SidebarInset>
             </SidebarProvider>

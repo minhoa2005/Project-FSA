@@ -35,7 +35,6 @@ WHERE
             return { success: false, message: "Invalid email or password" };
         }
         const user = result.recordset[0];
-        console.log(user);
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
             return { success: false, message: "Invalid email or password" };
@@ -103,9 +102,7 @@ const logout = async () => {
 
 const authMe = async () => {
     const token = await getCookie();
-    console.log("Token in authMe:", token);
     const decodedToken = verifyToken(token);
-    console.log("Decoded Token in authMe:", decodedToken);
     if (decodedToken) {
         return {
             success: true, data: {
@@ -244,7 +241,6 @@ const resetPassword = async (data) => {
             update Account set password = @password where id = @userId
             `
         );
-        console.log(updatedPassword.rowsAffected[0][0]);
         if (updatedPassword.rowsAffected[0] > 0) {
             await deleteCustomCookie('recovery_data');
             return {
