@@ -11,8 +11,10 @@ import { ChevronRight } from 'lucide-react'
 import React, { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import UserDetailPanel from './UserDetailPanel'
+import { useRouter } from 'next/navigation'
 
 export default function UserList({ className }) {
+    const router = useRouter();
     const [filter, setFilter] = useState('all');
     const [search, setSearch] = useState('');
     const [total, setTotal] = useState('5');
@@ -24,7 +26,7 @@ export default function UserList({ className }) {
             setLoading(true);
             const response = await getAllUsers();
             setData(response.data);
-            console.log(data);
+            console.log(response);
         }
         catch (error) {
             toast.error('Failed to fetch users. Please try again later.', { duration: 4000 });
@@ -67,7 +69,7 @@ export default function UserList({ className }) {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {data.map((user) => (
+                        {(data || []).map((user) => (
                             <TableRow key={user.id} className="hover:bg-muted/50 cursor-pointer" onClick={() => setSelectedUserId(user.id)}>
                                 <TableCell>{user.id}</TableCell>
                                 <TableCell>{user.email}</TableCell>
