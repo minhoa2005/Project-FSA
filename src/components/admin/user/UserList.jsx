@@ -8,19 +8,24 @@ import { Separator } from '@/components/ui/separator'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { getAllUsers } from '@/service/admin/users/userManagement'
 import { ChevronRight } from 'lucide-react'
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { Suspense, useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import UserDetailPanel from './UserDetailPanel'
-import { useRouter } from 'next/navigation'
+import { unauthorized, useRouter } from 'next/navigation'
+import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination'
+import UserListSkeleton from './UserListSkeleton'
+import { debounce } from '@/lib/function'
 
 export default function UserList({ className }) {
     const router = useRouter();
     const [filter, setFilter] = useState('all');
     const [search, setSearch] = useState('');
-    const [total, setTotal] = useState('5');
+    const [totalPerPage, setTotalPerPage] = useState('5');
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPage, setTotalPage] = useState('');
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(false);
-    const [selectedUserId, setSelectedUserId] = useState(null);
+    const [selectedUser, setSelectedUser] = useState(null);
     const getUsers = useCallback(async () => {
         try {
             setLoading(true);
@@ -36,15 +41,76 @@ export default function UserList({ className }) {
         }
     }, []);
 
+    const handleChangePage = async () => {
+        const info = {
+            currentPage: currentPage,
+            totalPerPage: totalPerPage,
+            filter: filter,
+            search: search
+        }
+        try {
+            setLoading(true);
+            const response = await getAllUsers(info);
+            console.log(response.total)
+            if (response.success) {
+                setData(response.data);
+                setTotalPage(Math.ceil(parseInt(response.total) / parseInt(totalPerPage)));
+            }
+        }
+        catch (error) {
+            toast.error('Failed to fetch users. Please try again later.', { duration: 4000 });
+            console.error('Error fetching users:', error);
+        }
+        finally {
+            setLoading(false);
+        }
+    }
+
+    const handleFilter = async () => {
+        setCurrentPage(1);
+        const info = {
+            currentPage: 1,
+            totalPerPage: totalPerPage,
+            filter: filter,
+            search: search
+        }
+        try {
+            setLoading(true);
+            const response = await getAllUsers(info);
+            if (response.success) {
+                setData(response.data);
+                setTotalPage(Math.ceil(response.data.length / totalPerPage));
+            }
+        }
+        catch (error) {
+            toast.error('Failed to fetch users. Please try again later.', { duration: 4000 });
+            console.error('Error fetching users:', error);
+        }
+        finally {
+            setLoading(false);
+        }
+        console.log("Filter changed:", filter, search);
+    }
+
+    const debouncedSearch = debounce(setSearch, 500);
+
+    useEffect(() => {
+        handleFilter();
+    }, [filter, search]);
+
     useEffect(() => {
         getUsers();
-    }, [getUsers])
+    }, [getUsers]);
+
+    useEffect(() => {
+        handleChangePage();
+    }, [currentPage, totalPerPage]);
 
     return (
         <div className={`p-3 ${className} flex flex-row gap-2`}>
             <div className='flex-1'>
                 <div className='flex flex-row justify-between mb-2'>
-                    <Input placeholder="Search users..." className="w-[50%]" />
+                    <Input placeholder="Search users..." className="w-[50%]" onChange={(e) => debouncedSearch(e.target.value)} />
                     <Select onValueChange={setFilter} value={filter}>
                         <SelectTrigger className="w-[20%]">
                             <SelectValue />
@@ -58,43 +124,51 @@ export default function UserList({ className }) {
                         </SelectContent>
                     </Select>
                 </div>
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>User ID</TableHead>
-                            <TableHead>Email</TableHead>
-                            <TableHead>Role</TableHead>
-                            <TableHead>Is Active</TableHead>
-                            <TableHead></TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {(data || []).map((user) => (
-                            <TableRow key={user.id} className="hover:bg-muted/50 cursor-pointer" onClick={() => setSelectedUserId(user.id)}>
-                                <TableCell>{user.id}</TableCell>
-                                <TableCell>{user.email}</TableCell>
-                                <TableCell>{user.role}</TableCell>
-                                <TableCell>{user.isActive ? "Active" : "Inactive"}</TableCell>
-                                <TableCell>
-                                    <DropdownMenu >
-                                        <DropdownMenuTrigger asChild>
-                                            <Button variant={'ghost'}>
-                                                Action
-                                                <ChevronRight />
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="start" side="right">
-                                            <DropdownMenuItem>Edit</DropdownMenuItem>
-                                            <DropdownMenuItem>Disable</DropdownMenuItem>
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
+                {loading ? (
+                    <UserListSkeleton />
+                ) : (
+                    <Suspense fallback={<UserListSkeleton />}>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>User ID</TableHead>
+                                    <TableHead>Email</TableHead>
+                                    <TableHead>Role</TableHead>
+                                    <TableHead>Is Active</TableHead>
+                                    <TableHead></TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {(data || []).map((user) => (
+                                    <TableRow key={user.id} className="hover:bg-muted/50 cursor-pointer" onClick={() => setSelectedUser({ userId: user.id, userRole: user.role })}>
+                                        <TableCell>{user.id}</TableCell>
+                                        <TableCell>{user.email}</TableCell>
+                                        <TableCell>{user.role}</TableCell>
+                                        <TableCell>{user.isActive ? "Active" : "Inactive"}</TableCell>
+                                        <TableCell>
+                                            {user.role !== 'Admin' && (
+                                                <DropdownMenu >
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button variant={'ghost'}>
+                                                            Action
+                                                            <ChevronRight />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="start" side="right">
+                                                        <DropdownMenuItem>Edit</DropdownMenuItem>
+                                                        <DropdownMenuItem>Disable</DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            )}
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </Suspense>
+                )}
                 <div>
-                    <Select onValueChange={setTotal} value={total}>
+                    <Select onValueChange={setTotalPerPage} value={totalPerPage}>
                         <SelectTrigger className="w-[20%] mt-4">
                             <SelectValue />
                         </SelectTrigger>
@@ -106,12 +180,90 @@ export default function UserList({ className }) {
                             </SelectGroup>
                         </SelectContent>
                     </Select>
+                    <Pagination className="mt-4 float-right">
+                        <PaginationContent>
+                            <PaginationItem>
+                                <PaginationPrevious
+                                    onClick={() => currentPage > 1 && setCurrentPage(currentPage - 1)}
+                                    className={currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                                />
+                            </PaginationItem>
+
+                            {currentPage > 2 && (
+                                <>
+                                    <PaginationItem>
+                                        <PaginationLink
+                                            onClick={() => setCurrentPage(1)}
+                                            isActive={currentPage === 1}
+                                        >
+                                            1
+                                        </PaginationLink>
+                                    </PaginationItem>
+                                    {currentPage > 3 && <PaginationEllipsis />}
+                                </>
+                            )}
+
+
+                            {currentPage > 1 && (
+                                <PaginationItem>
+                                    <PaginationLink
+                                        onClick={() => setCurrentPage(currentPage - 1)}
+                                    >
+                                        {currentPage - 1}
+                                    </PaginationLink>
+                                </PaginationItem>
+                            )}
+
+
+                            <PaginationItem>
+                                <PaginationLink
+                                    onClick={() => setCurrentPage(currentPage)}
+                                    isActive={true}
+                                >
+                                    {currentPage}
+                                </PaginationLink>
+                            </PaginationItem>
+
+
+                            {currentPage < totalPage && (
+                                <PaginationItem>
+                                    <PaginationLink
+                                        onClick={() => setCurrentPage(currentPage + 1)}
+                                    >
+                                        {currentPage + 1}
+                                    </PaginationLink>
+                                </PaginationItem>
+                            )}
+
+
+                            {currentPage < totalPage - 1 && (
+                                <>
+                                    {currentPage < totalPage - 2 && <PaginationEllipsis />}
+                                    <PaginationItem>
+                                        <PaginationLink
+                                            onClick={() => setCurrentPage(totalPage)}
+                                            isActive={currentPage === totalPage}
+                                        >
+                                            {totalPage}
+                                        </PaginationLink>
+                                    </PaginationItem>
+                                </>
+                            )}
+
+                            <PaginationItem>
+                                <PaginationNext
+                                    onClick={() => currentPage < totalPage && setCurrentPage(currentPage + 1)}
+                                    className={currentPage === totalPage ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                                />
+                            </PaginationItem>
+                        </PaginationContent>
+                    </Pagination>
                 </div>
             </div>
             <Separator orientation='vertical' />
             <div className='w-[40%]'>
-                <UserDetailPanel userId={selectedUserId} setSelectedUserId={setSelectedUserId} />
+                <UserDetailPanel userData={selectedUser} setSelectedUser={setSelectedUser} />
             </div>
-        </div>
+        </div >
     )
 }

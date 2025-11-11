@@ -5,12 +5,6 @@ import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@
 export default function UserListSkeleton() {
     return (
         <div className="p-3 space-y-4">
-            {/* Search + Filter */}
-            <div className="flex justify-between mb-2">
-                <Skeleton className="h-9 w-[50%]" />
-                <Skeleton className="h-9 w-[20%]" />
-            </div>
-
             {/* Table skeleton */}
             <Table>
                 <TableHeader>
@@ -34,9 +28,6 @@ export default function UserListSkeleton() {
                     ))}
                 </TableBody>
             </Table>
-
-            {/* Pagination select */}
-            <Skeleton className="h-9 w-[20%] mt-4" />
         </div>
     )
 }
