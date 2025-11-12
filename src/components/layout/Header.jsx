@@ -19,10 +19,10 @@ export default function Header() {
                     <Input placeholder="Search..." className="ml-2 w-[100%] h-[50px]" />
                 </div>
                 <div className='flex-1 flex justify-center items-center'>
-                    <Button variant="ghost" className="p-8 cursor-pointer ">
+                    <Button variant="ghost" className="p-8 w-[30%] cursor-pointer ">
                         <HomeIcon className="h-10 w-10" />
                     </Button>
-                    <Button variant="ghost" className="p-8 cursor-pointer">
+                    <Button variant="ghost" className="p-8 w-[30%] cursor-pointer">
                         <User className="h-10 w-10" />
                     </Button>
                 </div>

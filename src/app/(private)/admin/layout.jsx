@@ -1,15 +1,17 @@
-import { AppSidebar } from '@/components/admin/ui/AppSidebar';
+import AdminHeader from '@/components/layout/AdminHeader';
+import { AppSidebar } from '@/components/layout/AppSidebar';
 import PrivateRoute from '@/components/permission/PrivateRoute';
 import { Separator } from '@/components/ui/separator';
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
+import { logout } from '@/service/public/auth/auth';
 
 
 import React from 'react'
 
-export default function layout({ children }) {
+export default async function layout({ children }) {
     return (
         <PrivateRoute allowedRoles={['Admin']}>
-            <SidebarProvider defaultOpen>
+            <SidebarProvider >
                 <AppSidebar />
                 <SidebarInset>
                     {children}

@@ -74,8 +74,8 @@ export const validateDateOfBirth = (dateOfBirth) => {
     const today = new Date();
     const age = today.getFullYear() - birthDate.getFullYear();
 
-    if (age < 13) {
-        return 'You must be at least 13 years old';
+    if (age < 18) {
+        return 'You must be at least 18 years old';
     }
     if (age > 120) {
         return 'Please enter a valid date of birth';

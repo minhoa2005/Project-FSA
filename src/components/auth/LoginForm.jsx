@@ -6,8 +6,9 @@ import { Input } from '../ui/input'
 import { Label } from '../ui/label'
 import { useUser } from '@/context/AuthContext'
 import { toast } from 'sonner'
+import { handleLogin } from '@/service/public/auth/auth'
 
-export default function LoginForm({ action }) {
+export default function LoginForm() {
     const { setUser, setAuthen, setLoading, loading } = useUser();
     useEffect(() => {
         if (loading) return;
@@ -16,7 +17,7 @@ export default function LoginForm({ action }) {
         try {
             e.preventDefault();
             const formData = new FormData(e.target);
-            const response = await action(formData);
+            const response = await handleLogin(formData);
             if (response.success) {
                 setUser(response.user);
                 setAuthen(true);
