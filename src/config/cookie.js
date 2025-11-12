@@ -1,5 +1,3 @@
-
-
 import { cookies } from "next/headers";
 
 const cookieName = process.env.COOKIE_NAME || "app_cookie";

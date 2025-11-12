@@ -22,6 +22,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem,
 import { logout } from "@/service/public/auth/auth";
 import { redirect } from "next/navigation";
 import LogOutComponent from "./LogOut";
+import { getInitials } from "@/lib/formatter";
 
 // Menu items.
 const items = [
@@ -71,11 +72,11 @@ export async function AppSidebar() {
                     size="lg"
                   >
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src={user?.avatar} alt={user?.name} />
-                      <AvatarFallback className="rounded-lg">AV</AvatarFallback>
+                      <AvatarImage src={user?.avatar} alt={user?.username} />
+                      <AvatarFallback className="rounded-lg">{getInitials(user?.username)}</AvatarFallback>
                     </Avatar>
                     <div className="grid flex-1 text-left text-sm leading-tight">
-                      <span className="truncate font-medium">{user?.email || "No Email"}</span>
+                      <span className="truncate font-medium">{user?.username || "No Username"}</span>
                       <span className="truncate text-xs">{user?.role || "No Role"}</span>
                     </div>
                     <ChevronsUpDown className="ml-auto size-4" />

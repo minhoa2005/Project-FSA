@@ -1,12 +1,9 @@
 "use server"
 
-import { redirect } from "next/navigation";
 import bcrypt from "bcryptjs";
 import { connectDB, sql } from "@/config/db";
-import { cookies } from "next/headers";
-import { cookieName, deleteCookie, deleteCustomCookie, getCookie, getCustomCookie, setCookie, setCustomCookie } from "@/config/cookie";
+import { deleteCookie, deleteCustomCookie, getCookie, getCustomCookie, setCookie, setCustomCookie } from "@/config/cookie";
 import { optionalToken, signToken, verifyToken } from "@/config/jwt";
-import { sign } from "jsonwebtoken";
 import { sendOTP } from "@/config/emailService";
 
 const pool = await connectDB();
@@ -20,6 +17,7 @@ const handleLogin = async (data) => {
             `SELECT
                 A.id,
                 A.email,
+                A.username,
                 A.password,
                 A.isActive,
                 R.roleName AS role
@@ -36,14 +34,22 @@ const handleLogin = async (data) => {
         if (result.recordset.length === 0) {
             return { success: false, message: "Invalid email or password" };
         }
-        const user = result.recordset[0];
-        const isMatch = await bcrypt.compare(password, user.password);
+        const user = {
+            id: result.recordset[0].id,
+            email: result.recordset[0].email,
+            username: result.recordset[0].username,
+            role: result.recordset[0].role,
+            isActive: result.recordset[0].isActive
+        };
+        const hashedPassword = result.recordset[0].password;
+        const isMatch = await bcrypt.compare(password, hashedPassword);
         if (!isMatch) {
             return { success: false, message: "Invalid email or password" };
         }
         const payload = {
             id: user.id,
             email: user.email,
+            username: user.username,
             role: user.role,
             isActive: user.isActive
         }
@@ -61,6 +67,7 @@ const handleRegister = async (data) => {
     const password = data.get('password');
     const confirmPassword = data.get('confirmPassword');
     const fullName = data.get('fullName');
+    const username = data.get('username');
     const transaction = new sql.Transaction(pool);
     if (password !== confirmPassword) {
         return { success: false, message: "Passwords do not match" };
@@ -76,8 +83,8 @@ const handleRegister = async (data) => {
             await transaction.rollback();
             return { success: false, message: "Email already exists" };
         }
-        const result = await pool.request().input('email', email).input('password', hashedPassword).query(
-            `INSERT INTO Account (email, password, roleId) values(@email, @password, 2)`
+        const result = await pool.request().input('email', email).input('username', username).input('password', hashedPassword).query(
+            `INSERT INTO Account (email, username, password, roleId) values(@email, @username, @password, 2)`
         );
         const updateRoleResult = await pool.request().input('email', email).query(
             `INSERT INTO AccountRole(accountId, roleId) VALUES((SELECT id FROM Account WHERE email = @email), 2)`
@@ -111,6 +118,7 @@ const authMe = async () => {
             success: true, data: {
                 id: decodedToken.id,
                 email: decodedToken.email,
+                username: decodedToken.username,
                 role: decodedToken.role,
                 isActive: decodedToken.isActive
             }
