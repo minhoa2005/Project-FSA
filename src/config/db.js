@@ -1,31 +1,31 @@
-// import sql from "mssql";
+import sql from "mssql";
 
-// const dbConfig = {
-//     user: process.env.DB_USER,
-//     password: process.env.DB_PASSWORD,
-//     server: process.env.DB_SERVER,
-//     database: process.env.DB_NAME,
-//     options: {
-//         trustServerCertificate: true,
-//         encrypt: false,
-//     }
-// }
+const dbConfig = {
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    server: process.env.DB_SERVER,
+    database: process.env.DB_NAME,
+    options: {
+        trustServerCertificate: true,
+        encrypt: false,
+    }
+}
 
-// let pool;
+let pool;
 
-// const connectDB = async () => {
-//     try {
-//         if (!pool) {
-//             pool = await sql.connect(dbConfig);
-//             console.log('Database Connected')
-//         }
-//         return pool;
-//     }
-//     catch (error) {
-//         console.log('Database connection error: ', error);
-//     }
-// }
+const connectDB = async () => {
+    try {
+        if (!pool) {
+            pool = await sql.connect(dbConfig);
+            console.log('Database Connected')
+        }
+        return pool;
+    }
+    catch (error) {
+        console.log('Database connection error: ', error);
+    }
+}
 
-// connectDB();
+connectDB();
 
-// export { sql, connectDB };
+export { sql, connectDB };

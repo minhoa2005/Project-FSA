@@ -167,4 +167,4 @@ const resetPassword = async (userId) => {
     }
 
 }
-export { getAllUsers, getUserById, disableUser }
+export { getAllUsers, getUserById, disableUser, resetPassword };
