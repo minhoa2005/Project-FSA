@@ -1,7 +1,7 @@
 "use client"
 import { useUser } from '@/context/AuthContext'
 import React, { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { unauthorized, useRouter } from 'next/navigation';
 
 export default function PublicRoute({ children }) {
     const router = useRouter();
@@ -9,11 +9,17 @@ export default function PublicRoute({ children }) {
     useEffect(() => {
         if (loading) return;
         if (authen) {
-            if (user?.role === 'Admin') {
-                router.push('/admin');
+            if (user?.isActive) {
+                if (user?.role === 'Admin') {
+                    router.push('/admin');
+                }
+                else {
+                    router.push('/');
+
+                }
             }
             else {
-                router.push('/')
+                router.push('/banned');
             }
         }
     }, [loading, authen]);

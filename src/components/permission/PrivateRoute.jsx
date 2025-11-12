@@ -11,6 +11,9 @@ export default function PrivateRoute({ children, allowedRoles = [], className = 
         if (!authen) {
             window.location.href = '/login';
         }
+        if (user && !user?.isActive) {
+            router.push('/banned');
+        }
         if (user?.role && user && allowedRoles.length > 0 && !allowedRoles.includes(user?.role)) {
             unauthorized();
         }

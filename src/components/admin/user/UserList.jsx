@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { getAllUsers } from '@/service/admin/users/userManagement'
+import { disableUser, getAllUsers } from '@/service/admin/users/userManagement'
 import { ChevronRight } from 'lucide-react'
 import React, { Suspense, useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
@@ -26,12 +26,12 @@ export default function UserList({ className }) {
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(false);
     const [selectedUser, setSelectedUser] = useState(null);
+    const [disableLoading, setDisableLoading] = useState(false);
     const getUsers = useCallback(async () => {
         try {
             setLoading(true);
             const response = await getAllUsers();
             setData(response.data);
-            console.log(response);
         }
         catch (error) {
             toast.error('Failed to fetch users. Please try again later.', { duration: 4000 });
@@ -40,6 +40,43 @@ export default function UserList({ className }) {
             setLoading(false);
         }
     }, []);
+
+    const updateIsActive = (id) => {
+        setData(data.map(user => {
+            if (user.id === id) {
+                return { ...user, isActive: !user.isActive };
+            }
+            return user;
+        }));
+    }
+
+    const disableAccount = async (id, isActive) => {
+        try {
+            const funcData = {
+                id: id,
+                isActive: isActive
+            }
+            setDisableLoading(true);
+            await disableUser(funcData);
+            toast.success('Operation successfully.', { duration: 4000 });
+            updateIsActive(id, isActive);
+            // setData(data.map(user => {
+            //     if (user.id === id) {
+            //         return {
+            //             ...user,
+            //             isActive: !isActive
+            //         }
+            //     }
+            //     return user;
+            // }))
+            // await getUsers();
+        } catch (error) {
+            toast.error('Failed to disable user. Please try again later.', { duration: 4000 });
+            console.error('Error disabling user:', error);
+        } finally {
+            setDisableLoading(false);
+        }
+    }
 
     const handleChangePage = async () => {
         const info = {
@@ -140,7 +177,9 @@ export default function UserList({ className }) {
                             </TableHeader>
                             <TableBody>
                                 {(data || []).map((user) => (
-                                    <TableRow key={user.id} className="hover:bg-muted/50 cursor-pointer" onClick={() => setSelectedUser({ userId: user.id, userRole: user.role })}>
+                                    <TableRow key={user.id} className="hover:bg-muted/50 cursor-pointer"
+                                        onClick={() => setSelectedUser({ userId: user.id, userRole: user.role })}
+                                    >
                                         <TableCell>{user.id}</TableCell>
                                         <TableCell>{user.email}</TableCell>
                                         <TableCell>{user.role}</TableCell>
@@ -156,7 +195,11 @@ export default function UserList({ className }) {
                                                     </DropdownMenuTrigger>
                                                     <DropdownMenuContent align="start" side="right">
                                                         <DropdownMenuItem>Edit</DropdownMenuItem>
-                                                        <DropdownMenuItem>Disable</DropdownMenuItem>
+                                                        <DropdownMenuItem
+                                                            onClick={() => disableAccount(user.id, user.isActive)}
+                                                        >
+                                                            {user.isActive ? 'Disable' : 'Enable'}
+                                                        </DropdownMenuItem>
                                                     </DropdownMenuContent>
                                                 </DropdownMenu>
                                             )}
@@ -262,7 +305,7 @@ export default function UserList({ className }) {
             </div>
             <Separator orientation='vertical' />
             <div className='w-[40%]'>
-                <UserDetailPanel userData={selectedUser} setSelectedUser={setSelectedUser} />
+                <UserDetailPanel userData={selectedUser} setSelectedUser={setSelectedUser} updateIsActive={updateIsActive} />
             </div>
         </div >
     )

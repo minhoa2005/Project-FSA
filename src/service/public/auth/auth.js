@@ -18,18 +18,20 @@ const handleLogin = async (data) => {
     try {
         const result = await pool.request().input('email', email).query(
             `SELECT
-    A.id,
-    A.email,
-    A.password,
-    R.roleName AS role
-FROM
-    Account AS A
-JOIN
-    AccountRole AS AR ON A.id = AR.accountId 
-JOIN
-    Role AS R ON AR.roleId = R.id 
-WHERE
-    A.email = @email `
+                A.id,
+                A.email,
+                A.password,
+                A.isActive,
+                R.roleName AS role
+                FROM
+                    Account AS A
+                JOIN
+                    AccountRole AS AR ON A.id = AR.accountId 
+                JOIN
+                    Role AS R ON AR.roleId = R.id 
+                WHERE
+                    A.email = @email 
+    `
         );
         if (result.recordset.length === 0) {
             return { success: false, message: "Invalid email or password" };
@@ -42,7 +44,8 @@ WHERE
         const payload = {
             id: user.id,
             email: user.email,
-            role: user.role
+            role: user.role,
+            isActive: user.isActive
         }
         const token = signToken(payload);
         await setCookie(token);
@@ -108,7 +111,8 @@ const authMe = async () => {
             success: true, data: {
                 id: decodedToken.id,
                 email: decodedToken.email,
-                role: decodedToken.role
+                role: decodedToken.role,
+                isActive: decodedToken.isActive
             }
         };
     } else {

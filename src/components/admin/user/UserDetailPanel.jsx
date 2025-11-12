@@ -3,26 +3,22 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { formatDate } from '@/lib/formatter';
-import { getUserById } from '@/service/admin/users/userManagement'
+import { disableUser, getUserById } from '@/service/admin/users/userManagement'
 import React, { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner';
 
-export default function UserDetailPanel({ setSelectedUser, userData }) {
+export default function UserDetailPanel({ setSelectedUser, userData, updateIsActive }) {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(false);
-    const [fullName, setFullName] = useState('');
-    const [phoneNumber, setPhoneNumber] = useState('');
-    const [dob, setDob] = useState('');
+    const [disableLoading, setDisableLoading] = useState(false);
+    const [isActive, setIsActive] = useState(true);
 
     const fetchUserData = useCallback(async (id) => {
         try {
             setLoading(true);
             const response = await getUserById(id);
             setData(response.data);
-            console.log(response.data);
-            setFullName(response.data?.fullName || '');
-            setPhoneNumber(response.data?.phoneNumber || '');
-            setDob(response.data?.dob || '');
+            setIsActive(response.data.isActive);
         }
         catch (error) {
             toast.error('Failed to fetch user. Please try again later.', { duration: 4000 });
@@ -32,16 +28,25 @@ export default function UserDetailPanel({ setSelectedUser, userData }) {
         }
     }, []);
 
-    const saveEdit = async () => {
-        const saveData = {
-            ...data,
-            fullName,
-            phoneNumber,
-            dob
-        }
-        setData(saveData);
-        console.log('Saved data:', saveData);
 
+
+    const disableAccount = async () => {
+        try {
+            const funcData = {
+                id: data.id,
+                isActive: isActive
+            }
+            setDisableLoading(true);
+            await disableUser(funcData);
+            setIsActive(!isActive);
+            updateIsActive(data.id);
+            toast.success('User disabled successfully.', { duration: 4000 });
+        } catch (error) {
+            toast.error('Failed to disable user. Please try again later.', { duration: 4000 });
+            console.error('Error disabling user:', error);
+        } finally {
+            setDisableLoading(false);
+        }
     }
 
     useEffect(() => {
@@ -75,23 +80,29 @@ export default function UserDetailPanel({ setSelectedUser, userData }) {
                                 </div>
                                 <div className='grid gap-2'>
                                     <Label>Full Name</Label>
-                                    <Input value={fullName || ''} onChange={(e) => setFullName(e.target.value)} disabled={checkPermission(data?.role)} />
+                                    <Input value={data?.fullName || ''} disabled />
                                 </div>
                                 <div className='grid gap-2'>
                                     <Label>Phone Number</Label>
-                                    <Input value={phoneNumber || ''} onChange={(e) => setPhoneNumber(e.target.value)} disabled={checkPermission(data?.role)} />
+                                    <Input value={data?.phoneNumber || ''} disabled />
                                 </div>
                                 <div className='grid gap-2'>
                                     <Label>Date of Birth</Label>
-                                    <Input type={'date'} value={dob ? new Date(dob).toISOString().split('T')[0] : ''} onChange={(e) => { setDob(e.target.value) }} disabled={checkPermission(data?.role)} />
+                                    <Input type={'date'} value={data?.dob ? new Date(data.dob).toISOString().split('T')[0] : ''} disabled />
                                 </div>
                             </div>
 
                         </CardContent>
                         <CardFooter className='flex justify-center gap-2'>
-                            <Button variant="outline" disabled={!userData || checkPermission(data?.role)} onClick={saveEdit}>Save Changes</Button>
+                            <Button variant="outline" disabled={!userData || checkPermission(data?.role)} >Save Changes</Button>
                             <Button variant="outline" disabled={!userData || checkPermission(data?.role)}>Reset Password</Button>
-                            <Button variant="outline" disabled={!userData || checkPermission(data?.role)}>Disable</Button>
+                            <Button
+                                variant="outline"
+                                disabled={!userData || checkPermission(data?.role) || disableLoading}
+                                onClick={() => disableAccount()}
+                            >
+                                {isActive ? 'Disable' : 'Enable'}
+                            </Button>
                             <Button variant="outline" onClick={() => setSelectedUser(null)}>Close</Button>
                         </CardFooter>
                     </>

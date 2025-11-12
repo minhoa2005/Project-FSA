@@ -14,7 +14,6 @@ export default function AuthContext({ children, authMe, logout }) {
         setLoading(true);
         try {
             const response = await authMe();
-            console.log(response);
             if (response.success) {
                 setUser(response.data);
                 setAuthen(true);
