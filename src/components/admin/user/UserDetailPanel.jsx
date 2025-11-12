@@ -37,10 +37,15 @@ export default function UserDetailPanel({ setSelectedUser, userData, updateIsAct
                 isActive: isActive
             }
             setDisableLoading(true);
-            await disableUser(funcData);
-            setIsActive(!isActive);
-            updateIsActive(data.id);
-            toast.success('User disabled successfully.', { duration: 4000 });
+            const response = await disableUser(funcData);
+            if (!response.success) {
+                toast.error(response.message, { duration: 4000 });
+            }
+            else {
+                setIsActive(!isActive);
+                updateIsActive(data.id);
+                toast.success('User disabled successfully.', { duration: 4000 });
+            }
         } catch (error) {
             toast.error('Failed to disable user. Please try again later.', { duration: 4000 });
             console.error('Error disabling user:', error);
@@ -94,7 +99,6 @@ export default function UserDetailPanel({ setSelectedUser, userData, updateIsAct
 
                         </CardContent>
                         <CardFooter className='flex justify-center gap-2'>
-                            <Button variant="outline" disabled={!userData || checkPermission(data?.role)} >Save Changes</Button>
                             <Button variant="outline" disabled={!userData || checkPermission(data?.role)}>Reset Password</Button>
                             <Button
                                 variant="outline"

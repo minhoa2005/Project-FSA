@@ -8,7 +8,7 @@ export default function page() {
     return (
         <div>
             <header>
-                <AdminHeader name="User Management" />
+                <AdminHeader name="Account Management" />
             </header>
             <div>
                 <Suspense fallback={<UserListSkeleton />}>

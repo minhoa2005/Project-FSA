@@ -112,6 +112,23 @@ const disableUser = async (data) => {
     }
     try {
         const { id, isActive } = data;
+        const checkUser = await pool.request().input('id', id).query(
+            `
+            select r.roleName from Account a where id = @id join AccountRole ar on a.id = ar.accountId join Role r on ar.roleId = r.id
+            `
+        )
+        if (checkUser.recordset.length <= 0) {
+            return {
+                success: false,
+                message: "User not found"
+            }
+        }
+        if (checkUser.recordset[0].roleName === 'Admin') {
+            return {
+                success: false,
+                message: "Cannot disable Admin user"
+            }
+        }
         if (isActive) {
             const result = await pool.request().input('id', id).query(
                 `

@@ -37,8 +37,8 @@ const items = [
     icon: Inbox,
   },
   {
-    title: "User Management",
-    url: "/admin/user",
+    title: "Account Management",
+    url: "/admin/account",
     icon: User2Icon,
   },
 ]
