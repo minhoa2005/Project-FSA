@@ -57,9 +57,13 @@ export default function UserList({ className }) {
                 isActive: isActive
             }
             setDisableLoading(true);
-            await disableUser(funcData);
-            toast.success('Operation successfully.', { duration: 4000 });
-            updateIsActive(id, isActive);
+            const response = await disableUser(funcData);
+            if (response.success) {
+                toast.success('Operation successfully.', { duration: 4000 });
+                updateIsActive(id, isActive);
+            } else {
+                toast.error(response.message, { duration: 4000 });
+            }
             // setData(data.map(user => {
             //     if (user.id === id) {
             //         return {
@@ -194,7 +198,7 @@ export default function UserList({ className }) {
                                                         </Button>
                                                     </DropdownMenuTrigger>
                                                     <DropdownMenuContent align="start" side="right">
-                                                        <DropdownMenuItem>Edit</DropdownMenuItem>
+                                                        <DropdownMenuItem>Reset Password</DropdownMenuItem>
                                                         <DropdownMenuItem
                                                             onClick={() => disableAccount(user.id, user.isActive)}
                                                         >
