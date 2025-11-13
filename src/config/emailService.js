@@ -94,4 +94,4 @@ const sendNewPassword = async (to, pass) => {
     }
 }
 
-export { sendOTP };
+export { sendOTP, sendNewPassword };

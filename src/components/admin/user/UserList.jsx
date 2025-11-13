@@ -6,12 +6,12 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { disableUser, getAllUsers } from '@/service/admin/users/userManagement'
+import { disableUser, getAllUsers, resetAccountPassword } from '@/service/admin/users/userManagement'
 import { ChevronRight } from 'lucide-react'
 import React, { Suspense, useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import UserDetailPanel from './UserDetailPanel'
-import { unauthorized, useRouter } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination'
 import UserListSkeleton from './UserListSkeleton'
 import { debounce } from '@/lib/function'
@@ -26,6 +26,7 @@ export default function UserList({ className }) {
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(false);
     const [selectedUser, setSelectedUser] = useState(null);
+    const [resetPasswordLoading, setResetPasswordLoading] = useState(false);
     const [disableLoading, setDisableLoading] = useState(false);
     const getUsers = useCallback(async () => {
         try {
@@ -135,6 +136,27 @@ export default function UserList({ className }) {
 
     const debouncedSearch = debounce(setSearch, 500);
 
+    const handleResetPassword = async (id) => {
+        console.log('Reset password for user ID:', id);
+        setResetPasswordLoading(true);
+        try {
+            const response = await resetAccountPassword(id);
+            if (response.success) {
+                toast.success('Password reset successfully. The new password has been sent to the user\'s email.', { duration: 4000 });
+            } else {
+                toast.error(response.message, { duration: 4000 });
+            }
+        }
+        catch (error) {
+            toast.error('Failed to reset password. Please try again later.', { duration: 4000 });
+            console.error('Error resetting password:', error);
+        }
+        finally {
+            setResetPasswordLoading(false);
+        }
+
+    }
+
     useEffect(() => {
         handleFilter();
     }, [filter, search]);
@@ -198,8 +220,14 @@ export default function UserList({ className }) {
                                                         </Button>
                                                     </DropdownMenuTrigger>
                                                     <DropdownMenuContent align="start" side="right">
-                                                        <DropdownMenuItem>Reset Password</DropdownMenuItem>
                                                         <DropdownMenuItem
+                                                            disabled={resetPasswordLoading}
+                                                            onClick={() => handleResetPassword(user.id)}
+                                                        >
+                                                            Reset Password
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem
+                                                            disabled={disableLoading}
                                                             onClick={() => disableAccount(user.id, user.isActive)}
                                                         >
                                                             {user.isActive ? 'Disable' : 'Enable'}
