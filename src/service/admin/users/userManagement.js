@@ -2,7 +2,9 @@
 
 import { getCookie } from "@/config/cookie";
 import { sql, connectDB } from "@/config/db"
+import { sendNewPassword } from "@/config/emailService";
 import { verifyToken } from "@/config/jwt";
+import { randomPassword } from "@/lib/function";
 import bcrypt from "bcryptjs";
 import { Int, NVarChar } from "mssql";
 import { unauthorized } from "next/navigation";
@@ -114,7 +116,11 @@ const disableUser = async (data) => {
         const { id, isActive } = data;
         const checkUser = await pool.request().input('id', id).query(
             `
-            select r.roleName from Account a where id = @id join AccountRole ar on a.id = ar.accountId join Role r on ar.roleId = r.id
+            select r.roleName
+            from Account a
+            join AccountRole ar on a.id = ar.accountId
+            join Role r on ar.roleId = r.id
+            where a.id = @id
             `
         )
         if (checkUser.recordset.length <= 0) {
@@ -161,10 +167,45 @@ const disableUser = async (data) => {
     }
 }
 
-const resetPassword = async (userId) => {
+const resetAccountPassword = async (userId) => {
+    console.log('Resetting password for user ID:', userId);
     if (!await verifyAdmin()) {
         unauthorized();
     }
-
+    try {
+        const user = await pool.request().input('id', userId).query(
+            `
+            select email from Account where id = @id
+            `
+        )
+        if (user.recordset.length === 0) {
+            return {
+                success: false,
+                message: "User not fount"
+            }
+        }
+        const email = user.recordset[0].email;
+        const newPassword = randomPassword();
+        const hashedPassword = await bcrypt.hash(newPassword, await bcrypt.genSalt(10));
+        const updated = await pool.request().input('id', userId).input('password', hashedPassword).query(
+            `
+            update Account set password = @password where id = @id
+            `
+        )
+        if (updated.rowsAffected[0] >= 0) {
+            await sendNewPassword(email, newPassword);
+            return {
+                success: true,
+                message: "Password reset successfully",
+            }
+        }
+    }
+    catch (error) {
+        console.error('Error resetting user password:', error);
+        return {
+            success: false,
+            message: "Error resetting password"
+        }
+    }
 }
-export { getAllUsers, getUserById, disableUser, resetPassword };
+export { getAllUsers, getUserById, disableUser, resetAccountPassword };
