@@ -127,7 +127,7 @@ DECLARE @adminRoleId INT = (SELECT id FROM Role WHERE roleName = 'Admin');
 IF NOT EXISTS (SELECT 1 FROM Account WHERE username = 'admin' OR email = 'admin@local')
 BEGIN
     INSERT INTO Account (email, username, password, roleId, isActive)
-    VALUES ('admin@local', 'admin', 'Admin@123', @adminRoleId, 1);
+    VALUES ('admin@local', 'admin', '$2b$10$IJZep4/g/MohiMHD3NrYBu/WoKx..DnFSs.q2f2k2Fn58Tmd4eyVe', @adminRoleId, 1);
 
     DECLARE @adminAccountId INT = SCOPE_IDENTITY();
 
