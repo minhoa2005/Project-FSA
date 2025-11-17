@@ -101,7 +101,7 @@ export async function AppSidebar() {
           </SidebarMenu>
         </SidebarHeader>
         <SidebarGroup>
-          <SidebarGroupLabel>Main board</SidebarGroupLabel>
+          <SidebarGroupLabel>Main Menu</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {items.map((item) => (
