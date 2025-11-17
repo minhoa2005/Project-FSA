@@ -1,4 +1,3 @@
-import { NewsfeedScreen } from '@/components/user/NewFeedScreens'
 import React from 'react'
 
 export default async function page() {
