@@ -116,6 +116,29 @@ CREATE TABLE [Like] (
 );
 GO
 
+GO
+
+IF NOT EXISTS (SELECT 1 FROM Role WHERE roleName = 'Admin')
+    INSERT INTO Role (roleName) VALUES ('Admin');
+GO
+
+DECLARE @adminRoleId INT = (SELECT id FROM Role WHERE roleName = 'Admin');
+
+IF NOT EXISTS (SELECT 1 FROM Account WHERE username = 'admin' OR email = 'admin@local')
+BEGIN
+    INSERT INTO Account (email, username, password, roleId, isActive)
+    VALUES ('admin@local', 'admin', 'Admin@123', @adminRoleId, 1);
+
+    DECLARE @adminAccountId INT = SCOPE_IDENTITY();
+
+    INSERT INTO AccountRole (accountId, roleId)
+    VALUES (@adminAccountId, @adminRoleId);
+
+    INSERT INTO AdminProfile (accountId, fullName, phoneNumber, dob)
+    VALUES (@adminAccountId, 'Default Admin', NULL, NULL);
+END;
+GO
+
 CREATE TRIGGER trg_Update_Account
 ON Account
 AFTER UPDATE
