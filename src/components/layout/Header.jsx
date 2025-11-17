@@ -13,7 +13,7 @@ export default function Header() {
     const { theme, setTheme } = useTheme();
     const { logout, user } = useUser();
     return (
-        <div className='border-b border-gray-300 sticky top-0 z-50'>
+        <div className={`border-b border-gray-300 sticky top-0 z-50 bg-background`}>
             <div className='p-2 flex justify-between items-center gap-4'>
                 <div className='flex gap-2 items-center LogoSearch flex-1'>
                     <Image src="/logo2.png" alt="Logo" width={50} height={50} />
