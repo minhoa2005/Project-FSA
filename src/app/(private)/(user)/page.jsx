@@ -1,5 +1,4 @@
 import { BlogDetailScreen } from '@/components/blog/BlogDetailScreen'
-import { ChatScreen } from '@/components/blog/ChatScreen'
 import { ContactsSidebar } from '@/components/blog/ContactsSidebar'
 import React from 'react'
 
