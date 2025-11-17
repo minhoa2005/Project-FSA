@@ -6,7 +6,6 @@ export default async function page() {
         <div>
             <div>
                 {/* Content */}
-                <NewsfeedScreen />
             </div>
             <div>
                 {/* Thanh friend */}
