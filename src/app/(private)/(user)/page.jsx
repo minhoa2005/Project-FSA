@@ -1,3 +1,4 @@
+import { NewsfeedScreen } from '@/components/user/NewFeedScreens'
 import React from 'react'
 
 export default async function page() {
@@ -5,6 +6,7 @@ export default async function page() {
         <div>
             <div>
                 {/* Content */}
+                <NewsfeedScreen />
             </div>
             <div>
                 {/* Thanh friend */}
