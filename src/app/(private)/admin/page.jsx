@@ -1,9 +1,7 @@
-
 import AdminHeader from "@/components/layout/AdminHeader";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-
 
 export default function Page() {
     return (

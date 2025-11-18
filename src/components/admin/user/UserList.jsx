@@ -28,6 +28,7 @@ export default function UserList({ className }) {
     const [selectedUser, setSelectedUser] = useState(null);
     const [resetPasswordLoading, setResetPasswordLoading] = useState(false);
     const [disableLoading, setDisableLoading] = useState(false);
+
     const getUsers = useCallback(async () => {
         try {
             setLoading(true);
