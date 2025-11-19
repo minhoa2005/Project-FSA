@@ -1,7 +1,6 @@
 import UserList from '@/components/admin/user/UserList'
 import AdminHeader from '@/components/layout/AdminHeader'
-import React, { Suspense } from 'react'
-import UserListSkeleton from '@/components/admin/user/UserListSkeleton'
+import React from 'react'
 
 
 export default function page() {
@@ -11,9 +10,7 @@ export default function page() {
                 <AdminHeader name="Account Management" />
             </header>
             <div>
-                <Suspense fallback={<UserListSkeleton />}>
-                    <UserList />
-                </Suspense>
+                <UserList />
             </div>
         </div>
     )
