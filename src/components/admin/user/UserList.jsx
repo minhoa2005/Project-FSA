@@ -191,57 +191,55 @@ export default function UserList({ className }) {
                 {loading ? (
                     <UserListSkeleton />
                 ) : (
-                    <Suspense fallback={<UserListSkeleton />}>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>User ID</TableHead>
-                                    <TableHead>Email</TableHead>
-                                    <TableHead>Role</TableHead>
-                                    <TableHead>Is Active</TableHead>
-                                    <TableHead></TableHead>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>User ID</TableHead>
+                                <TableHead>Email</TableHead>
+                                <TableHead>Role</TableHead>
+                                <TableHead>Is Active</TableHead>
+                                <TableHead></TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {(data || []).map((user) => (
+                                <TableRow key={user.id} className="hover:bg-muted/50 cursor-pointer"
+                                    onClick={() => setSelectedUser({ userId: user.id, userRole: user.role })}
+                                >
+                                    <TableCell>{user.id}</TableCell>
+                                    <TableCell>{user.email}</TableCell>
+                                    <TableCell>{user.role}</TableCell>
+                                    <TableCell>{user.isActive ? "Active" : "Inactive"}</TableCell>
+                                    <TableCell>
+                                        {user.role !== 'Admin' && (
+                                            <DropdownMenu >
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button variant={'ghost'}>
+                                                        Action
+                                                        <ChevronRight />
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="start" side="right">
+                                                    <DropdownMenuItem
+                                                        disabled={resetPasswordLoading}
+                                                        onClick={() => handleResetPassword(user.id)}
+                                                    >
+                                                        Reset Password
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem
+                                                        disabled={disableLoading}
+                                                        onClick={() => disableAccount(user.id, user.isActive)}
+                                                    >
+                                                        {user.isActive ? 'Disable' : 'Enable'}
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        )}
+                                    </TableCell>
                                 </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {(data || []).map((user) => (
-                                    <TableRow key={user.id} className="hover:bg-muted/50 cursor-pointer"
-                                        onClick={() => setSelectedUser({ userId: user.id, userRole: user.role })}
-                                    >
-                                        <TableCell>{user.id}</TableCell>
-                                        <TableCell>{user.email}</TableCell>
-                                        <TableCell>{user.role}</TableCell>
-                                        <TableCell>{user.isActive ? "Active" : "Inactive"}</TableCell>
-                                        <TableCell>
-                                            {user.role !== 'Admin' && (
-                                                <DropdownMenu >
-                                                    <DropdownMenuTrigger asChild>
-                                                        <Button variant={'ghost'}>
-                                                            Action
-                                                            <ChevronRight />
-                                                        </Button>
-                                                    </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="start" side="right">
-                                                        <DropdownMenuItem
-                                                            disabled={resetPasswordLoading}
-                                                            onClick={() => handleResetPassword(user.id)}
-                                                        >
-                                                            Reset Password
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuItem
-                                                            disabled={disableLoading}
-                                                            onClick={() => disableAccount(user.id, user.isActive)}
-                                                        >
-                                                            {user.isActive ? 'Disable' : 'Enable'}
-                                                        </DropdownMenuItem>
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
-                                            )}
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </Suspense>
+                            ))}
+                        </TableBody>
+                    </Table>
                 )}
                 <div>
                     <Select onValueChange={setTotalPerPage} value={totalPerPage}>
