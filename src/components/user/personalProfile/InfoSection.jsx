@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { getPersonalInfo, updateInfo } from '@/service/user/personalInfo'
+import { getPersonalInfo, updateInfo } from '@/service/users/personalInfo'
 import React, { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import InfoSectionSkeleton from './InfoSectionSkeleton'
@@ -58,7 +58,7 @@ export default function InfoSection({ className }) {
         fetching ? (
             <InfoSectionSkeleton />
         ) : (
-            <Card Card className={`${className}`}>
+            <Card className={`${className}`}>
                 <CardHeader>
                     <CardTitle className='text-2xl'>Personal Information</CardTitle>
                 </CardHeader>
