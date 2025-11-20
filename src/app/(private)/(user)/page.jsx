@@ -1,13 +1,17 @@
+import { BlogDetailScreen } from '@/components/blog/BlogDetailScreen'
+import ContactsSidebar from '@/components/blog/ContactsSidebar'
+
 import React from 'react'
 
-export default async function page() {
+export default function page() {
     return (
-        <div>
-            <div>
+        <div className='grid grid-cols-4'>
+            <div className='col-span-3'>
+                <BlogDetailScreen />
                 {/* Content */}
             </div>
-            <div>
-                {/* Thanh friend */}
+            <div  className='cols-span-1'>
+                <ContactsSidebar />
             </div>
         </div>
     )
