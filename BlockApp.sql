@@ -48,6 +48,7 @@ CREATE TABLE AdminProfile (
     fullName VARCHAR(100) NOT NULL,
     phoneNumber VARCHAR(15),
     dob DATE,
+    imgUrl VARCHAR(255),
     createdAt DATETIME DEFAULT GETDATE(),
     updatedAt DATETIME DEFAULT GETDATE()
 );
@@ -59,6 +60,7 @@ CREATE TABLE UserProfile (
     fullName VARCHAR(100) NOT NULL,
     phoneNumber VARCHAR(15),
     dob DATE,
+    imgUrl VARCHAR(255),
     createdAt DATETIME DEFAULT GETDATE(),
     updatedAt DATETIME DEFAULT GETDATE()
 );
@@ -100,7 +102,8 @@ CREATE TABLE Comments (
     id INT IDENTITY(1,1) PRIMARY KEY,
     userId INT NOT NULL,
     blogId INT NOT NULL,
-    comment TEXT NOT NULL,
+    text VARCHAR(MAX) NULL,
+    image VARCHAR(255) NULL,
     createdAt DATETIME DEFAULT GETDATE(),
     FOREIGN KEY (userId) REFERENCES Account(id),
     FOREIGN KEY (blogId) REFERENCES Blogs(id)

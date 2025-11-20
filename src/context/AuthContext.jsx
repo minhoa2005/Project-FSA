@@ -1,4 +1,5 @@
 "use client"
+import { useRouter } from 'next/navigation';
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { toast } from 'sonner';
 
@@ -9,6 +10,8 @@ export default function AuthContext({ children, authMe, logout }) {
     const [loading, setLoading] = useState(true);
     const [authen, setAuthen] = useState(false);
     const [error, setError] = useState(null);
+    const router = useRouter();
+
 
     const auth = async () => {
         setLoading(true);
@@ -31,12 +34,19 @@ export default function AuthContext({ children, authMe, logout }) {
         }
     }
 
+    const handleLogout = async () => {
+        await logout();
+        setUser(null)
+        setAuthen(false)
+        router.push('/login')
+    }
+
     useEffect(() => {
         auth();
     }, []);
 
     return (
-        <userContext.Provider value={{ user, setUser, loading, setLoading, authen, setAuthen, error, setError, logout }}>
+        <userContext.Provider value={{ user, setUser, loading, setLoading, authen, setAuthen, error, setError, logout, handleLogout }}>
             {children}
         </userContext.Provider>
     )
@@ -51,3 +61,5 @@ export const useUser = () => {
     }
     return context;
 }
+
+
