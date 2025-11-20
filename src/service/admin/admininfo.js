@@ -10,6 +10,7 @@ const pool = await connectDB();
 const verifyAdmin = async () => {
     const token = await getCookie();
     const verifyAdmin = verifyToken(token);
+    // console.log(verifyAdmin.role)
 
     if (!verifyAdmin || verifyAdmin.role !== 'Admin') {
         return false;
@@ -39,4 +40,4 @@ const getAdminInfo = async () => {
     }
 }
 
-export { getAdminInfo };
+export { getAdminInfo, verifyAdmin };
