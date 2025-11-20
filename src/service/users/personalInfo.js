@@ -18,7 +18,7 @@ const verifyUser = async () => {
 const getPersonalInfo = async () => {
     if (!await verifyUser()) {
         unauthorized();
-    }
+    } 
     try {
         const token = await getCookie();
         const decoded = verifyToken(token);
