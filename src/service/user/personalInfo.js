@@ -10,11 +10,10 @@ const verifyUser = async () => {
     const token = await getCookie();
     const verifyUser = verifyToken(token);
     if (!verifyUser || verifyUser.role !== 'User') {
-        // console.log(1)
         return false;
     }
     return true;
-}
+};
 
 const getPersonalInfo = async () => {
     if (!await verifyUser()) {
