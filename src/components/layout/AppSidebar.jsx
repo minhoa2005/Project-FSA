@@ -5,6 +5,7 @@ import { AlertCircle, BanIcon, Calendar, CheckCircle2, ChevronUp, createLucideIc
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu'
 import { useUser } from '@/context/AuthContext'
 import { getAdminInfo } from '@/service/admin/admininfo'
+import { useRouter } from 'next/navigation'
 
 const dashboard = [
   {
@@ -66,7 +67,8 @@ const report = [
 export function AppSidebar() {
 
   const { handleLogout } = useUser();
-  const [info, setInfo]  = useState();
+  const [info, setInfo] = useState();
+  const router = useRouter();
 
   useEffect(() => {
     const fetchInfo = async () => {
@@ -85,100 +87,100 @@ export function AppSidebar() {
   }, [])
 
   return (
-      <Sidebar>
-        <SidebarContent>
-          <SidebarGroup>
-            <SidebarGroupContent>
+    <Sidebar>
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupContent>
 
-              <SidebarGroupLabel className={'text-base'}>Dashboard</SidebarGroupLabel>
-              <SidebarMenu>
-                {dashboard.map((dashboard) => (
-                  <SidebarMenuItem key={dashboard.title}>
-                    <SidebarMenuButton asChild>
-                      <a href={dashboard.url}>
-                        <dashboard.icon />
-                        <span>{dashboard.title}</span>
-                      </a>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-
-              <SidebarGroupLabel className={'text-base'}>Users</SidebarGroupLabel>
-              <SidebarMenu>
-                {user.map((u) => (
-                  <SidebarMenuItem key={(u.title)}>
-                    <SidebarMenuButton asChild>
-                      <a href={u.url}>
-                        <u.icon />
-                        <span>{u.title}</span>
-                      </a>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-
-              <SidebarGroupLabel className={'text-base'}>Blog</SidebarGroupLabel>
-              <SidebarMenu>
-                {blog.map((b) => (
-                  <SidebarMenuItem key={(b.title)}>
-                    <SidebarMenuButton asChild>
-                      <a href={b.url}>
-                        <b.icon />
-                        <span>{b.title}</span>
-                      </a>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-
-              <SidebarGroupLabel className={'text-base'}>Báo cáo & Kiểm duyệt</SidebarGroupLabel>
-              <SidebarMenu>
-                {report.map((b) => (
-                  <SidebarMenuItem key={(b.title)}>
-                    <SidebarMenuButton asChild>
-                      <a href={b.url}>
-                        <b.icon />
-                        <span>{b.title}</span>
-                      </a>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-
-            </SidebarGroupContent>
-          </SidebarGroup>
-        </SidebarContent>
-
-        <SidebarFooter>
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <SidebarMenuButton>
-                    <User2 />{info?.fullName ? info.fullName : 'Null'}
-
-                    <ChevronUp className="ml-auto" />
-                  </SidebarMenuButton>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  side="top"
-                  className="w-[--radix-popper-anchor-width]"
-                >
-                  <DropdownMenuItem>
-                    <a href='admin/reset-pass'>
-                      <span>Đổi mật khẩu</span>
+            <SidebarGroupLabel className={'text-base'}>Dashboard</SidebarGroupLabel>
+            <SidebarMenu>
+              {dashboard.map((dashboard) => (
+                <SidebarMenuItem key={dashboard.title}>
+                  <SidebarMenuButton asChild>
+                    <a href={dashboard.url}>
+                      <dashboard.icon />
+                      <span>{dashboard.title}</span>
                     </a>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleLogout}>
-                    Đăng xuất
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </SidebarMenuItem>
-          </SidebarMenu>
-        </SidebarFooter>
-      </Sidebar>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+
+            <SidebarGroupLabel className={'text-base'}>Users</SidebarGroupLabel>
+            <SidebarMenu>
+              {user.map((u) => (
+                <SidebarMenuItem key={(u.title)}>
+                  <SidebarMenuButton asChild>
+                    <a href={u.url}>
+                      <u.icon />
+                      <span>{u.title}</span>
+                    </a>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+
+            <SidebarGroupLabel className={'text-base'}>Blog</SidebarGroupLabel>
+            <SidebarMenu>
+              {blog.map((b) => (
+                <SidebarMenuItem key={(b.title)}>
+                  <SidebarMenuButton asChild>
+                    <a href={b.url}>
+                      <b.icon />
+                      <span>{b.title}</span>
+                    </a>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+
+            <SidebarGroupLabel className={'text-base'}>Báo cáo & Kiểm duyệt</SidebarGroupLabel>
+            <SidebarMenu>
+              {report.map((b) => (
+                <SidebarMenuItem key={(b.title)}>
+                  <SidebarMenuButton asChild>
+                    <a href={b.url}>
+                      <b.icon />
+                      <span>{b.title}</span>
+                    </a>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
+
+      <SidebarFooter>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <SidebarMenuButton>
+                  <User2 />{info?.fullName ? info.fullName : 'Null'}
+
+                  <ChevronUp className="ml-auto" />
+                </SidebarMenuButton>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                side="top"
+                className="w-[--radix-popper-anchor-width]"
+              >
+                <DropdownMenuItem>
+                  <a href='admin/reset-pass'>
+                    <span>Đổi mật khẩu</span>
+                  </a>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleLogout}>
+                  Đăng xuất
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
+    </Sidebar>
 
   )
 }
