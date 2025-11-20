@@ -2,7 +2,6 @@ import AuthContext from "@/context/AuthContext";
 import "./globals.css";
 import { Toaster } from "sonner";
 import { authMe, logout } from "@/service/public/auth/auth";
-import { cookies } from "next/headers";
 
 export default async function Layout({ children }) {
     return (
