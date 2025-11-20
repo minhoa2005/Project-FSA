@@ -17,15 +17,16 @@ Mở Terminal mới trong Visual Studio Code.
 3. Cài Đặt Các Gói Phụ Thuộc
 Chạy lệnh sau để cài đặt tất cả các gói Node.js cần thiết (từ file package.json):
 
-Bash
 
 npm install
+
+
 4. Khởi Chạy Chế Độ Phát Triển
 Chạy lệnh sau để khởi động ứng dụng ở chế độ phát triển (dev):
 
-Bash
-
 npm run dev
+
+
 Ứng dụng sẽ tự động chạy và có thể truy cập qua trình duyệt (thông thường là http://localhost:<PORT>).
 
 - Thông Tin Tài Khoản Mặc Định
@@ -35,4 +36,3 @@ Email: admin@local
 
 Mật khẩu: Admin123456
 
-Bạn có muốn tôi giúp tạo thêm mục "Các Lệnh Hữu Ích Khác" hoặc "Cấu Trúc Dự Án" không?
