@@ -77,4 +77,4 @@ const updateInfo = async (data) => {
         }
     }
 }
-export { getPersonalInfo };
+export { getPersonalInfo, updateInfo };

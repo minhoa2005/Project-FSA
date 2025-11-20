@@ -3,9 +3,10 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { getPersonalInfo } from '@/service/user/personalInfo'
+import { getPersonalInfo, updateInfo } from '@/service/user/personalInfo'
 import React, { useEffect, useState } from 'react'
 import { toast } from 'sonner'
+import InfoSectionSkeleton from './InfoSectionSkeleton'
 
 export default function InfoSection({ className }) {
     const [fetching, setFetching] = useState(false);
@@ -33,10 +34,17 @@ export default function InfoSection({ className }) {
     const handleUpdate = async () => {
         setLoading(true);
         try {
-
+            const response = await updateInfo(data);
+            if (response.success) {
+                toast.success("Personal information updated successfully.", { duration: 4000 });
+            }
+            else {
+                toast.error(response.message || "Failed to update personal information.", { duration: 4000 });
+            }
         }
         catch (error) {
-
+            console.error("Error updating personal info:", error);
+            toast.error("Failed to update personal information.", { duration: 4000 });
         }
         finally {
             setLoading(false);
@@ -45,51 +53,56 @@ export default function InfoSection({ className }) {
     useEffect(() => {
         fetchInfo();
     }, [])
+
     return (
-        <Card className={`${className}`}>
-            <CardHeader>
-                <CardTitle className='text-2xl'>Personal Information</CardTitle>
-            </CardHeader>
-            <CardContent>
-                <div className=''>
-                    <Label>Full Name</Label>
-                    <Input
-                        placeholder={data?.fullName ? '' : 'Not provided'}
-                        type="text"
-                        value={data?.fullName}
-                        onChange={(e) => setData((prev) => ({ ...prev, fullName: e.target.value }))}
-                        className="mt-1 mb-4" />
-                </div>
-                <div>
-                    <Label>Email Address</Label>
-                    <Input
-                        placeholder={data?.email ? '' : 'Not provided'}
-                        type="email"
-                        value={data?.email}
-                        onChange={(e) => setData((prev) => ({ ...prev, email: e.target.value }))}
-                        className="mt-1 mb-4" />
-                </div>
-                <div>
-                    <Label>Phone Number</Label>
-                    <Input
-                        placeholder={data?.phoneNumber ? '' : 'Not provided'}
-                        type="tel"
-                        value={data?.phoneNumber}
-                        onChange={(e) => setData((prev) => ({ ...prev, phoneNumber: e.target.value }))}
-                        className="mt-1 mb-4" />
-                </div>
-                <div>
-                    <Label>Date of Birth</Label>
-                    <Input
-                        type="date"
-                        value={data?.dob ? new Date(data.dob).toISOString().split('T')[0] : ''}
-                        onChange={(e) => setData((prev) => ({ ...prev, dob: e.target.value }))}
-                        className="mt-1 mb-4" />
-                </div>
-            </CardContent>
-            <CardFooter className='flex justify-end' >
-                <Button className='cursor-pointer'>Update Information</Button>
-            </CardFooter>
-        </Card>
+        fetching ? (
+            <InfoSectionSkeleton />
+        ) : (
+            <Card Card className={`${className}`}>
+                <CardHeader>
+                    <CardTitle className='text-2xl'>Personal Information</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div className=''>
+                        <Label>Full Name</Label>
+                        <Input
+                            placeholder={data?.fullName ? '' : 'Not provided'}
+                            type="text"
+                            value={data?.fullName}
+                            onChange={(e) => setData((prev) => ({ ...prev, fullName: e.target.value }))}
+                            className="mt-1 mb-4" />
+                    </div>
+                    <div>
+                        <Label>Email Address</Label>
+                        <Input
+                            placeholder={data?.email ? '' : 'Not provided'}
+                            type="email"
+                            value={data?.email}
+                            onChange={(e) => setData((prev) => ({ ...prev, email: e.target.value }))}
+                            className="mt-1 mb-4" />
+                    </div>
+                    <div>
+                        <Label>Phone Number</Label>
+                        <Input
+                            placeholder={data?.phoneNumber ? '' : 'Not provided'}
+                            type="tel"
+                            value={data?.phoneNumber}
+                            onChange={(e) => setData((prev) => ({ ...prev, phoneNumber: e.target.value }))}
+                            className="mt-1 mb-4" />
+                    </div>
+                    <div>
+                        <Label>Date of Birth</Label>
+                        <Input
+                            type="date"
+                            value={data?.dob ? new Date(data.dob).toISOString().split('T')[0] : ''}
+                            onChange={(e) => setData((prev) => ({ ...prev, dob: e.target.value }))}
+                            className="mt-1 mb-4" />
+                    </div>
+                </CardContent>
+                <CardFooter className='flex justify-end' >
+                    <Button className='cursor-pointer' onClick={() => handleUpdate()} disabled={loading}>Update Information</Button>
+                </CardFooter>
+            </Card >
+        )
     )
 }
