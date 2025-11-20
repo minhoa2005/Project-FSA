@@ -85,7 +85,6 @@ export function AppSidebar() {
   }, [])
 
   return (
-    <SidebarProvider>
       <Sidebar>
         <SidebarContent>
           <SidebarGroup>
@@ -180,7 +179,6 @@ export function AppSidebar() {
           </SidebarMenu>
         </SidebarFooter>
       </Sidebar>
-    </SidebarProvider>
 
   )
 }

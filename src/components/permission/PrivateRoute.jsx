@@ -6,7 +6,7 @@ import React, { useEffect } from 'react'
 export default function PrivateRoute({ children, allowedRoles = [], className = '' }) {
     const { authen, loading, user } = useUser();
     const router = useRouter();
-    useEffect(() => {
+    useEffect(() =>  {
         if (loading) return;
         if (!authen) {
             window.location.href = '/login';
