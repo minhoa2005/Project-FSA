@@ -13,7 +13,7 @@ export default async function layout({ children }) {
         redirect('/login');
     }
     return (
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem> 
             {children}
         </ThemeProvider>
     )
