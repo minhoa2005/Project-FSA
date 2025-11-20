@@ -25,6 +25,8 @@ npm install
 Chạy lệnh sau để khởi động ứng dụng ở chế độ phát triển (dev):
 
 npm run dev
+
+
 Ứng dụng sẽ tự động chạy và có thể truy cập qua trình duyệt (thông thường là http://localhost:<PORT>).
 
 - Thông Tin Tài Khoản Mặc Định
