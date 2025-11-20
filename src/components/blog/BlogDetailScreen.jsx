@@ -38,13 +38,13 @@ export function BlogDetailScreen() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen">
       <div className="max-w-4xl mx-auto p-6">
         {/* Blog Header */}
         <div className="mb-6">
           <Badge className="mb-4">Công nghệ</Badge>
           <h1 className="mb-4">10 Tips for Better Web Development</h1>
-          
+
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Avatar>
@@ -56,15 +56,15 @@ export function BlogDetailScreen() {
                 <p className="text-sm text-gray-600">15/11/2024 • 5 phút đọc</p>
               </div>
             </div>
-            
+
             <Button variant="outline" size="sm">
               <MoreHorizontal className="w-4 h-4" />
             </Button>
           </div>
         </div>
-        
+
         {/* Cover Image */}
-        
+
         {/* Engagement Bar */}
         <Card className="mb-6">
           <CardContent className="p-4">
@@ -83,42 +83,42 @@ export function BlogDetailScreen() {
                   <span>18</span>
                 </Button>
               </div>
-              
+
               <Button variant="ghost" size="sm">
                 <Bookmark className="w-5 h-5" />
               </Button>
             </div>
           </CardContent>
         </Card>
-        
+
         {/* Blog Content */}
         <Card className="mb-6">
           <CardContent className="p-8 prose max-w-none">
             <p>
               Web development is constantly evolving, and staying up-to-date with the latest best practices is crucial for creating efficient, maintainable code. In this article, I'll share my top 10 tips that have helped me become a better developer.
             </p>
-            
+
             <h2>1. Write Clean, Readable Code</h2>
             <p>
               Clean code is not just about making your code work—it's about making it understandable for others (and your future self). Use meaningful variable names, proper indentation, and comments where necessary.
             </p>
-            
+
             <h2>2. Master the Fundamentals</h2>
             <p>
               Before jumping into the latest framework, make sure you have a solid understanding of HTML, CSS, and JavaScript. These fundamentals will serve you well regardless of which tools you use.
             </p>
-            
+
             <h2>3. Learn Version Control</h2>
             <p>
               Git is an essential tool for any developer. Understanding version control will help you collaborate with others and manage your codebase effectively.
             </p>
-            
+
             <p className="text-gray-600 italic">
               Continue reading to discover the remaining 7 tips that will transform your web development workflow...
             </p>
           </CardContent>
         </Card>
-        
+
         {/* Tags */}
         <div className="flex gap-2 mb-6">
           <Badge variant="secondary">webdev</Badge>
@@ -126,13 +126,13 @@ export function BlogDetailScreen() {
           <Badge variant="secondary">tips</Badge>
           <Badge variant="secondary">javascript</Badge>
         </div>
-        
+
         <Separator className="my-8" />
-        
+
         {/* Comments Section */}
         <div>
           <h2 className="mb-4">Bình luận ({comments.length})</h2>
-          
+
           {/* Add Comment */}
           <Card className="mb-6">
             <CardContent className="p-4">
@@ -142,7 +142,7 @@ export function BlogDetailScreen() {
                   <AvatarFallback>U</AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
-                  <Textarea 
+                  <Textarea
                     placeholder="Viết bình luận của bạn..."
                     rows={3}
                   />
@@ -154,7 +154,7 @@ export function BlogDetailScreen() {
               </div>
             </CardContent>
           </Card>
-          
+
           {/* Comments List */}
           <div className="space-y-4">
             {comments.map((comment) => (
@@ -181,7 +181,7 @@ export function BlogDetailScreen() {
                           Trả lời
                         </Button>
                       </div>
-                      
+
                       {/* Replies */}
                       {comment.replies && comment.replies.length > 0 && (
                         <div className="mt-4 pl-6 border-l-2 border-gray-200 space-y-4">
