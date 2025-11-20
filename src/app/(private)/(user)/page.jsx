@@ -1,5 +1,6 @@
 import { BlogDetailScreen } from '@/components/blog/BlogDetailScreen'
-import { ContactsSidebar } from '@/components/blog/ContactsSidebar'
+import ContactsSidebar from '@/components/blog/ContactsSidebar'
+
 import React from 'react'
 
 export default function page() {

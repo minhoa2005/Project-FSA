@@ -116,6 +116,18 @@ CREATE TABLE [Like] (
 );
 GO
 
+CREATE TABLE Messages (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    senderId INT NOT NULL,
+    receiverId INT NOT NULL,
+    roomId VARCHAR(50) NOT NULL,
+    text NVARCHAR(MAX) NOT NULL,
+    createdAt DATETIME DEFAULT GETDATE(),
+    FOREIGN KEY (senderId) REFERENCES Account(id),
+    FOREIGN KEY (receiverId) REFERENCES Account(id)
+);
+GO
+
 GO
 
 IF NOT EXISTS (SELECT 1 FROM Role WHERE roleName = 'Admin')
