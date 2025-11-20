@@ -35,4 +35,3 @@ Email: admin@local
 
 Mật khẩu: Admin123456
 
-Bạn có muốn tôi giúp tạo thêm mục "Các Lệnh Hữu Ích Khác" hoặc "Cấu Trúc Dự Án" không?
