@@ -170,8 +170,8 @@ export function AppSidebar() {
                       <span>Đổi mật khẩu</span>
                     </a>
                   </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <span onClick={handleLogout}>Đăng xuất</span>
+                  <DropdownMenuItem onClick={handleLogout}>
+                    Đăng xuất
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
