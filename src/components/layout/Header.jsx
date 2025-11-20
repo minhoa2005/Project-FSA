@@ -8,10 +8,12 @@ import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuPortal, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from '../ui/dropdown-menu'
 import { useUser } from '@/context/AuthContext'
 import { getInitials } from '@/lib/formatter'
+import { useRouter } from 'next/navigation'
 
 export default function Header() {
     const { theme, setTheme } = useTheme();
     const { logout, user } = useUser();
+    const router = useRouter()
     return (
         <div className={`border-b border-gray-300 sticky top-0 z-50 bg-background`}>
             <div className='p-2 flex justify-between items-center gap-4'>
@@ -28,10 +30,10 @@ export default function Header() {
                     </div>
                 </div>
                 <div className='flex-1 flex justify-center items-center'>
-                    <Button variant="ghost" className="p-6 w-[20%] cursor-pointer ">
+                    <Button variant="ghost" className="p-6 w-[20%] cursor-pointer " onClick={() => { router.push('/') }}>
                         <HomeIcon className="h-10 w-10" />
                     </Button>
-                    <Button variant="ghost" className="p-6 w-[20%] cursor-pointer">
+                    <Button variant="ghost" className="p-6 w-[20%] cursor-pointer" onClick={() => { router.push('/personal/page') }}>
                         <User className="h-10 w-10" />
                     </Button>
                 </div>
@@ -44,7 +46,7 @@ export default function Header() {
                             </Avatar>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent className="w-56">
-                            <DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => { router.push('/personal/info') }}>
                                 <Avatar className="h-4 w-4 cursor-pointer ">
                                     <AvatarImage src="/avatar.png" alt="User Avatar" />
                                     <AvatarFallback>{getInitials(user?.username)}</AvatarFallback>
