@@ -8,6 +8,10 @@ export default async function layout({ children }) {
     if (!cookie) {
         redirect('/login');
     }
+    const verified = verifyToken(cookie);
+    if (!cookie || !verified) {
+        redirect('/login');
+    }
     return (
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
             {children}
