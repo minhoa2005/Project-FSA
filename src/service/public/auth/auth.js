@@ -31,7 +31,9 @@ const handleLogin = async (data) => {
                     A.email = @email 
     `
         );
+        console.log(result.recordset);
         if (result.recordset.length === 0) {
+            
             return { success: false, message: "Invalid email or password" };
         }
         const user = {
@@ -43,6 +45,7 @@ const handleLogin = async (data) => {
         };
         const hashedPassword = result.recordset[0].password;
         const isMatch = await bcrypt.compare(password, hashedPassword);
+        console.log(result.recordset);
         if (!isMatch) {
             return { success: false, message: "Invalid email or password" };
         }
@@ -53,6 +56,7 @@ const handleLogin = async (data) => {
             role: user.role,
             isActive: user.isActive
         }
+        console.log(result.recordset);
         const token = signToken(payload);
         await setCookie(token);
         return { success: true, message: "Login successful", user };
