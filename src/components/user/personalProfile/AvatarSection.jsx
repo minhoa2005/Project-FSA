@@ -14,13 +14,13 @@ export default function AvatarSection({ className }) {
                         <AvatarFallback>{getInitials("Minh")}</AvatarFallback>
                     </Avatar>
                     <div className='flex flex-col gap-1' >
-                        <p>Profile Picture</p>
-                        <p className='text-zinc-400 text-sm' >PNG, JPEG under 15MB</p>
+                        <p>Ảnh đại diện</p>
+                        <p className='text-zinc-400 text-sm' >PNG, JPEG dưới 15MB</p>
                     </div>
                 </div>
                 <div className='flex  gap-2 justify-center' >
-                    <Button className={'cursor-pointer'}>Upload profile picture</Button>
-                    <Button variant="outline" className={'cursor-pointer'}>Remove</Button>
+                    <Button className={'cursor-pointer'}>Đăng tải ảnh</Button>
+                    <Button variant="outline" className={'cursor-pointer'}>Xóa</Button>
                 </div>
             </CardContent>
         </Card>

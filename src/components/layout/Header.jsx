@@ -56,22 +56,22 @@ export default function Header() {
                             <DropdownMenuSub>
                                 <DropdownMenuSubTrigger>
                                     <Contrast className="mr-2 h-4 w-4" />
-                                    Theme
+                                    Giao diện
                                 </DropdownMenuSubTrigger>
                                 <DropdownMenuPortal>
                                     <DropdownMenuSubContent side="left" sideOffset={4}>
                                         <DropdownMenuRadioGroup value={theme} onValueChange={setTheme}>
                                             <DropdownMenuRadioItem value="light">
                                                 <Sun className="mr-2 h-4 w-4" />
-                                                Light
+                                                Sáng
                                             </DropdownMenuRadioItem>
                                             <DropdownMenuRadioItem value="dark">
                                                 <Moon className="mr-2 h-4 w-4" />
-                                                Dark
+                                                Tối
                                             </DropdownMenuRadioItem>
                                             <DropdownMenuRadioItem value="system">
                                                 <Monitor className="mr-2 h-4 w-4" />
-                                                System
+                                                Hệ thống
                                             </DropdownMenuRadioItem>
                                         </DropdownMenuRadioGroup>
                                     </DropdownMenuSubContent>
@@ -79,7 +79,7 @@ export default function Header() {
                             </DropdownMenuSub>
                             <DropdownMenuItem onClick={async () => { await logout(); window.location.href = '/login' }}>
                                 <LogOut className="mr-2 h-4 w-4" />
-                                Logout
+                                Đăng xuất
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
