@@ -45,7 +45,7 @@ export function AccManager() {
         fetchAccount()
     }, [search])
     return (
-        <div>
+        <div className="bg-background">
             <Breadcrumb>
                 <BreadcrumbList className={'text-base py-3'}>
                     <BreadcrumbItem>
