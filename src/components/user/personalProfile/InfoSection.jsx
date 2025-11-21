@@ -86,7 +86,7 @@ export default function InfoSection({ className }) {
                         <Input
                             placeholder={data?.phoneNumber ? '' : 'Chưa cung cấp'}
                             type="tel"
-                            value={data?.phoneNumber}
+                            value={data?.phoneNumber || ''}
                             onChange={(e) => setData((prev) => ({ ...prev, phoneNumber: e.target.value }))}
                             className="mt-1 mb-4" />
                     </div>
