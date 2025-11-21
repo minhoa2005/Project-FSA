@@ -7,5 +7,7 @@ export default function page() {
         <div>
             <AccManager />
         </div>
+
+
     )
 }

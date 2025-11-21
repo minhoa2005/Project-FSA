@@ -68,7 +68,7 @@ export default function InfoSection({ className }) {
                         <Input
                             placeholder={data?.fullName ? '' : 'Not provided'}
                             type="text"
-                            value={data?.fullName}
+                            value={data?.fullName || ''}
                             onChange={(e) => setData((prev) => ({ ...prev, fullName: e.target.value }))}
                             className="mt-1 mb-4" />
                     </div>
@@ -77,7 +77,7 @@ export default function InfoSection({ className }) {
                         <Input
                             placeholder={data?.email ? '' : 'Not provided'}
                             type="email"
-                            value={data?.email}
+                            value={data?.email || ''}
                             onChange={(e) => setData((prev) => ({ ...prev, email: e.target.value }))}
                             className="mt-1 mb-4" />
                     </div>

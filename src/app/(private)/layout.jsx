@@ -1,5 +1,6 @@
 import { ThemeProvider } from '@/components/theme/ThemeProvider'
 import { getCookie } from '@/config/cookie';
+import { verifyToken } from '@/config/jwt';
 import { redirect } from 'next/navigation';
 import React from 'react'
 
