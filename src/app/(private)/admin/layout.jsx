@@ -6,10 +6,10 @@ import React from 'react'
 export default function layout({ children }) {
 
     return (
-        <PrivateRoute allowedRoles={'Admin'}>
+        <PrivateRoute allowedRoles={'Admin'} className="light">
             <SidebarProvider defaultOpen>
                 <AppSidebar />
-                <main className="flex-1 min-h-screen px-8 py-6 mx-2 bg-white">
+                <main className="flex-1 min-h-screen pl-10 pr-5 py-6 mx-2">
                     {children}
                 </main>
             </SidebarProvider>
