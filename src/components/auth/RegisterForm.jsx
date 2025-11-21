@@ -36,14 +36,14 @@ export default function RegisterForm({ action }) {
             <div className='flex-1 flex items-center justify-center'>
                 <Card className="w-full max-w-sm">
                     <CardHeader>
-                        <CardTitle >Login to your account</CardTitle>
-                        <CardDescription>Enter your email and password to login</CardDescription>
+                        <CardTitle >Đăng ký tài khoản</CardTitle>
+                        <CardDescription>Nhập email và mật khẩu của bạn để đăng ký</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <form id="register-form" onSubmit={handleSubmit}>
                             <div className="flex flex-col gap-6">
                                 <div className="grid gap-2">
-                                    <Label htmlFor="fullName">Full Name</Label>
+                                    <Label htmlFor="fullName">Họ và tên</Label>
                                     <Input
                                         id="fullName"
                                         name="fullName"
@@ -53,7 +53,7 @@ export default function RegisterForm({ action }) {
                                     />
                                 </div>
                                 <div className="grid gap-2">
-                                    <Label htmlFor="username">Username</Label>
+                                    <Label htmlFor="username">Tên đăng nhập</Label>
                                     <Input
                                         id="username"
                                         name="username"
@@ -72,11 +72,11 @@ export default function RegisterForm({ action }) {
                                     />
                                 </div>
                                 <div className="grid gap-2">
-                                    <Label htmlFor="password">Password</Label>
+                                    <Label htmlFor="password">Mật khẩu</Label>
                                     <Input id="password" type="password" name="password" required />
                                 </div>
                                 <div className="grid gap-2">
-                                    <Label htmlFor="confirmPassword">Confirm password</Label>
+                                    <Label htmlFor="confirmPassword">Xác nhận mật khẩu</Label>
                                     <Input id="confirmPassword" type="password" name="confirmPassword" required />
                                 </div>
                             </div>
@@ -84,9 +84,9 @@ export default function RegisterForm({ action }) {
                     </CardContent>
                     <CardFooter className="flex flex-col gap-2">
                         <Button className="w-full" variant="outline" type="submit" form="register-form">
-                            Register
+                            Đăng ký
                         </Button>
-                        <p>Already have an account? <a href="/login" className="text-blue-500 hover:underline">Login</a></p>
+                        <p>Đã có tài khoản? <a href="/login" className="text-blue-500 hover:underline">Đăng nhập</a></p>
                     </CardFooter>
                 </Card>
             </div>

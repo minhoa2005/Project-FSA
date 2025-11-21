@@ -43,24 +43,24 @@ export default function PasswordSection({ className }) {
     return (
         <Card className={`${className}`}>
             <CardHeader>
-                <CardTitle className='text-2xl'>Change Password</CardTitle>
+                <CardTitle className='text-2xl'>Đổi mật khẩu</CardTitle>
             </CardHeader>
             <CardContent>
                 <div className='flex flex-col gap-2'>
-                    <Label>Current Password</Label>
+                    <Label>Mật khẩu hiện tại</Label>
                     <Input type="password" placeholder="" value={oldPassword} onChange={(e) => setOldPassword(e.target.value)} className="mt-1 mb-4" />
                 </div>
                 <div className='flex flex-col gap-2'>
-                    <Label>New Password</Label>
+                    <Label>Mật khẩu mới</Label>
                     <Input type="password" placeholder="" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="mt-1 mb-4" />
                 </div>
                 <div className='flex flex-col gap-2'>
-                    <Label>Confirm New Password</Label>
+                    <Label>Xác nhận mật khẩu mới</Label>
                     <Input type="password" placeholder="" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="mt-1 mb-4" />
                 </div>
             </CardContent>
             <CardFooter className='flex justify-end' >
-                <Button className='cursor-pointer' disabled={loading} onClick={handleUpdatePassword}>Update Password</Button>
+                <Button className='cursor-pointer' disabled={loading} onClick={handleUpdatePassword}>Cập Nhật Mật Khẩu</Button>
             </CardFooter>
         </Card>
     )
