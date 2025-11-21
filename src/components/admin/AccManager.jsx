@@ -16,6 +16,7 @@ import { Ban, BookmarkIcon, Container, HeartIcon, KeyRound, SlashIcon, StarIcon,
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "../ui/alert-dialog";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "../ui/breadcrumb";
 import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "../ui/pagination";
+import { cn } from "@/lib/utils";
 
 export function AccManager() {
     const [account, setAccount] = useState([]);
@@ -24,7 +25,7 @@ export function AccManager() {
         const fetchAccount = async () => {
             try {
                 const res = await getAllUser();
-                console.log("all acc:", res.data)
+                // console.log("all acc:", res.data)
 
                 if (res.success) {
                     setAccount(res.data)
@@ -48,8 +49,8 @@ export function AccManager() {
                     <BreadcrumbSeparator>
                         <SlashIcon />
                     </BreadcrumbSeparator>
-                    <BreadcrumbItem>
-                        <BreadcrumbPage>Danh sách người dùng</BreadcrumbPage>
+                    <BreadcrumbItem >
+                        <BreadcrumbPage className={'font-medium'}>Danh sách người dùng</BreadcrumbPage>
                     </BreadcrumbItem>
                 </BreadcrumbList>
             </Breadcrumb>
@@ -58,8 +59,7 @@ export function AccManager() {
                 <TableHeader>
                     <TableRow>
                         <TableHead className="w-[100px]">Id</TableHead>
-                        <TableHead>Email</TableHead>
-                        <TableHead>Usename</TableHead>
+                        <TableHead>Usename / Email</TableHead>
                         <TableHead>Vai trò</TableHead>
                         <TableHead>Thời gian tạo</TableHead>
                         <TableHead>Trạng thái</TableHead>
@@ -70,8 +70,9 @@ export function AccManager() {
                     {account.map((a) => (
                         <TableRow key={a.id}>
                             <TableCell className="font-medium">{a.id}</TableCell>
-                            <TableCell>{a.email}</TableCell>
-                            <TableCell>{a.username}</TableCell>
+                            <TableCell> {a.username} <br />
+                                <span className="italic">{a.email}</span>
+                            </TableCell>
 
                             <TableCell>
                                 {a.roleid === 1 ? 'Admin' : 'Khách'}
@@ -79,8 +80,7 @@ export function AccManager() {
 
                             <TableCell>{new Date(a.createdAt).toLocaleString()}</TableCell>
                             <TableCell>
-                                <span className={`px-2 py-1 rounded-full text-sm font-medium 
-    ${a.isActive === true ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
+                                <span className={cn('px-2 py-1 rounded-full text-sm font-medium', a.isActive === true ? "bg-green-100 text-green-700" : " bg-red-100 text-red-700")}>
 
                                     {a.isActive === true ? "Hoạt động" : "Không hoạt động"}
                                 </span>
@@ -177,8 +177,8 @@ export function AccManager() {
                 </TableBody>
 
             </Table>
-            <Pagination>
-                <PaginationContent>
+            <Pagination className='flex justify-start py-3'>
+                <PaginationContent >
                     <PaginationItem>
                         <PaginationPrevious href="#" />
                     </PaginationItem>
@@ -201,7 +201,7 @@ export function AccManager() {
                     </PaginationItem>
                 </PaginationContent>
             </Pagination>
-        </div>
+        </div >
 
     )
 }

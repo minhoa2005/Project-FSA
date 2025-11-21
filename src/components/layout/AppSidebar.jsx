@@ -1,11 +1,13 @@
 'use client'
 import React, { useEffect, useState } from 'react'
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider } from '../ui/sidebar'
-import { AlertCircle, BanIcon, Calendar, CheckCircle2, ChevronUp, createLucideIcon, FileText, Home, Inbox, Loader2, LucideCreativeCommons, MessageSquare, Search, Settings, User, User2, UserPlus } from 'lucide-react'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu'
+import { AlertCircle, BanIcon, Calendar, CheckCircle2, ChevronUp, Contrast, createLucideIcon, FileText, Home, Inbox, Loader2, LucideCreativeCommons, MessageSquare, Monitor, Moon, Search, Settings, Sun, User, User2, UserPlus } from 'lucide-react'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuPortal, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from '../ui/dropdown-menu'
 import { useUser } from '@/context/AuthContext'
 import { getAdminInfo } from '@/service/admin/admininfo'
-import { useRouter } from 'next/navigation'
+import { useTheme } from 'next-themes'
+import { usePathname } from 'next/navigation'
+import { cn } from '@/lib/utils'
 
 const dashboard = [
   {
@@ -68,7 +70,8 @@ export function AppSidebar() {
 
   const { handleLogout } = useUser();
   const [info, setInfo] = useState();
-  const router = useRouter();
+  const { theme, setTheme } = useTheme();
+  const pathName = usePathname()
 
   useEffect(() => {
     const fetchInfo = async () => {
@@ -88,7 +91,7 @@ export function AppSidebar() {
 
   return (
     <Sidebar className="w-72 bg-white border-gray-300 text-gray-1000">
-      <h1 className='flex px-10 pt-5 text-lg uppercase tracking-widest text-gray-700'>Xin chào Admin!</h1>
+      <h1 className='flex px-10 pt-5 text-lg uppercase tracking-widest'>Xin chào Admin!</h1>
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupContent className="space-y-5 py-5">
@@ -98,21 +101,25 @@ export function AppSidebar() {
             </SidebarGroupLabel>
 
             <SidebarMenu className="px-2 space-y-1">
-              {dashboard.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton
-                    asChild
-                    className="
-                   flex items-center gap-4 px-4  text-base
-                "
-                  >
-                    <a href={item.url}>
-                      <item.icon />
-                      <span className="font-medium">{item.title}</span>
-                    </a>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {dashboard.map((item) => {
+                const active = pathName === item.url;
+                return (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton
+                      asChild
+                      className={cn('flex items-center gap-4 px-4  text-base',
+                        active && "bg-gray-200 dark:bg-gray-700"
+                      )}
+                    >
+                      <a href={item.url}>
+                        <item.icon />
+                        <span className="font-medium">{item.title}</span>
+                      </a>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )
+
+              })}
             </SidebarMenu>
 
 
@@ -121,21 +128,26 @@ export function AppSidebar() {
             </SidebarGroupLabel>
 
             <SidebarMenu className="px-2 space-y-1">
-              {user.map((u) => (
-                <SidebarMenuItem key={u.title}>
-                  <SidebarMenuButton
-                    asChild
-                    className="
-                  flex items-center gap-4 px-4  text-base
-                "
-                  >
-                    <a href={u.url}>
-                      <u.icon />
-                      <span className="font-medium">{u.title}</span>
-                    </a>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {user.map((u) => {
+                const active = pathName === u.url
+                return (
+                  <SidebarMenuItem key={u.title}>
+                    <SidebarMenuButton
+                      asChild
+                      className={cn(
+                        "flex items-center gap-4 px-4 text-base",
+                        active && "bg-gray-200 dark:bg-gray-700"
+                      )}
+                    >
+                      <a href={u.url}>
+                        <u.icon />
+                        <span className="font-medium">{u.title}</span>
+                      </a>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )
+
+              })}
             </SidebarMenu>
 
 
@@ -144,21 +156,26 @@ export function AppSidebar() {
             </SidebarGroupLabel>
 
             <SidebarMenu className="px-2 space-y-1">
-              {blog.map((b) => (
-                <SidebarMenuItem key={b.title}>
-                  <SidebarMenuButton
-                    asChild
-                    className="
-                  flex items-center gap-4 px-4  text-base
-                "
-                  >
-                    <a href={b.url}>
-                      <b.icon />
-                      <span className="font-medium">{b.title}</span>
-                    </a>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {blog.map((b) => {
+                const active = pathName === b.url;
+                return (
+                  <SidebarMenuItem key={b.title}>
+                    <SidebarMenuButton
+                      asChild
+                      className={cn(
+                        "flex items-center gap-4 px-4 text-base",
+                        active && "bg-gray-200 dark:bg-gray-700"
+                      )}
+                    >
+                      <a href={b.url}>
+                        <b.icon />
+                        <span className="font-medium">{b.title}</span>
+                      </a>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )
+
+              })}
             </SidebarMenu>
 
 
@@ -167,13 +184,16 @@ export function AppSidebar() {
             </SidebarGroupLabel>
 
             <SidebarMenu className="px-2 space-y-1">
-              {report.map((r) => (
+              {report.map((r) => {
+                const active = pathName === r.url;
+
                 <SidebarMenuItem key={r.title}>
                   <SidebarMenuButton
                     asChild
-                    className="
-                  flex items-center gap-4 px-4  text-base
-                "
+                    className={cn(
+                      "flex items-center gap-4 px-4 text-base",
+                      active && "bg-gray-200 dark:bg-gray-700"
+                    )}
                   >
                     <a href={r.url}>
                       <r.icon />
@@ -181,7 +201,7 @@ export function AppSidebar() {
                     </a>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-              ))}
+              })}
             </SidebarMenu>
 
           </SidebarGroupContent>
@@ -210,6 +230,31 @@ export function AppSidebar() {
                     Đổi mật khẩu
                   </a>
                 </DropdownMenuItem>
+
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger className={'font-medium'}>
+                    Theme
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuPortal>
+                    <DropdownMenuSubContent side="left" sideOffset={4}>
+                      <DropdownMenuRadioGroup value={theme} onValueChange={setTheme}>
+                        <DropdownMenuRadioItem value="light">
+                          <Sun className="mr-2 h-4 w-4" />
+                          Light
+                        </DropdownMenuRadioItem>
+                        <DropdownMenuRadioItem value="dark">
+                          <Moon className="mr-2 h-4 w-4" />
+                          Dark
+                        </DropdownMenuRadioItem>
+                        <DropdownMenuRadioItem value="system">
+                          <Monitor className="mr-2 h-4 w-4" />
+                          System
+                        </DropdownMenuRadioItem>
+                      </DropdownMenuRadioGroup>
+                    </DropdownMenuSubContent>
+                  </DropdownMenuPortal>
+                </DropdownMenuSub>
+
                 <DropdownMenuItem
                   onClick={handleLogout} className={'font-medium'}
                 >
