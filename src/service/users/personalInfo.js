@@ -3,6 +3,7 @@ import { unauthorized } from "next/navigation";
 import { connectDB } from "@/config/db";
 import { getCookie } from "@/config/cookie";
 import { verifyToken } from "@/config/jwt";
+import bcrypt from 'bcryptjs';
 
 const pool = await connectDB();
 
@@ -94,15 +95,25 @@ const changePassword = async (oldPassword, newPassword) => {
         const token = await getCookie();
         const decoded = verifyToken(token);
         const id = decoded.id;
-        const result = await pool.request().input('id', id).input('oldPassword', oldPassword).input('newPassword', newPassword).query(`
+        const salt = await bcrypt.genSalt(10);
+        const newPassHash = await bcrypt.hash(newPassword, salt);
+        const checkOldPass = await pool.request().input('id', id).query(`select password from Account where id = @id`);
+        const isMatch = await bcrypt.compare(oldPassword, checkOldPass.recordset[0].password);
+        if (!isMatch) {
+            return {
+                success: false,
+                message: "Mật khẩu cũ không đúng"
+            }
+        }
+        const result = await pool.request().input('id', id).input('oldPassword', oldPassword).input('newPassword', newPassHash).query(`
             update Account
             set password = @newPassword
-            where id = @id and password = @oldPassword
+            where id = @id
             `);
         if (result.rowsAffected[0] === 0) {
             return {
                 success: false,
-                message: "Old password is incorrect"
+                message: "Đã có lỗi xảy ra"
             }
         }
         return {
@@ -113,7 +124,7 @@ const changePassword = async (oldPassword, newPassword) => {
         console.error('Error changing password:', error);
         return {
             success: false,
-            message: "Error changing password"
+            message: "Đã có lỗi xảy ra"
         }
     }
 }
