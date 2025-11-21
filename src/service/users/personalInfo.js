@@ -18,7 +18,7 @@ const verifyUser = async () => {
 const getPersonalInfo = async () => {
     if (!await verifyUser()) {
         unauthorized();
-    } 
+    }
     try {
         const token = await getCookie();
         const decoded = verifyToken(token);
@@ -66,7 +66,16 @@ const updateInfo = async (data) => {
             update UserProfile
             set fullName = @fullName, phoneNumber = @phoneNumber, dob = @dob
             where accountId = @id
-            `)
+            `);
+        if (result.rowsAffected[0] === 0) {
+            return {
+                success: false,
+                message: "User not found"
+            }
+        }
+        return {
+            success: true
+        }
     }
     catch (error) {
         console.error('Error updating personal info:', error);
@@ -76,4 +85,36 @@ const updateInfo = async (data) => {
         }
     }
 }
-export { getPersonalInfo, updateInfo };
+
+const changePassword = async (oldPassword, newPassword) => {
+    if (!await verifyUser()) {
+        unauthorized();
+    }
+    try {
+        const token = await getCookie();
+        const decoded = verifyToken(token);
+        const id = decoded.id;
+        const result = await pool.request().input('id', id).input('oldPassword', oldPassword).input('newPassword', newPassword).query(`
+            update Account
+            set password = @newPassword
+            where id = @id and password = @oldPassword
+            `);
+        if (result.rowsAffected[0] === 0) {
+            return {
+                success: false,
+                message: "Old password is incorrect"
+            }
+        }
+        return {
+            success: true
+        }
+    }
+    catch (error) {
+        console.error('Error changing password:', error);
+        return {
+            success: false,
+            message: "Error changing password"
+        }
+    }
+}
+export { getPersonalInfo, updateInfo, changePassword };

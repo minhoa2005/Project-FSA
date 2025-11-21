@@ -1,10 +1,18 @@
+"use client"
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import React from 'react'
+import { changePassword } from '@/service/users/personalInfo'
+import React, { useState } from 'react'
 
 export default function PasswordSection({ className }) {
+    const [oldPassword, setOldPassword] = useState('');
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const handleUpdatePassword = async () => {
+        const response = await changePassword(oldPassword, newPassword);
+    }
     return (
         <Card className={`${className}`}>
             <CardHeader>
