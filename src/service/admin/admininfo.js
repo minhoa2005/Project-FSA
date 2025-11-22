@@ -26,9 +26,9 @@ const getAdminInfo = async () => {
 
     try {
         const result = await pool.request()
-            .query("select u.accountId, u.fullName, u.phoneNumber, u.dob, u.imgUrl, u.createdAt, u.updatedAt from AdminProfile u")
+            .query("select u.accountId, a.email, u.fullName, u.phoneNumber, u.dob, u.imgUrl, u.createdAt, u.updatedAt from AdminProfile u join Account a on a.id = u.id")
 
-            // console.log(result)
+            console.log(result)
         return{
             success: true,
             data: result.recordset[0]

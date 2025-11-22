@@ -9,34 +9,41 @@ import {
     TableRow,
 } from "@/components/ui/table"
 import Link from "next/link"
-import { getAllUser } from "@/service/admin/accountManager";
+import { filterAcc, getAllUser } from "@/service/admin/accountManager";
 import { useEffect, useState } from "react";
 import { ToggleGroup, ToggleGroupItem } from "../ui/toggle-group";
-import { Ban, BookmarkIcon, Container, HeartIcon, KeyRound, SlashIcon, StarIcon, Unlock } from "lucide-react";
+import { Ban, BookmarkIcon, Container, HeartIcon, KeyRound, Search, SlashIcon, StarIcon, Unlock } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "../ui/alert-dialog";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "../ui/breadcrumb";
 import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "../ui/pagination";
 import { cn } from "@/lib/utils";
+import { InputGroup, InputGroupAddon, InputGroupInput } from "../ui/input-group";
+import { toast } from "sonner";
 
 export function AccManager() {
     const [account, setAccount] = useState([]);
+    const [search, setSearch] = useState('');
 
     useEffect(() => {
         const fetchAccount = async () => {
-            try {
+
+            if (!search) {
                 const res = await getAllUser();
-                // console.log("all acc:", res.data)
-
-                if (res.success) {
-                    setAccount(res.data)
-                }
-
-            } catch (err) {
-                console.log("fetch acc error", err)
+                setAccount(res.data)
+                return;
             }
+
+            if (search && account.length === 0) {
+                toast("Không có kết quả phù hợp")
+                return;
+            }
+
+            // console.log("all acc:", res.data)
+            const result = await filterAcc(search)
+            setAccount(result.data)
         }
         fetchAccount()
-    }, [])
+    }, [search])
     return (
         <div className="bg-background">
             <Breadcrumb>
@@ -54,19 +61,26 @@ export function AccManager() {
                     </BreadcrumbItem>
                 </BreadcrumbList>
             </Breadcrumb>
-
+            <div className="grid w-full max-w-sm gap-6">
+                <InputGroup>
+                    <InputGroupInput placeholder="Tìm kiếm theo tên đăng nhập..." onChange={(e) => setSearch(e.target.value)} />
+                    <InputGroupAddon >
+                        <Search />
+                    </InputGroupAddon>
+                </InputGroup>
+            </div>
             <Table>
                 <TableHeader>
                     <TableRow>
                         <TableHead className="w-[100px]">Id</TableHead>
-                        <TableHead>Usename / Email</TableHead>
-                        <TableHead>Vai trò</TableHead>
-                        <TableHead>Thời gian tạo</TableHead>
-                        <TableHead>Trạng thái</TableHead>
-                        <TableHead className="text-center">Hành Động</TableHead>
+                        <TableHead className="w-[300px]">Usename / Email</TableHead>
+                        <TableHead className="w-[150px]">Vai trò</TableHead>
+                        <TableHead className="w-[350px]">Thời gian tạo</TableHead>
+                        <TableHead className="w-[120px]">Trạng thái</TableHead>
+                        <TableHead className="w-[100px] text-center">Hành Động</TableHead>
                     </TableRow>
                 </TableHeader>
-                <TableBody>
+                {account.length !== 0 ? <TableBody>
                     {account.map((a) => (
                         <TableRow key={a.id}>
                             <TableCell className="font-medium">{a.id}</TableCell>
@@ -82,7 +96,7 @@ export function AccManager() {
                             <TableCell>
                                 <span className={cn('px-2 py-1 rounded-full text-sm font-medium', a.isActive === true ? "bg-green-100 text-green-700" : " bg-red-100 text-red-700")}>
 
-                                    {a.isActive === true ? "Hoạt động" : "Không hoạt động"}
+                                    {a.isActive ? "Hoạt động" : "Không hoạt động"}
                                 </span>
                             </TableCell>
 
@@ -170,37 +184,38 @@ export function AccManager() {
                                     ''
                                 }
 
-
                             </TableCell>
                         </TableRow>
                     ))}
-                </TableBody>
+                </TableBody> : ''}
 
             </Table>
-            <Pagination className='flex justify-start py-3'>
-                <PaginationContent >
-                    <PaginationItem>
-                        <PaginationPrevious href="#" />
-                    </PaginationItem>
-                    <PaginationItem>
-                        <PaginationLink href="#" isActive>1</PaginationLink>
-                    </PaginationItem>
-                    <PaginationItem>
-                        <PaginationLink href="#" >
-                            2
-                        </PaginationLink>
-                    </PaginationItem>
-                    <PaginationItem>
-                        <PaginationLink href="#">3</PaginationLink>
-                    </PaginationItem>
-                    <PaginationItem>
-                        <PaginationEllipsis />
-                    </PaginationItem>
-                    <PaginationItem>
-                        <PaginationNext href="#" />
-                    </PaginationItem>
-                </PaginationContent>
-            </Pagination>
+            {account.length === 0 ? '' :
+                <Pagination className='flex justify-end py-3'>
+                    <PaginationContent >
+                        <PaginationItem>
+                            <PaginationPrevious href="#" />
+                        </PaginationItem>
+                        <PaginationItem>
+                            <PaginationLink href="#" isActive>1</PaginationLink>
+                        </PaginationItem>
+                        <PaginationItem>
+                            <PaginationLink href="#" >
+                                2
+                            </PaginationLink>
+                        </PaginationItem>
+                        <PaginationItem>
+                            <PaginationLink href="#">3</PaginationLink>
+                        </PaginationItem>
+                        <PaginationItem>
+                            <PaginationEllipsis />
+                        </PaginationItem>
+                        <PaginationItem>
+                            <PaginationNext href="#" />
+                        </PaginationItem>
+                    </PaginationContent>
+                </Pagination>
+            }
         </div >
 
     )

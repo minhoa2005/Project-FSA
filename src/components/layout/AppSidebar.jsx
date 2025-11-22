@@ -8,6 +8,10 @@ import { getAdminInfo } from '@/service/admin/admininfo'
 import { useTheme } from 'next-themes'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
+import { Sheet, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle, SheetTrigger } from '../ui/sheet'
+import { Button } from '../ui/button'
+import { Label } from '../ui/label'
+import { Input } from '../ui/input'
 
 const dashboard = [
   {
@@ -90,13 +94,13 @@ export function AppSidebar() {
   }, [])
 
   return (
-    <Sidebar className="w-72 bg-white border-gray-300 text-gray-1000">
-      <h1 className='flex px-10 pt-5 text-lg uppercase tracking-widest'>Xin chào Admin!</h1>
+    <Sidebar className="w-72 bg-white border-gray-300 text-gray-1000 dark:border-[#262626]">
+      <h1 className='flex text-start px-6 py-3 text-lg tracking-widest font-bold border-b border-gray-300 dark:border-[#262626]'>BlogG.</h1>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupContent className="space-y-5 py-5">
+          <SidebarGroupContent className="space-y-4 py-2">
 
-            <SidebarGroupLabel className="text-sm text-gray-500 uppercase tracking-widest px-4">
+            <SidebarGroupLabel className="text-xs font-medium text-gray-500 uppercase tracking-widest px-4 dark:text-gray-200">
               Dashboard
             </SidebarGroupLabel>
 
@@ -108,12 +112,12 @@ export function AppSidebar() {
                     <SidebarMenuButton
                       asChild
                       className={cn('flex items-center gap-4 px-4  text-base',
-                        active && "bg-gray-200 dark:bg-gray-700"
+                        active && "bg-gray-200 dark:bg-[#262626]"
                       )}
                     >
                       <a href={item.url}>
                         <item.icon />
-                        <span className="font-medium">{item.title}</span>
+                        <span>{item.title}</span>
                       </a>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -123,7 +127,7 @@ export function AppSidebar() {
             </SidebarMenu>
 
 
-            <SidebarGroupLabel className="text-sm text-gray-500 uppercase tracking-widest px-4">
+            <SidebarGroupLabel className="text-xs font-medium text-gray-500 uppercase tracking-widest px-4 dark:text-gray-200">
               Users
             </SidebarGroupLabel>
 
@@ -136,12 +140,12 @@ export function AppSidebar() {
                       asChild
                       className={cn(
                         "flex items-center gap-4 px-4 text-base",
-                        active && "bg-gray-200 dark:bg-gray-700"
+                        active && "bg-gray-200 dark:bg-[#262626]"
                       )}
                     >
                       <a href={u.url}>
                         <u.icon />
-                        <span className="font-medium">{u.title}</span>
+                        <span>{u.title}</span>
                       </a>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -151,7 +155,7 @@ export function AppSidebar() {
             </SidebarMenu>
 
 
-            <SidebarGroupLabel className="text-sm text-gray-500 uppercase tracking-widest px-4">
+            <SidebarGroupLabel className="text-xs font-medium text-gray-500 uppercase tracking-widest px-4 dark:text-gray-200">
               Blog
             </SidebarGroupLabel>
 
@@ -164,12 +168,12 @@ export function AppSidebar() {
                       asChild
                       className={cn(
                         "flex items-center gap-4 px-4 text-base",
-                        active && "bg-gray-200 dark:bg-gray-700"
+                        active && "bg-gray-200 dark:bg-[#262626]"
                       )}
                     >
                       <a href={b.url}>
                         <b.icon />
-                        <span className="font-medium">{b.title}</span>
+                        <span>{b.title}</span>
                       </a>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -179,28 +183,30 @@ export function AppSidebar() {
             </SidebarMenu>
 
 
-            <SidebarGroupLabel className="text-sm text-gray-500 uppercase tracking-widest px-4">
+            <SidebarGroupLabel className="text-xs font-medium text-gray-500 uppercase tracking-widest px-4 dark:text-gray-200">
               Báo cáo & Kiểm duyệt
             </SidebarGroupLabel>
 
             <SidebarMenu className="px-2 space-y-1">
               {report.map((r) => {
                 const active = pathName === r.url;
+                return (
+                  <SidebarMenuItem key={r.title}>
+                    <SidebarMenuButton
+                      asChild
+                      className={cn(
+                        "flex items-center gap-4 px-4 text-base",
+                        active && "bg-gray-200 dark:bg-[#262626]"
+                      )}
+                    >
+                      <a href={r.url}>
+                        <r.icon />
+                        <spa>{r.title}</spa>
+                      </a>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )
 
-                <SidebarMenuItem key={r.title}>
-                  <SidebarMenuButton
-                    asChild
-                    className={cn(
-                      "flex items-center gap-4 px-4 text-base",
-                      active && "bg-gray-200 dark:bg-gray-700"
-                    )}
-                  >
-                    <a href={r.url}>
-                      <r.icon />
-                      <span className="font-medium">{r.title}</span>
-                    </a>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
               })}
             </SidebarMenu>
 
@@ -208,7 +214,7 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-gray-300 py-4">
+      <SidebarFooter className="border-t border-gray-300 py-3 dark:border-[#262626]">
         <SidebarMenu>
           <SidebarMenuItem>
             <DropdownMenu>
@@ -224,15 +230,44 @@ export function AppSidebar() {
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
 
-              <DropdownMenuContent side="right" className="w-[--radix-popper-anchor-width]" >
-                <DropdownMenuItem className={'font-medium'}>
-                  <a href="/admin/reset-pass">
-                    Đổi mật khẩu
-                  </a>
-                </DropdownMenuItem>
+              <DropdownMenuContent side="right" className="w-50">
+
+                <Sheet>
+                  <SheetTrigger asChild>
+                    <span className='flex px-2 py-1.5 text-sm hover:bg-gray-100 rounded dark:hover:bg-[#262626]'>Đặt mật khẩu</span>
+                  </SheetTrigger>
+                  <SheetContent>
+                    <SheetHeader>
+                      <SheetTitle>Đặt mật khẩu</SheetTitle>
+                      <SheetDescription>
+                        xxx
+                      </SheetDescription>
+                    </SheetHeader>
+                    <div className="grid flex-1 auto-rows-min gap-6 px-4">
+                      <div className="grid gap-3">
+                        <Label htmlFor="sheet-demo-name">Mật khẩu cũ</Label>
+                        <Input id="old-password" type='password'/>
+                      </div>
+                      <div className="grid gap-3">
+                        <Label htmlFor="sheet-demo-username">Mật khẩu mới</Label>
+                        <Input id="new-password" type='password'/>
+                      </div>
+                      <div className="grid gap-3">
+                        <Label htmlFor="sheet-demo-username">Xác nhận mật khẩu mới</Label>
+                        <Input id="re-new-password" type='password'/>
+                      </div>
+                    </div>
+                    <SheetFooter>
+                      <Button type="submit">Lưu</Button>
+                      <SheetClose asChild>
+                        <Button variant="outline">Hủy</Button>
+                      </SheetClose>
+                    </SheetFooter>
+                  </SheetContent>
+                </Sheet>
 
                 <DropdownMenuSub>
-                  <DropdownMenuSubTrigger className={'font-medium'}>
+                  <DropdownMenuSubTrigger>
                     Theme
                   </DropdownMenuSubTrigger>
                   <DropdownMenuPortal>
@@ -256,7 +291,7 @@ export function AppSidebar() {
                 </DropdownMenuSub>
 
                 <DropdownMenuItem
-                  onClick={handleLogout} className={'font-medium'}
+                  onClick={handleLogout}
                 >
                   Đăng xuất
                 </DropdownMenuItem>
