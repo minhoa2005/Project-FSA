@@ -27,6 +27,8 @@ CREATE TABLE Account (
     password VARCHAR(255) NOT NULL,
     roleId INT,
     isActive BIT DEFAULT 1,
+    isVerified BIT DEFAULT 0,
+    f2aEnabled BIT DEFAULT 0,
     createdAt DATETIME DEFAULT GETDATE(),
     updatedAt DATETIME DEFAULT GETDATE(),
     FOREIGN KEY (roleId) REFERENCES Role(id)
