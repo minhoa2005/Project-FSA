@@ -1,4 +1,4 @@
-import { createServer } from "http";
+import { createServer, IncomingMessage, ServerResponse } from "http";
 import { parse } from "url";
 import next from "next";
 import { Server } from "socket.io";
@@ -13,7 +13,7 @@ const handle = app.getRequestHandler();
 
 app.prepare().then(() => {
     // Tạo HTTP Server thủ công
-    const httpServer = createServer(async (req, res) => {
+    const httpServer = createServer(async (req: IncomingMessage, res: ServerResponse) => {
         try {
             // 1. Parse URL
             const parsedUrl = parse(req.url, true);
@@ -42,9 +42,11 @@ app.prepare().then(() => {
         });
     });
 
-    // 4. Lắng nghe port
-    httpServer.listen(port, (err) => {
-        if (err) throw err;
+    httpServer.on("error", (err) => {
+        console.error("Server error:", err);
+    });
+
+    httpServer.listen(port, () => {
         console.log(`> Ready on http://${hostname}:${port}`);
     });
 });
