@@ -1,4 +1,4 @@
-"use client"
+"use cilent"
 
 import React from 'react'
 
