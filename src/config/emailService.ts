@@ -8,7 +8,7 @@ const transporter = mail.createTransport({
     }
 })
 
-const sendOTP = async (to, otp) => {
+const sendOTP = async (to: string, otp: string) => {
     const mailOptions = {
         from: "BlogG",
         to: to,
@@ -51,7 +51,7 @@ const sendOTP = async (to, otp) => {
     }
 }
 
-const sendNewPassword = async (to, pass) => {
+const sendNewPassword = async (to: string, pass: string) => {
     const mailOptions = {
         from: "BlogG",
         to: to,

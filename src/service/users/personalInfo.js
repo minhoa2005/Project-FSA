@@ -128,4 +128,4 @@ const changePassword = async (oldPassword, newPassword) => {
         }
     }
 }
-export { getPersonalInfo, updateInfo, changePassword };
+export { getPersonalInfo, updateInfo, changePassword, verifyUser };
