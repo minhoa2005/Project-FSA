@@ -1,4 +1,4 @@
-import { createServer } from "http";
+import { createServer, IncomingMessage, ServerResponse } from "http";
 import { parse } from "url";
 import next from "next";
 import { Server } from "socket.io";
@@ -13,7 +13,7 @@ const handle = app.getRequestHandler();
 
 app.prepare().then(() => {
     // Tạo HTTP Server thủ công
-    const httpServer = createServer(async (req, res) => {
+    const httpServer = createServer(async (req: IncomingMessage, res: ServerResponse) => {
         try {
             // 1. Parse URL
             const parsedUrl = parse(req.url, true);
@@ -30,25 +30,23 @@ app.prepare().then(() => {
     // 3. Tích hợp Socket.IO
     const io = new Server(httpServer);
 
-   io.on("connection", (socket) => {
-  console.log("Client connected:", socket.id);
+    io.on("connection", (socket) => {
+        console.log("Client kết nối: " + socket.id);
 
-  socket.on("join_room", (roomId) => {
-    socket.join(roomId);
-    console.log(socket.id, "joined", roomId);
-  });
+        socket.on("send-message", (msg) => {
+            io.emit("receive-message", msg);
+        });
 
-  socket.on("send_message", (msg) => {
-    io.to(msg.roomId).emit("receive_message", msg);
-  });
+        socket.on("disconnect", () => {
+            console.log("Client ngắt kết nối");
+        });
+    });
 
-  socket.on("disconnect", () => {
-    console.log("Client disconnected");
-  });
-}); 
-    // 4. Lắng nghe port
-    httpServer.listen(port, (err) => {
-        if (err) throw err;
+    httpServer.on("error", (err) => {
+        console.error("Server error:", err);
+    });
+
+    httpServer.listen(port, () => {
         console.log(`> Ready on http://${hostname}:${port}`);
     });
 });
