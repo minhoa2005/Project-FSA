@@ -9,6 +9,7 @@ import { getInitials } from "@/lib/formatter";
 import ChatBox from "../chat/ChatBox";
 
 export default function ContactsSidebar() {
+  
   const [contacts, setContacts] = useState([]);
   const [activeChat, setActiveChat] = useState(null);
   useEffect(() => {
@@ -62,6 +63,8 @@ export default function ContactsSidebar() {
         <ChatBox
           user={activeChat}
           onClose={() => setActiveChat(null)}
+          avatar={activeChat.avatar}
+          name={activeChat.name}
         />
       )}
     </div>
