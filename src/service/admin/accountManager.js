@@ -20,6 +20,20 @@ const getAllUser = async () => {
     }
 }
 
+const getAllAccBan = async () => {
+    try {
+        const result = await pool.request()
+            .query('select a.id, a.email, a.username, a.roleid, a.isActive, a.createdAt from Account a where isActive = 0')
+
+        return {
+            success: true,
+            data: result.recordset
+        }
+    } catch (err) {
+        console.log('get all acc banj err', err)
+    }
+}
+
 const filterAcc = async (keyword) => {
     const result = await pool.request()
         .input('key', `%${keyword}%`)
@@ -55,4 +69,4 @@ const unBanAcc = async (id) => {
 
 
 
-export { getAllUser, filterAcc, banAcc, unBanAcc }
+export { getAllUser, filterAcc, banAcc, unBanAcc, getAllAccBan }
