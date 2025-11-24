@@ -13,10 +13,10 @@ export default function LoginForm() {
     useEffect(() => {
         if (loading) return;
     }, [loading])
-    const handleSubmit = async (e) => {
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         try {
             e.preventDefault();
-            const formData = new FormData(e.target);
+            const formData = new FormData(e.target as HTMLFormElement);
             const response = await handleLogin(formData);
             if (response.success) {
                 setUser(response.user);

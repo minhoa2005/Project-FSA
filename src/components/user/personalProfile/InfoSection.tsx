@@ -8,6 +8,7 @@ import React, { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import InfoSectionSkeleton from './InfoSectionSkeleton'
 
+
 export default function InfoSection({ className }) {
     const [fetching, setFetching] = useState(false);
     const [data, setData] = useState(null);
