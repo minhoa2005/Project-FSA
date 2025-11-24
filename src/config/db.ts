@@ -1,6 +1,7 @@
+import { config } from "@/types/config/dbTypes";
 import sql from "mssql";
 
-const dbConfig = {
+const dbConfig: config = {
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
     server: process.env.DB_SERVER,
@@ -11,7 +12,7 @@ const dbConfig = {
     }
 }
 
-let pool;
+let pool: sql.ConnectionPool | null = null;
 
 const connectDB = async () => {
     try {
