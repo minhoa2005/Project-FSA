@@ -33,4 +33,26 @@ const filterAcc = async (keyword) => {
         data: result.recordset
     }
 }
-export { getAllUser, filterAcc }
+
+const banAcc = async (id) => {
+    const result = await pool.request()
+        .input("id", id)
+        .query(`
+                UPDATE Account
+                SET isActive = 0
+                WHERE id = @id
+            `);
+
+    return result;
+};
+
+const unBanAcc = async (id) => {
+    const result = await pool.request()
+        .input('id', id)
+        .query(`Update account set isActive = 1 where id = @id`);
+    return result;
+}
+
+
+
+export { getAllUser, filterAcc, banAcc, unBanAcc }
