@@ -27,7 +27,10 @@ const getCustomCookie = async (name: string) => {
 
 const deleteCustomCookie = async (name: string) => {
     const cookie = await cookies();
-    cookie.delete(name, { path: "/" });
+    cookie.delete({
+        name: name,
+        path: "/"
+    });
 }
 
 const getCookie = async () => {
@@ -37,7 +40,10 @@ const getCookie = async () => {
 
 const deleteCookie = async () => {
     const cookie = await cookies();
-    cookie.delete(cookieName, { path: "/" });
+    cookie.delete({
+        name: cookieName,
+        path: "/"
+    });
 }
 
 export { setCookie, getCookie, deleteCookie, cookieName, setCustomCookie, getCustomCookie, deleteCustomCookie };
