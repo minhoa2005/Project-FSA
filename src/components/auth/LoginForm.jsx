@@ -38,8 +38,8 @@ export default function LoginForm() {
             <div className='flex-1 flex items-center justify-center'>
                 <Card className="w-full max-w-sm">
                     <CardHeader>
-                        <CardTitle >Login to your account</CardTitle>
-                        <CardDescription>Enter your email and password to login</CardDescription>
+                        <CardTitle >Đăng nhập</CardTitle>
+                        <CardDescription>Nhập email và mật khẩu của bạn để đăng nhập</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <form id="login-form" onSubmit={handleSubmit}>
@@ -56,12 +56,12 @@ export default function LoginForm() {
                                 </div>
                                 <div className="grid gap-2">
                                     <div className="flex items-center">
-                                        <Label htmlFor="password">Password</Label>
+                                        <Label htmlFor="password">Mật khẩu</Label>
                                         <a
                                             href="/recovery"
                                             className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
                                         >
-                                            Forgot your password?
+                                            Quên mật khẩu?
                                         </a>
                                     </div>
                                     <Input id="password" type="password" name="password" required />
@@ -71,12 +71,12 @@ export default function LoginForm() {
                     </CardContent>
                     <CardFooter className="flex flex-col gap-2">
                         <Button type="submit" form="login-form" className="w-full cursor-pointer">
-                            Login
+                            Đăng nhập
                         </Button>
                         <Button className="w-full" variant="outline" onClick={() => {
                             window.location.href = '/register';
                         }}>
-                            Register
+                            Đăng ký
                         </Button>
                     </CardFooter>
                 </Card>

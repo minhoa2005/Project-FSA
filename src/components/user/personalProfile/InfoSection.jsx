@@ -60,38 +60,38 @@ export default function InfoSection({ className }) {
         ) : (
             <Card className={`${className}`}>
                 <CardHeader>
-                    <CardTitle className='text-2xl'>Personal Information</CardTitle>
+                    <CardTitle className='text-2xl'>Thông tin cá nhân</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <div className=''>
-                        <Label>Full Name</Label>
+                        <Label>Họ và tên</Label>
                         <Input
-                            placeholder={data?.fullName ? '' : 'Not provided'}
+                            placeholder={data?.fullName ? '' : 'Chưa cung cấp'}
                             type="text"
-                            value={data?.fullName}
+                            value={data?.fullName || ''}
                             onChange={(e) => setData((prev) => ({ ...prev, fullName: e.target.value }))}
                             className="mt-1 mb-4" />
                     </div>
                     <div>
-                        <Label>Email Address</Label>
+                        <Label>Email</Label>
                         <Input
-                            placeholder={data?.email ? '' : 'Not provided'}
+                            placeholder={data?.email ? '' : 'Chưa cung cấp'}
                             type="email"
-                            value={data?.email}
+                            value={data?.email || ''}
                             onChange={(e) => setData((prev) => ({ ...prev, email: e.target.value }))}
                             className="mt-1 mb-4" />
                     </div>
                     <div>
-                        <Label>Phone Number</Label>
+                        <Label>Số điện thoại</Label>
                         <Input
-                            placeholder={data?.phoneNumber ? '' : 'Not provided'}
+                            placeholder={data?.phoneNumber ? '' : 'Chưa cung cấp'}
                             type="tel"
-                            value={data?.phoneNumber}
+                            value={data?.phoneNumber || ''}
                             onChange={(e) => setData((prev) => ({ ...prev, phoneNumber: e.target.value }))}
                             className="mt-1 mb-4" />
                     </div>
                     <div>
-                        <Label>Date of Birth</Label>
+                        <Label>Ngày sinh</Label>
                         <Input
                             type="date"
                             value={data?.dob ? new Date(data.dob).toISOString().split('T')[0] : ''}
@@ -100,7 +100,7 @@ export default function InfoSection({ className }) {
                     </div>
                 </CardContent>
                 <CardFooter className='flex justify-end' >
-                    <Button className='cursor-pointer' onClick={() => handleUpdate()} disabled={loading}>Update Information</Button>
+                    <Button className='cursor-pointer' onClick={() => handleUpdate()} disabled={loading}>Cập Nhật</Button>
                 </CardFooter>
             </Card >
         )
