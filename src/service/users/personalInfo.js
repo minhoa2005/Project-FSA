@@ -3,6 +3,7 @@ import { unauthorized } from "next/navigation";
 import { connectDB } from "@/config/db";
 import { getCookie } from "@/config/cookie";
 import { verifyToken } from "@/config/jwt";
+import bcrypt from 'bcryptjs';
 
 const pool = await connectDB();
 
@@ -10,11 +11,10 @@ export const verifyUser = async () => {
     const token = await getCookie();
     const verifyUser = verifyToken(token);
     if (!verifyUser || verifyUser.role !== 'User') {
-        // console.log(1)
         return false;
     }
     return true;
-}
+};
 
 const getPersonalInfo = async () => {
     if (!await verifyUser()) {
@@ -67,7 +67,16 @@ const updateInfo = async (data) => {
             update UserProfile
             set fullName = @fullName, phoneNumber = @phoneNumber, dob = @dob
             where accountId = @id
-            `)
+            `);
+        if (result.rowsAffected[0] === 0) {
+            return {
+                success: false,
+                message: "User not found"
+            }
+        }
+        return {
+            success: true
+        }
     }
     catch (error) {
         console.error('Error updating personal info:', error);
@@ -77,4 +86,46 @@ const updateInfo = async (data) => {
         }
     }
 }
-export { getPersonalInfo };
+
+const changePassword = async (oldPassword, newPassword) => {
+    if (!await verifyUser()) {
+        unauthorized();
+    }
+    try {
+        const token = await getCookie();
+        const decoded = verifyToken(token);
+        const id = decoded.id;
+        const salt = await bcrypt.genSalt(10);
+        const newPassHash = await bcrypt.hash(newPassword, salt);
+        const checkOldPass = await pool.request().input('id', id).query(`select password from Account where id = @id`);
+        const isMatch = await bcrypt.compare(oldPassword, checkOldPass.recordset[0].password);
+        if (!isMatch) {
+            return {
+                success: false,
+                message: "Mật khẩu cũ không đúng"
+            }
+        }
+        const result = await pool.request().input('id', id).input('oldPassword', oldPassword).input('newPassword', newPassHash).query(`
+            update Account
+            set password = @newPassword
+            where id = @id
+            `);
+        if (result.rowsAffected[0] === 0) {
+            return {
+                success: false,
+                message: "Đã có lỗi xảy ra"
+            }
+        }
+        return {
+            success: true
+        }
+    }
+    catch (error) {
+        console.error('Error changing password:', error);
+        return {
+            success: false,
+            message: "Đã có lỗi xảy ra"
+        }
+    }
+}
+export { getPersonalInfo, updateInfo, changePassword, verifyUser };

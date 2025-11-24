@@ -13,7 +13,7 @@ export default function LogOutComponent() {
     return (
         <DropdownMenuItem onClick={handleLogout}>
             <LogOutIcon />
-            <span>Logout</span>
+            <span>Đăng Xuất</span>
         </DropdownMenuItem>
     )
 }
