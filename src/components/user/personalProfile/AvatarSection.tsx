@@ -4,7 +4,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { getInitials } from '@/lib/formatter'
 import React from 'react'
 
-export default function AvatarSection({ className }) {
+export default function AvatarSection({ className }: { className?: string }) {
     return (
         <Card className={`${className}`}>
             <CardContent className='flex justify-between gap-4 items-center' >

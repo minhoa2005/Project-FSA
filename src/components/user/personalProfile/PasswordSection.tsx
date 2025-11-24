@@ -7,7 +7,7 @@ import { changePassword } from '@/service/users/personalInfo'
 import React, { useState } from 'react'
 import { toast } from 'sonner'
 
-export default function PasswordSection({ className }) {
+export default function PasswordSection({ className }: { className?: string }) {
     const [oldPassword, setOldPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
