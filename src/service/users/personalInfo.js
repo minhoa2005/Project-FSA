@@ -6,7 +6,7 @@ import { verifyToken } from "@/config/jwt";
 
 const pool = await connectDB();
 
-const verifyUser = async () => {
+export const verifyUser = async () => {
     const token = await getCookie();
     const verifyUser = verifyToken(token);
     if (!verifyUser || verifyUser.role !== 'User') {

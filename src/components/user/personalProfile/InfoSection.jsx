@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { getPersonalInfo } from '@/service/user/personalInfo'
+import { getPersonalInfo } from '@/service/users/personalInfo'
 import React, { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
