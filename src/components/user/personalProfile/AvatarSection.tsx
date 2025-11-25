@@ -15,6 +15,8 @@ export default function AvatarSection({ className }: { className?: string }) {
     const [imageSrc, setImageSrc] = useState<string | ArrayBuffer | null>(null);
     const [crop, setCrop] = useState<{ x: number, y: number }>({ x: 0, y: 0 });
     const [zoom, setZoom] = useState(1);
+    const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
+    const
     const onFileChange = () => {
         const file = ref.current.files[0];
         if (file.size > 15 * 1024 * 1024) {
