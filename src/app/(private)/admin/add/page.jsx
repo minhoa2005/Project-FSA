@@ -1,4 +1,4 @@
-"use client"
+"use cilent"
 
 import AccCreate from '@/components/admin/AccCreate'
 import React from 'react'
