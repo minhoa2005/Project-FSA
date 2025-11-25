@@ -23,6 +23,7 @@ import {
   Camera,
   X,
 } from "lucide-react";
+import Image from "next/image";
 
 interface CurrentUser {
   id: number;
@@ -114,10 +115,12 @@ export default function CreatePostBox({
 
           const mediaPreview =
             file.type.startsWith("image/") ? (
-              <img
+              <Image
                 src={url}
                 alt={file.name}
                 className="h-40 w-full object-cover"
+                width={160}
+                height={160}
               />
             ) : file.type.startsWith("video/") ? (
               <video
@@ -126,7 +129,7 @@ export default function CreatePostBox({
                 className="h-40 w-full object-cover"
               />
             ) : (
-              <div className="h-40 w-full bg-muted px-2 py-1 text-xs">
+              <div className="h-40 w-full px-2 py-1 text-xs">
                 {file.name}
               </div>
             );
@@ -141,7 +144,7 @@ export default function CreatePostBox({
               <button
                 type="button"
                 onClick={() => handleRemoveFile(idx)}
-                className="absolute right-1 top-1 inline-flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/80"
+                className="absolute right-1 top-1 inline-flex h-6 w-6 items-center justify-center rounded-full"
               >
                 <X className="h-3 w-3" />
               </button>
@@ -153,7 +156,7 @@ export default function CreatePostBox({
   };
 
   return (
-    <Card className="mb-4 rounded-xl bg-white shadow-sm">
+    <Card className="mb-4 rounded-xl  shadow-sm">
       <CardContent className="space-y-3 pt-4">
         <Dialog
           open={open}
@@ -171,42 +174,44 @@ export default function CreatePostBox({
             </Avatar>
 
             <DialogTrigger asChild>
-              <button
+              <Button
                 type="button"
-                className="flex-1 rounded-full border border-gray-200 bg-gray-100 px-4 py-2 text-left text-sm text-muted-foreground hover:bg-gray-200"
+                className="flex-1 rounded-full border px-4 py-2 text-left text-sm text-muted-foreground "
+                variant="outline"
               >
                 {displayName} ơi, bạn đang nghĩ gì thế?
-              </button>
+              </Button>
             </DialogTrigger>
           </div>
 
           {/* Hàng dưới: các nút kiểu FB */}
           <div className="mt-2 flex items-center justify-between border-t pt-2 text-xs text-muted-foreground">
             <DialogTrigger asChild>
-              <button
+              <Button
                 type="button"
-                className="flex flex-1 items-center justify-center gap-2 rounded-md px-2 py-2 hover:bg-gray-100"
+                className="flex flex-1 items-center justify-center gap-2 rounded-md px-2 py-2"
+                variant="ghost"
               >
                 <ImageIcon className="h-4 w-4" />
                 <span>Ảnh/Video</span>
-              </button>
+              </Button>
             </DialogTrigger>
 
-            <div className="flex flex-1 items-center justify-end gap-1">
-              <button
+            {/* <div className="flex flex-1 items-center justify-end gap-1">
+              <Button
                 type="button"
-                className="flex items-center gap-1 rounded-md px-2 py-2 hover:bg-gray-100"
+                className="flex items-center gap-1 rounded-md px-2 py-2"
               >
                 <Users className="h-4 w-4" />
                 <span>Tag</span>
-              </button>
+              </Button>
               <button
                 type="button"
                 className="flex items-center gap-1 rounded-md px-2 py-2 hover:bg-gray-100"
               >
                 <Smile className="h-4 w-4" />
               </button>
-            </div>
+            </div> */}
           </div>
 
           {/* POPUP TẠO BÀI VIẾT */}
@@ -245,13 +250,13 @@ export default function CreatePostBox({
                   <span className="text-sm font-semibold">
                     {displayName}
                   </span>
-                  <button
+                  {/* <button
                     type="button"
-                    className="mt-1 inline-flex items-center gap-1 rounded-md bg-gray-200 px-2 py-0.5 text-[11px] font-medium text-gray-700"
+                    className="mt-1 inline-flex items-center gap-1 bg-primary rounded-md px-2 py-0.5 text-[11px] font-medium text-background"
                   >
                     <Users className="h-3 w-3" />
                     Bạn bè
-                  </button>
+                  </button> */}
                 </div>
               </div>
 
@@ -265,37 +270,41 @@ export default function CreatePostBox({
               />
 
               {/* thêm vào bài viết + nút chọn media */}
-              <div className="rounded-xl border bg-gray-50 px-3 py-2">
+              <div className="rounded-xl border px-3 py-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-600">
+                  <span className="text-sm font-medium ">
                     Thêm vào bài viết của bạn
                   </span>
                   <div className="flex items-center gap-2">
-                    <button
+                    <Button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-full hover:bg-gray-200"
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-full cursor-pointer"
+                      variant="outline"
                     >
                       <ImageIcon className="h-4 w-4" />
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       type="button"
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-full hover:bg-gray-200"
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-full cursor-pointer"
+                      variant="outline"
                     >
                       <Camera className="h-4 w-4" />
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       type="button"
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-full hover:bg-gray-200"
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-full cursor-pointer"
+                      variant="outline"
                     >
                       <Smile className="h-4 w-4" />
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       type="button"
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-full hover:bg-gray-200"
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-full cursor-pointer"
+                      variant="outline"
                     >
                       <MapPin className="h-4 w-4" />
-                    </button>
+                    </Button>
                   </div>
                 </div>
 
@@ -308,6 +317,7 @@ export default function CreatePostBox({
                   type="submit"
                   className="w-full font-semibold"
                   disabled={!canSubmit}
+                  variant="default"
                 >
                   {submitting ? "Đang đăng..." : "Đăng"}
                 </Button>

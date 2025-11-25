@@ -143,13 +143,14 @@ export default function AvatarSection({ className }: { className?: string }) {
                             onCropChange={setCrop}
                             onZoomChange={setZoom}
                             onCropComplete={onCropComplete}
+                            cropShape="round"
                         />
                     </div>
                     <Slider
                         className='cursor-pointer mt-4 transition-all'
                         min={1}
                         max={5}
-                        step={0.1}
+                        step={0.01}
                         value={[zoom]}
                         onValueChange={(e) => setZoom(e[0])}
                     />

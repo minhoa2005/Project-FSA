@@ -15,7 +15,7 @@ export default function PostList({
 }: PostListProps) {
   if (!posts?.length) {
     return (
-      <div className="text-center text-sm text-muted-foreground">
+      <div className="text-center text-sm">
         Chưa có bài viết nào.
       </div>
     );
