@@ -9,7 +9,7 @@ import {
     TableRow,
 } from "@/components/ui/table"
 import Link from "next/link"
-import { filterAcc, getAllUser } from "@/service/admin/accountManager";
+import { banAcc, filterAcc, getAllUser, unBanAcc } from "@/service/admin/accountManager";
 import { useEffect, useState } from "react";
 import { ToggleGroup, ToggleGroupItem } from "../ui/toggle-group";
 import { Ban, BookmarkIcon, Container, HeartIcon, KeyRound, Search, SlashIcon, StarIcon, Unlock } from "lucide-react";
@@ -19,29 +19,65 @@ import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, Pagi
 import { cn } from "@/lib/utils";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "../ui/input-group";
 import { toast } from "sonner";
+import { debounce } from "@/lib/function";
 
 export function AccManager() {
     const [account, setAccount] = useState([]);
     const [search, setSearch] = useState('');
+    const debouncedSearch = debounce(setSearch, 500);
 
-    useEffect(() => {
-        const fetchAccount = async () => {
-
-            if (!search) {
-                const res = await getAllUser();
-                setAccount(res.data)
-                return;
+    const handleBan = async (id) => {
+        // console.log(id)
+        try {
+            const res = await banAcc(id);
+            if (res) {
+                const resp = await getAllUser();
+                setAccount(resp.data)
+                toast.success("Khóa tài khoản thành công!");
+            } else {
+                toast.error("Lỗi khóa tài khoản!");
             }
-
-            if (search && account.length === 0) {
-                toast("Không có kết quả phù hợp")
-                return;
-            }
-
-            // console.log("all acc:", res.data)
-            const result = await filterAcc(search)
-            setAccount(result.data)
+        } catch (err) {
+            console.error(err);
+            toast.error("Lỗi khóa tài khoản!");
         }
+    };
+
+    const handleUnBan = async (id) => {
+        try {
+            const res = await unBanAcc(id);
+            if (res) {
+                const resp = await getAllUser();
+                setAccount(resp.data)
+                toast.success("Mở khóa tài khoản thành công!")
+            } else {
+                toast.error("Mở khóa tài khoản không thành công!")
+            }
+        } catch (err) {
+            console.log(err)
+            toast.error("Lỗi mở khóa tài khoản!")
+        }
+    }
+
+
+    const fetchAccount = async () => {
+
+        if (!search) {
+            const res = await getAllUser();
+            setAccount(res.data)
+            return;
+        }
+
+        if (search && account.length === 0) {
+            toast("Không có kết quả phù hợp")
+            return;
+        }
+
+        // console.log("all acc:", res.data)
+        const result = await filterAcc(search)
+        setAccount(result.data)
+    }
+    useEffect(() => {
         fetchAccount()
     }, [search])
     return (
@@ -63,7 +99,7 @@ export function AccManager() {
             </Breadcrumb>
             <div className="grid w-full max-w-sm gap-6">
                 <InputGroup>
-                    <InputGroupInput placeholder="Tìm kiếm theo tên đăng nhập..." onChange={(e) => setSearch(e.target.value)} />
+                    <InputGroupInput placeholder="Tìm kiếm theo tên đăng nhập..." onChange={(e) => debouncedSearch(e.target.value)} />
                     <InputGroupAddon >
                         <Search />
                     </InputGroupAddon>
@@ -75,7 +111,7 @@ export function AccManager() {
                         <TableHead className="w-[100px]">Id</TableHead>
                         <TableHead className="w-[300px]">Usename / Email</TableHead>
                         <TableHead className="w-[150px]">Vai trò</TableHead>
-                        <TableHead className="w-[350px]">Thời gian tạo</TableHead>
+                        <TableHead className="w-[250px]">Thời gian tạo</TableHead>
                         <TableHead className="w-[120px]">Trạng thái</TableHead>
                         <TableHead className="w-[100px] text-center">Hành Động</TableHead>
                     </TableRow>
@@ -104,29 +140,32 @@ export function AccManager() {
 
                                 {a.roleid === 2 ?
                                     <ToggleGroup type="multiple" variant="outline" spacing={2} size="sm">
-                                        {a.isActive = true ? <ToggleGroupItem
-                                            value="ban"
-                                            aria-label="Toggle ban"
-                                            className="data-[state=on]:bg-red-100 data-[state=on]:text-red-600"
-                                        >
-                                            <AlertDialog>
-                                                <AlertDialogTrigger asChild>
-                                                    <span ><Ban /></span>
-                                                </AlertDialogTrigger>
-                                                <AlertDialogContent>
-                                                    <AlertDialogHeader>
-                                                        <AlertDialogTitle>Bạn có chắc chắn muốn cấm tài khoản này?</AlertDialogTitle>
-                                                        <AlertDialogDescription>
-                                                            Vui lòng xác nhận để tiếp tục hành động!
-                                                        </AlertDialogDescription>
-                                                    </AlertDialogHeader>
-                                                    <AlertDialogFooter>
-                                                        <AlertDialogCancel>Hủy</AlertDialogCancel>
-                                                        <AlertDialogAction>Cấm</AlertDialogAction>
-                                                    </AlertDialogFooter>
-                                                </AlertDialogContent>
-                                            </AlertDialog>
-                                        </ToggleGroupItem>
+                                        {a.isActive === true ?
+                                            <ToggleGroupItem
+                                                value="ban"
+                                                aria-label="Toggle ban"
+                                                className="data-[state=on]:bg-red-100 data-[state=on]:text-red-600"
+                                            >
+                                                <AlertDialog>
+                                                    <AlertDialogTrigger asChild>
+                                                        <span ><Ban /></span>
+                                                    </AlertDialogTrigger>
+                                                    <AlertDialogContent>
+                                                        <AlertDialogHeader>
+                                                            <AlertDialogTitle>Bạn có chắc chắn muốn cấm tài khoản này?</AlertDialogTitle>
+                                                            <AlertDialogDescription>
+                                                                Vui lòng xác nhận để tiếp tục hành động!
+                                                            </AlertDialogDescription>
+                                                        </AlertDialogHeader>
+                                                        <AlertDialogFooter>
+                                                            <AlertDialogCancel>Hủy</AlertDialogCancel>
+                                                            <AlertDialogAction onClick={() => handleBan(a.id)}>
+                                                                Cấm
+                                                            </AlertDialogAction>
+                                                        </AlertDialogFooter>
+                                                    </AlertDialogContent>
+                                                </AlertDialog>
+                                            </ToggleGroupItem>
                                             :
                                             <ToggleGroupItem
                                                 value="unlock"
@@ -148,7 +187,7 @@ export function AccManager() {
 
                                                         <AlertDialogFooter>
                                                             <AlertDialogCancel>Hủy</AlertDialogCancel>
-                                                            <AlertDialogAction>Mở khóa</AlertDialogAction>
+                                                            <AlertDialogAction onClick={() => handleUnBan(a.id)}>Mở khóa</AlertDialogAction>
                                                         </AlertDialogFooter>
                                                     </AlertDialogContent>
                                                 </AlertDialog>
