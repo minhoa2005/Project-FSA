@@ -21,7 +21,7 @@ export default function AvatarSection({ className }: { className?: string }) {
     const [crop, setCrop] = useState<{ x: number, y: number }>({ x: 0, y: 0 });
     const [zoom, setZoom] = useState(1);
     const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
-    const { user } = useUser();
+    const { user, setUser } = useUser();
     const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
     const onFileChange = () => {
         const file = ref.current.files[0];
@@ -52,7 +52,8 @@ export default function AvatarSection({ className }: { className?: string }) {
             setAvatarUrl(croppedDataUrl);
             setOpen(false);
             setImageSrc(null);
-            await updateAvatar(croppedDataUrl);
+            const result = await updateAvatar(croppedDataUrl);
+            setUser((prev) => ({ ...prev, imgUrl: result.url }));
             ref.current.value = null;
             toast.success("Cập nhật ảnh đại diện thành công");
         } catch (error) {
