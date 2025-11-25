@@ -33,7 +33,7 @@
     "**/*.mts",
     "**/*.ts",
     "**/*.tsx"
-  ],
+, "src/service/users/chat.ts", "src/service/users/post.js", "src/service/users/personalInfo.js", "src/components/blog/ChatWindow.tsx"  ],
   "exclude": [
     "node_modules"
   ]

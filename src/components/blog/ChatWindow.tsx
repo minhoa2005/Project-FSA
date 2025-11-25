@@ -1,12 +1,13 @@
 "use client";
+import { useSocket } from "@/hooks/useSocket";
 import { useState, useEffect, useRef } from "react";
-import { getSocket } from "@/lib/socket";
+
 
 export default function ChatWindow({ user, currentUserId }) {
   const [messages, setMessages] = useState([]);
   const [newMsg, setNewMsg] = useState("");
-  const scrollRef = useRef();
-  const socket = getSocket();
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const socket = useSocket();
 
   useEffect(() => {
     if (!user) return;

@@ -1,3 +1,4 @@
+"use server"
 import mail from "nodemailer";
 
 const transporter = mail.createTransport({
@@ -51,6 +52,62 @@ const sendOTP = async (to: string, otp: string) => {
     }
 }
 
+const sendAccCreateByAdminToCus = async (to: string, password: string) => {
+    const mailOptions = {
+        from: "BlogG",
+        to: to,
+        subject: "BlogG: Tài khoản của bạn đã được tạo thành công!",
+        html:
+            `
+            <div style="font-family: Arial, sans-serif; background:#f4f7fb; padding:20px;">
+            <div style="
+                max-width:600px;
+                margin:0 auto;
+                background:#ffffff;
+                border-radius:8px;
+                padding:25px;
+                box-shadow:0 4px 12px rgba(0,0,0,0.08);
+                border:1px solid #e6e6e6;
+            ">
+                <h2 style="color:#1a1a1a; text-align:center; margin-top:0;">
+                    🎉 Tài khoản BlogG đã sẵn sàng!
+                </h2>
+
+                <p style="color:#444; font-size:14px;">
+                    Xin chào,
+                    <br/>Tài khoản của bạn đã được tạo thành công. Đây là thông tin đăng nhập của bạn:
+                </p>
+
+                <div style="
+                    background:#f0f8ff;
+                    padding:20px;
+                    border-radius:6px;
+                    border-left:5px solid #007bff;
+                    margin:20px 0;
+                ">
+                    <p style="margin:0; font-size:15px; color:#333;">
+                        <b>Email:</b> ${to}
+                    </p>
+                    <p style="margin:0; font-size:15px; color:#333;">
+                        <b>Password:</b> ${password}
+                    </p>
+                </div>
+
+                <p style="color:#555; font-size:13px; text-align:center;">
+                    Vì lý do bảo mật, vui lòng đổi mật khẩu sau khi đăng nhập.
+                </p>
+
+            </div>
+        </div>
+        `
+    }
+    try {
+        await transporter.sendMail(mailOptions);
+    } catch (error) {
+        console.error("Error sending account by admin:", error);
+    }
+}
+
 const sendNewPassword = async (to: string, pass: string) => {
     const mailOptions = {
         from: "BlogG",
@@ -94,4 +151,4 @@ const sendNewPassword = async (to: string, pass: string) => {
     }
 }
 
-export { sendOTP, sendNewPassword };
+export { sendOTP, sendNewPassword, sendAccCreateByAdminToCus };

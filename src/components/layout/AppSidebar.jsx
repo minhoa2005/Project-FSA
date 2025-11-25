@@ -94,7 +94,7 @@ export function AppSidebar() {
   }, [])
 
   return (
-    <Sidebar className="w-72 bg-white border-gray-300 text-gray-1000 dark:border-[#262626]">
+    <Sidebar className="w-72 border-gray-300 text-gray-1000 dark:border-[#262626]">
       <h1 className='flex text-start px-6 py-3 text-lg tracking-widest font-bold border-b border-gray-300 dark:border-[#262626]'>BlogG.</h1>
       <SidebarContent>
         <SidebarGroup>
@@ -201,7 +201,7 @@ export function AppSidebar() {
                     >
                       <a href={r.url}>
                         <r.icon />
-                        <spa>{r.title}</spa>
+                        <span>{r.title}</span>
                       </a>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -246,15 +246,15 @@ export function AppSidebar() {
                     <div className="grid flex-1 auto-rows-min gap-6 px-4">
                       <div className="grid gap-3">
                         <Label htmlFor="sheet-demo-name">Mật khẩu cũ</Label>
-                        <Input id="old-password" type='password'/>
+                        <Input id="old-password" type='password' />
                       </div>
                       <div className="grid gap-3">
                         <Label htmlFor="sheet-demo-username">Mật khẩu mới</Label>
-                        <Input id="new-password" type='password'/>
+                        <Input id="new-password" type='password' />
                       </div>
                       <div className="grid gap-3">
                         <Label htmlFor="sheet-demo-username">Xác nhận mật khẩu mới</Label>
-                        <Input id="re-new-password" type='password'/>
+                        <Input id="re-new-password" type='password' />
                       </div>
                     </div>
                     <SheetFooter>

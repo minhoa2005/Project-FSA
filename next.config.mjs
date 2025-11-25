@@ -24,6 +24,15 @@ const nextConfig = {
     authInterrupts: true,
   },
 
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'ik.imagekit.io'
+      }
+    ]
+  },
+
 
   // async rewrites() {
   //   return [
