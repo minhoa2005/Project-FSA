@@ -25,7 +25,6 @@ CREATE TABLE Account (
     email VARCHAR(100) UNIQUE NOT NULL,
     username VARCHAR(50) NOT NULL,
     password VARCHAR(255) NOT NULL,
-    roleId INT,
     isActive BIT DEFAULT 1,
     isVerified BIT DEFAULT 0,
     f2aEnabled BIT DEFAULT 0,

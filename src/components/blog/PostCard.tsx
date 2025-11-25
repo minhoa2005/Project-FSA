@@ -239,7 +239,7 @@ export default function PostCard({ post, isOwner, onChanged }: PostCardProps) {
                     alt=""
                     width={1200}
                     height={800}
-                    className="max-h-[400px] w-full object-cover"
+                    className="aspect-[16/9] w-full object-cover"
                   />
                 ))}
               </div>

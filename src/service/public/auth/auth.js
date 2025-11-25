@@ -9,9 +9,9 @@ import { sendOTP } from "@/config/emailService";
 const pool = await connectDB();
 
 const handleLogin = async (data) => {
-
     const email = data.get('email');
     const password = data.get('password');
+    console.log(email, password);
     try {
         const result = await pool.request().input('email', email).query(
             `SELECT
@@ -20,7 +20,6 @@ const handleLogin = async (data) => {
                 A.username,
                 A.password,
                 A.isActive,
-                UP.imgUrl,
                 R.roleName AS role
                 FROM
                     Account AS A
@@ -28,27 +27,29 @@ const handleLogin = async (data) => {
                     AccountRole AS AR ON A.id = AR.accountId 
                 JOIN
                     Role AS R ON AR.roleId = R.id 
-                JOIN 
-                    UserProfile AS UP ON A.id = UP.accountId
                 WHERE
-                    A.email = @email 
+                    A.email = @email
     `
         );
-        console.log(result.recordset);
+        console.log(result);
         if (result.recordset.length === 0) {
-
             return { success: false, message: "Invalid email or password" };
         }
+        const roleName = result.recordset[0].role;
+        const profile = await pool.request().input('id', result.recordset[0].id).query(
+            `SELECT imgUrl FROM ${roleName}Profile WHERE accountId = @id`
+        )
         const user = {
             id: result.recordset[0].id,
             email: result.recordset[0].email,
             username: result.recordset[0].username,
             role: result.recordset[0].role,
             isActive: result.recordset[0].isActive,
-            imgUrl: result.recordset[0].imgUrl || null
+            imgUrl: profile.recordset[0].imgUrl || null
         };
         const hashedPassword = result.recordset[0].password;
         const isMatch = await bcrypt.compare(password, hashedPassword);
+        console.log()
         console.log(result.recordset);
         if (!isMatch) {
             return { success: false, message: "Invalid email or password" };
@@ -92,7 +93,7 @@ const handleRegister = async (data) => {
             return { success: false, message: "Email already exists" };
         }
         const result = await pool.request().input('email', email).input('username', username).input('password', hashedPassword).query(
-            `INSERT INTO Account (email, username, password, roleId) values(@email, @username, @password, 2)`
+            `INSERT INTO Account (email, username, password) values(@email, @username, @password)`
         );
         const updateRoleResult = await pool.request().input('email', email).query(
             `INSERT INTO AccountRole(accountId, roleId) VALUES((SELECT id FROM Account WHERE email = @email), 2)`
@@ -121,6 +122,8 @@ const logout = async () => {
 const authMe = async () => {
     const token = await getCookie();
     const decodedToken = verifyToken(token);
+    console.log("Decoded Token:", decodedToken);
+    const roleName = decodedToken?.role;
     if (decodedToken) {
         const refresh = await pool.request().input('id', decodedToken.id).query(
             `SELECT
@@ -138,7 +141,7 @@ const authMe = async () => {
                 JOIN
                     Role AS R ON AR.roleId = R.id 
                 JOIN 
-                    UserProfile AS UP ON A.id = UP.accountId
+                    ${roleName}Profile AS UP ON A.id = UP.accountId
                 WHERE
                     A.id = @id
             `)
