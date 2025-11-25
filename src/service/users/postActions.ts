@@ -1,236 +1,213 @@
-// src/services/users/postActions.ts
-'use server';
+"use server";
 
-import { revalidatePath } from 'next/cache';
-import sql from 'mssql';
-import { v2 as cloudinary } from 'cloudinary';
+import fs from "fs/promises";
+import path from "path";
+import { connectDB, sql } from "@/config/db";
+import { revalidatePath } from "next/cache";
 
-// Config Cloudinary (từ .env)
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
+const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads");
+const FEED_PATH = "/(private)/(user)";
 
-// Config MSSQL connection pool (local, cho ProjectFSA)
-const dbConfig = {
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  server: process.env.DB_SERVER || 'localhost',
-  database: process.env.DB_NAME,  // ProjectFSA
-  options: {
-    encrypt: false,  // Local: false
-    trustServerCertificate: true,
-    port: parseInt(process.env.DB_PORT || '1433'),
-  },
-  pool: {
-    max: 10,
-    min: 0,
-    idleTimeoutMillis: 30000,
-  },
-};
+export async function createBlog(formData: FormData) {
+  const pool = await connectDB();
 
-let pool: sql.ConnectionPool | null = null;
+  const textRaw = (formData.get("text") as string) || "";
+  const text = textRaw.trim() || null;
+  const creatorId = Number(formData.get("creatorId"));
 
-// Local helper: Get DB pool (singleton)
-async function getDB(): Promise<sql.ConnectionPool> {
-  if (!pool) {
-    pool = await sql.connect(dbConfig);
-    console.log('Connected to ProjectFSA DB');
+  if (!creatorId) {
+    throw new Error("creatorId is required");
   }
-  return pool;
-}
 
-// Type cho BlogPost (dùng ở PostFeed)
-export interface BlogPost {
-  id: number;
-  text: string;
-  image?: string;
-  video?: string;
-  creatorId: number;
-  fullName: string;
-  imgUrl?: string;
-  likesCount: number;
-  commentsCount: number;
-  createdAt: Date;
-  updatedAt: Date;
-}
+  // 1. tạo blog
+  const result = await pool
+    .request()
+    .input("text", sql.NVarChar(sql.MAX), text) // dùng NVARCHAR để không bị ??? tiếng Việt
+    .input("creatorId", sql.Int, creatorId)
+    .query(`
+      INSERT INTO Blogs(text, creatorId)
+      OUTPUT inserted.id
+      VALUES (@text, @creatorId)
+    `);
 
-// Local helper: Upload media (Cloudinary)
-async function uploadMedia(buffer: Buffer, isVideo: boolean, folder: string): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const resourceType = isVideo ? 'video' : 'image';
-    cloudinary.uploader.upload_stream(
-      { folder, resource_type: resourceType },
-      (error, result) => {
-        if (error) {
-          console.error('Upload error:', error);
-          reject(error);
-        } else {
-          resolve(result?.secure_url || '');
-        }
-      }
-    ).end(buffer);
-  });
-}
+  const blogId = result.recordset[0].id as number;
 
-// Action tạo Blog mới (đăng bài)
-export async function createBlogAction(formData: FormData): Promise<{ success: boolean; blog?: BlogPost; error?: string }> {
-  try {
-    const text = (formData.get('text') as string)?.trim();
-    if (!text || text.length === 0) {
-      return { success: false, error: 'Nội dung không được để trống!' };
-    }
+  // 2. xử lý nhiều file media
+  const mediaFiles = formData.getAll("media") as File[];
 
-    const imageFile = formData.get('image') as File | null;
-    const videoFile = formData.get('video') as File | null;
-    const creatorId = 1;  // Hardcode tạm, thay bằng session.user.id sau
+  await fs.mkdir(UPLOAD_DIR, { recursive: true });
 
-    let imageUrl = '';
-    let videoUrl = '';
+  for (const file of mediaFiles) {
+    if (!file || file.size === 0) continue;
 
-    // Upload image nếu có
-    if (imageFile && imageFile.size > 0) {
-      const buffer = Buffer.from(await imageFile.arrayBuffer());
-      imageUrl = await uploadMedia(buffer, false, 'fb-blogs/images');
-    }
+    const bytes = Buffer.from(await file.arrayBuffer());
+    const safeName = file.name.replace(/\s+/g, "-");
+    const fileName = `${Date.now()}-${safeName}`;
+    const filePath = path.join(UPLOAD_DIR, fileName);
 
-    // Upload video nếu có
-    if (videoFile && videoFile.size > 0) {
-      const buffer = Buffer.from(await videoFile.arrayBuffer());
-      videoUrl = await uploadMedia(buffer, true, 'fb-blogs/videos');
-    }
+    await fs.writeFile(filePath, bytes);
 
-    // Inline SQL: INSERT Blog + OUTPUT data + join UserProfile cho fullName/imgUrl
-    const db = await getDB();
-    const result = await db.request()
-      .input('text', sql.Text, text)
-      .input('image', sql.VarChar(255), imageUrl || null)
-      .input('video', sql.VarChar(255), videoUrl || null)
-      .input('creatorId', sql.Int, creatorId)
-      .query<BlogPost>(`
-        INSERT INTO Blogs (text, image, video, creatorId, createdAt, updatedAt)
-        OUTPUT 
-          INSERTED.id, INSERTED.text, INSERTED.image, INSERTED.video, INSERTED.creatorId, 
-          INSERTED.createdAt, INSERTED.updatedAt,
-          (SELECT fullName FROM UserProfile up INNER JOIN Account a ON up.accountId = a.id WHERE a.id = INSERTED.creatorId) AS fullName,
-          (SELECT imgUrl FROM UserProfile up INNER JOIN Account a ON up.accountId = a.id WHERE a.id = INSERTED.creatorId) AS imgUrl,
-          0 AS likesCount, 0 AS commentsCount
-        VALUES (@text, @image, @video, @creatorId, GETDATE(), GETDATE())
-      `);
+    const publicUrl = `/uploads/${fileName}`;
+    const type = file.type.startsWith("image/")
+      ? "image"
+      : file.type.startsWith("video/")
+      ? "video"
+      : "other";
 
-    const blog = result.recordset[0];
-    revalidatePath('/');  // Refresh feed (giống FB, bài mới hiện top)
-
-    return { success: true, blog };
-  } catch (error) {
-    console.error('Lỗi tạo bài viết:', error);
-    return { success: false, error: 'Có lỗi xảy ra khi đăng bài. Thử lại nhé!' };
+    await pool
+      .request()
+      .input("blogId", sql.Int, blogId)
+      .input("url", sql.VarChar(255), publicUrl)
+      .input("type", sql.VarChar(20), type)
+      .query(
+        "INSERT INTO BlogMedia(blogId, mediaUrl, mediaType) VALUES (@blogId, @url, @type)",
+      );
   }
+
+  
+  revalidatePath(FEED_PATH);
+
+  
 }
+export async function updateBlog(formData: FormData) {
+  const pool = await connectDB();
 
-// Action cập nhật Blog (sửa bài)
-export async function updateBlogAction(blogId: number, formData: FormData): Promise<{ success: boolean; blog?: BlogPost; error?: string }> {
-  try {
-    const text = (formData.get('text') as string)?.trim();
-    if (!text || text.length === 0) {
-      return { success: false, error: 'Nội dung không được để trống!' };
-    }
+  const blogId = Number(formData.get("blogId"));
+  const textRaw = (formData.get("text") as string) || "";
+  const text = textRaw.trim() || null;
 
-    const imageFile = formData.get('image') as File | null;
-    const existingImage = formData.get('existingImage') as string || '';
-    let imageUrl = existingImage;
+  const removeIdsRaw = (formData.get("removeMediaIds") as string) || "";
+  const removeIds = removeIdsRaw
+    .split(",")
+    .map((s) => parseInt(s.trim(), 10))
+    .filter((n) => !isNaN(n));
 
-    // Upload ảnh mới nếu có
-    if (imageFile && imageFile.size > 0) {
-      const buffer = Buffer.from(await imageFile.arrayBuffer());
-      imageUrl = await uploadMedia(buffer, false, 'fb-blogs/images');
-    }
+  if (!blogId) throw new Error("blogId is required");
 
-    // Inline SQL: UPDATE Blog + OUTPUT data + join + count likes/comments
-    const db = await getDB();
-    const result = await db.request()
-      .input('id', sql.Int, blogId)
-      .input('text', sql.Text, text)
-      .input('image', sql.VarChar(255), imageUrl || null)
-      .query<BlogPost>(`
-        UPDATE Blogs 
-        SET text = @text, image = @image, updatedAt = GETDATE()
-        OUTPUT 
-          INSERTED.id, INSERTED.text, INSERTED.image, INSERTED.video, INSERTED.creatorId, 
-          INSERTED.createdAt, GETDATE() AS updatedAt,
-          up.fullName, up.imgUrl,
-          ISNULL(likes.count, 0) AS likesCount,
-          ISNULL(comments.count, 0) AS commentsCount
-        FROM Blogs b
-        INNER JOIN Account a ON b.creatorId = a.id
-        INNER JOIN UserProfile up ON a.id = up.accountId
-        LEFT JOIN (SELECT blogId, COUNT(*) AS count FROM [Like] GROUP BY blogId) likes ON b.id = likes.blogId
-        LEFT JOIN (SELECT blogId, COUNT(*) AS count FROM Comments GROUP BY blogId) comments ON b.id = comments.blogId
-        WHERE b.id = @id
-      `);
+  // update text
+  await pool
+    .request()
+    .input("id", sql.Int, blogId)
+    .input("text", sql.NVarChar(sql.MAX), text)
+    .query(
+      "UPDATE Blogs SET text = @text, updatedAt = GETDATE() WHERE id = @id",
+    );
 
-    if (result.recordset.length === 0) {
-      return { success: false, error: 'Không tìm thấy bài viết để sửa!' };
-    }
-
-    const blog = result.recordset[0];
-    revalidatePath('/');  // Refresh feed
-
-    return { success: true, blog };
-  } catch (error) {
-    console.error('Lỗi cập nhật bài viết:', error);
-    return { success: false, error: 'Có lỗi xảy ra khi sửa bài. Thử lại nhé!' };
+  // xóa media cũ
+  if (removeIds.length > 0) {
+    await pool
+      .request()
+      .query(
+        `DELETE FROM BlogMedia WHERE id IN (${removeIds
+          .map((n) => Number(n))
+          .join(",")})`,
+      );
   }
+
+  // thêm media mới
+  const newMedia = formData.getAll("newMedia") as File[];
+  await fs.mkdir(UPLOAD_DIR, { recursive: true });
+
+  for (const file of newMedia) {
+    if (!file || file.size === 0) continue;
+
+    const bytes = Buffer.from(await file.arrayBuffer());
+    const safeName = file.name.replace(/\s+/g, "-");
+    const fileName = `${Date.now()}-${safeName}`;
+    const filePath = path.join(UPLOAD_DIR, fileName);
+
+    await fs.writeFile(filePath, bytes);
+
+    const publicUrl = `/uploads/${fileName}`;
+    const type = file.type.startsWith("image/")
+      ? "image"
+      : file.type.startsWith("video/")
+      ? "video"
+      : "other";
+
+    await pool
+      .request()
+      .input("blogId", sql.Int, blogId)
+      .input("url", sql.VarChar(255), publicUrl)
+      .input("type", sql.VarChar(20), type)
+      .query(
+        "INSERT INTO BlogMedia(blogId, mediaUrl, mediaType) VALUES (@blogId, @url, @type)",
+      );
+  }
+
+  revalidatePath(FEED_PATH);
 }
+export async function getBlogs() {
+  const pool = await connectDB();
 
-// Action xóa Blog (xóa bài)
-export async function deleteBlogAction(blogId: number): Promise<{ success: boolean; error?: string }> {
-  try {
-    const db = await getDB();
+  // lấy blogs + user + media
+  const result = await pool.request().query(`
+    SELECT 
+      b.id AS blogId,
+      b.text,
+      b.creatorId,
+      b.createdAt,
+      b.updatedAt,
+      up.fullName,
+      up.imgUrl,
+      a.username,
+      m.id AS mediaId,
+      m.mediaUrl,
+      m.mediaType
+    FROM Blogs b
+    LEFT JOIN UserProfile up ON up.accountId = b.creatorId
+    LEFT JOIN Account a ON a.id = b.creatorId
+    LEFT JOIN BlogMedia m ON m.blogId = b.id
+    ORDER BY b.createdAt DESC, m.id ASC
+  `);
 
-    // Inline SQL: Xóa cascade [Like] và Comments trước
-    await db.request().input('id', sql.Int, blogId).query('DELETE FROM [Like] WHERE blogId = @id');
-    await db.request().input('id', sql.Int, blogId).query('DELETE FROM Comments WHERE blogId = @id');
+  const rows = result.recordset || [];
 
-    // Inline SQL: DELETE Blog
-    const result = await db.request().input('id', sql.Int, blogId).query('DELETE FROM Blogs WHERE id = @id');
+  const map = new Map<number, any>();
 
-    if (result.rowsAffected[0] === 0) {
-      return { success: false, error: 'Không tìm thấy bài viết để xóa!' };
+  for (const row of rows) {
+    const blogId = row.blogId as number;
+
+    if (!map.has(blogId)) {
+      map.set(blogId, {
+        id: blogId,
+        text: row.text,
+        creatorId: row.creatorId,
+        createdAt: row.createdAt,
+        updatedAt: row.updatedAt,
+        fullName: row.fullName,
+        username: row.username,
+        imgUrl: row.imgUrl,
+        media: [] as any[],
+      });
     }
 
-    revalidatePath('/');  // Refresh feed (bài biến mất khỏi UI)
-
-    return { success: true };
-  } catch (error) {
-    console.error('Lỗi xóa bài viết:', error);
-    return { success: false, error: 'Có lỗi xảy ra khi xóa bài. Thử lại nhé!' };
+    if (row.mediaId) {
+      const post = map.get(blogId);
+      post.media.push({
+        id: row.mediaId,
+        url: row.mediaUrl,
+        type: row.mediaType, // 'image' | 'video'
+      });
+    }
   }
+
+  return Array.from(map.values());
 }
+export async function deleteBlog(formData: FormData) {
+  const pool = await connectDB();
+  const id = Number(formData.get("blogId"));
+  if (!id) throw new Error("blogId is required");
 
-// Action fetch Blogs (feed, với join + count)
-export async function getBlogsAction(limit: number = 10): Promise<BlogPost[]> {
-  try {
-    const db = await getDB();
-    const result = await db.request()
-      .input('limit', sql.Int, limit)
-      .query<BlogPost>(`
-        SELECT b.id, b.text, b.image, b.video, b.creatorId, b.createdAt, b.updatedAt,
-               up.fullName, up.imgUrl,
-               ISNULL(likes.count, 0) AS likesCount,
-               ISNULL(comments.count, 0) AS commentsCount
-        FROM Blogs b
-        INNER JOIN Account a ON b.creatorId = a.id
-        INNER JOIN UserProfile up ON a.id = up.accountId
-        LEFT JOIN (SELECT blogId, COUNT(*) AS count FROM [Like] GROUP BY blogId) likes ON b.id = likes.blogId
-        LEFT JOIN (SELECT blogId, COUNT(*) AS count FROM Comments GROUP BY blogId) comments ON b.id = comments.blogId
-        ORDER BY b.createdAt DESC
-        OFFSET 0 ROWS FETCH NEXT @limit ROWS ONLY
-      `);
-    return result.recordset;
-  } catch (error) {
-    console.error('Lỗi fetch blogs:', error);
-    return [];  // Return empty array nếu lỗi, tránh crash
-  }
+  // xóa media
+  await pool.request()
+    .input("blogId", sql.Int, id)
+    .query(`DELETE FROM BlogMedia WHERE blogId = @blogId`);
+
+  // xóa blog
+  await pool.request()
+    .input("id", sql.Int, id)
+    .query(`DELETE FROM Blogs WHERE id = @id`);
+
+  revalidatePath("/(private)/(user)");
 }
