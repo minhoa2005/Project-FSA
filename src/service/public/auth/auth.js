@@ -20,6 +20,7 @@ const handleLogin = async (data) => {
                 A.username,
                 A.password,
                 A.isActive,
+                UP.imgUrl,
                 R.roleName AS role
                 FROM
                     Account AS A
@@ -27,13 +28,15 @@ const handleLogin = async (data) => {
                     AccountRole AS AR ON A.id = AR.accountId 
                 JOIN
                     Role AS R ON AR.roleId = R.id 
+                JOIN 
+                    UserProfile AS UP ON A.id = UP.accountId
                 WHERE
                     A.email = @email 
     `
         );
         console.log(result.recordset);
         if (result.recordset.length === 0) {
-            
+
             return { success: false, message: "Invalid email or password" };
         }
         const user = {
@@ -41,7 +44,8 @@ const handleLogin = async (data) => {
             email: result.recordset[0].email,
             username: result.recordset[0].username,
             role: result.recordset[0].role,
-            isActive: result.recordset[0].isActive
+            isActive: result.recordset[0].isActive,
+            imgUrl: result.recordset[0].imgUrl || null
         };
         const hashedPassword = result.recordset[0].password;
         const isMatch = await bcrypt.compare(password, hashedPassword);
@@ -118,13 +122,46 @@ const authMe = async () => {
     const token = await getCookie();
     const decodedToken = verifyToken(token);
     if (decodedToken) {
+        const refresh = await pool.request().input('id', decodedToken.id).query(
+            `SELECT
+                A.id,
+                A.email,
+                A.username,
+                A.password,
+                A.isActive,
+                UP.imgUrl,
+                R.roleName AS role
+                FROM
+                    Account AS A
+                JOIN
+                    AccountRole AS AR ON A.id = AR.accountId 
+                JOIN
+                    Role AS R ON AR.roleId = R.id 
+                JOIN 
+                    UserProfile AS UP ON A.id = UP.accountId
+                WHERE
+                    A.id = @id
+            `)
+        if (refresh.recordset.length === 0) {
+            return { success: false, message: "Unauthorized" };
+        }
+        const payload = {
+            id: refresh.recordset[0].id,
+            email: refresh.recordset[0].email,
+            username: refresh.recordset[0].username,
+            role: refresh.recordset[0].role,
+            isActive: refresh.recordset[0].isActive
+        }
+        const newToken = signToken(payload);
+        await setCookie(newToken);
         return {
             success: true, data: {
-                id: decodedToken.id,
-                email: decodedToken.email,
-                username: decodedToken.username,
-                role: decodedToken.role,
-                isActive: decodedToken.isActive
+                id: refresh.recordset[0].id,
+                email: refresh.recordset[0].email,
+                username: refresh.recordset[0].username,
+                role: refresh.recordset[0].role,
+                isActive: refresh.recordset[0].isActive,
+                imgUrl: refresh.recordset[0].imgUrl || null
             }
         };
     } else {
