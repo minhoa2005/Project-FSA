@@ -7,6 +7,7 @@ import bcrypt from 'bcryptjs';
 import { payloadType } from "@/types/config/tokenTypes";
 import { get } from "http";
 import { upload } from "../image/imageService";
+import { url } from "inspector";
 
 const pool = await connectDB();
 
@@ -153,7 +154,7 @@ const updateAvatar = async (avatarUrl: string) => {
                     message: "User not found"
                 }
             }
-            return { success: true };
+            return { success: true, url: uploadResult.upload.url };
         }
         return {
             success: false,
