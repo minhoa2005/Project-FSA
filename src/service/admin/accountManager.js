@@ -1,5 +1,5 @@
 "use server"
-
+import bcrypt from "bcryptjs";
 const { connectDB } = require("@/config/db")
 
 const pool = await connectDB()
@@ -19,6 +19,57 @@ const getAllUser = async () => {
         return (null)
     }
 }
+
+export const getAllEmail = async () => {
+    try {
+        const result = await pool.request()
+            .query('select email from account')
+        // console.log(result.recordset)
+        return result.recordset
+
+    } catch (err) {
+        console.log('err get all email', err)
+    }
+}
+
+export const getAllUsername = async () => {
+    const result = await pool.request()
+        .query('select username from account')
+    console.log(result.recordset)
+    return result.recordset;
+}
+
+export const addAccByAdmin = async (fullName, email, username, password) => {
+    try {
+        const salt = await bcrypt.genSalt(10)
+        const hashPass = await bcrypt.hash(password, salt)
+
+        await pool.request()
+            .input('email', email).input('username', username).input('password', hashPass)
+            .query(`insert into account(email, username, password, roleId) values (@email, @username, @password, 2)`)
+
+        await pool.request()
+            .input('email', email)
+            .query(`insert into AccountRole(accountId, roleId) values((select id from account where email = @email), 2)`)
+
+        await pool.request()
+            .input('email', email)
+            .input('fullName', fullName)
+            .query(`insert into UserProfile(accountId, fullName) values ((select id from account where email = @email), @fullName)`)
+
+        return {
+            success: true
+        }
+
+    } catch (err) {
+        console.log('Err add account by admin', err)
+        return {
+            success: false,
+            error: err
+        }
+    }
+}
+
 
 const getAllAccBan = async () => {
     try {
