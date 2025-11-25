@@ -1,24 +1,27 @@
 import { imageKit } from "@/config/imageKit"
 
 
-const upload = async (data: FormData) => {
+const upload = async (data: string, name: string) => {
     try {
-        const file = data.get("file");
-        const name: string = data.get("name").toString();
-        if (!file || !(file instanceof File)) {
+        if (!data || !data.startsWith('data:')) {
             return {
                 success: false,
-                message: "No file provided or invalid file type"
+                message: "Không có dữ liệu ảnh hợp lệ"
             }
         }
-        const buffer = Buffer.from(await file?.arrayBuffer()!);
         const upload = await imageKit.upload({
-            file: buffer,
-            fileName: data.get("fileName") as string,
+            file: data,
+            fileName: name,
             useUniqueFileName: true,
         })
-        return upload
+        return { success: true, upload }
     } catch (error) {
-        throw new Error(`Image upload failed: ${error}`)
+        console.log(error);
+        return {
+            success: false,
+            message: "Tải ảnh lên thất bại"
+        }
     }
 }
+
+export { upload };

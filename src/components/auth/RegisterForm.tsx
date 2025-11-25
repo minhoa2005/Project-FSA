@@ -10,9 +10,9 @@ import { handleRegister } from '@/service/public/auth/auth';
 
 export default function RegisterForm({ action }) {
     const router = useRouter();
-    const handleSubmit = async (e) => {
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        const formData = new FormData(e.target);
+        const formData = new FormData(e.target as HTMLFormElement);
         try {
             const response = await handleRegister(formData);
             if (response.success) {

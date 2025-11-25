@@ -201,7 +201,7 @@ export function AppSidebar() {
                     >
                       <a href={r.url}>
                         <r.icon />
-                        <spa>{r.title}</spa>
+                        <span>{r.title}</span>
                       </a>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
