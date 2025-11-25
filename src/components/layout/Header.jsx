@@ -41,7 +41,7 @@ export default function Header() {
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Avatar className="w-10 cursor-pointer ">
-                                <AvatarImage src="/avatar.png" alt="User Avatar" />
+                                <AvatarImage src={user?.imgUrl || ''} alt="User Avatar" />
                                 <AvatarFallback>{getInitials(user?.username)}</AvatarFallback>
                             </Avatar>
                         </DropdownMenuTrigger>

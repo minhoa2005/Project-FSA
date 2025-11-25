@@ -11,7 +11,7 @@ const signToken = (payload: payloadType) => {
 
 const verifyToken = (token: string) => {
     try {
-        return jwt.verify(token, secret);
+        return jwt.verify(token, secret) as payloadType;
     }
     catch (error) {
         return null;
