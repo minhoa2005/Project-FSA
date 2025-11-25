@@ -4,6 +4,7 @@ import fs from "fs/promises";
 import path from "path";
 import { connectDB, sql } from "@/config/db";
 import { revalidatePath } from "next/cache";
+import { uploadBytes } from "../image/imageService";
 
 const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads");
 const FEED_PATH = "/(private)/(user)";
@@ -35,25 +36,19 @@ export async function createBlog(formData: FormData) {
   // 2. xử lý nhiều file media
   const mediaFiles = formData.getAll("media") as File[];
 
-  await fs.mkdir(UPLOAD_DIR, { recursive: true });
-
   for (const file of mediaFiles) {
     if (!file || file.size === 0) continue;
 
     const bytes = Buffer.from(await file.arrayBuffer());
     const safeName = file.name.replace(/\s+/g, "-");
     const fileName = `${Date.now()}-${safeName}`;
-    const filePath = path.join(UPLOAD_DIR, fileName);
-
-    await fs.writeFile(filePath, bytes);
-
-    const publicUrl = `/uploads/${fileName}`;
     const type = file.type.startsWith("image/")
       ? "image"
       : file.type.startsWith("video/")
-      ? "video"
-      : "other";
-
+        ? "video"
+        : "other";
+    const uploadResult = await uploadBytes(bytes, fileName);
+    const publicUrl = uploadResult.url;
     await pool
       .request()
       .input("blogId", sql.Int, blogId)
@@ -64,10 +59,10 @@ export async function createBlog(formData: FormData) {
       );
   }
 
-  
+
   revalidatePath(FEED_PATH);
 
-  
+
 }
 export async function updateBlog(formData: FormData) {
   const pool = await connectDB();
@@ -106,7 +101,6 @@ export async function updateBlog(formData: FormData) {
 
   // thêm media mới
   const newMedia = formData.getAll("newMedia") as File[];
-  await fs.mkdir(UPLOAD_DIR, { recursive: true });
 
   for (const file of newMedia) {
     if (!file || file.size === 0) continue;
@@ -114,16 +108,13 @@ export async function updateBlog(formData: FormData) {
     const bytes = Buffer.from(await file.arrayBuffer());
     const safeName = file.name.replace(/\s+/g, "-");
     const fileName = `${Date.now()}-${safeName}`;
-    const filePath = path.join(UPLOAD_DIR, fileName);
-
-    await fs.writeFile(filePath, bytes);
-
-    const publicUrl = `/uploads/${fileName}`;
     const type = file.type.startsWith("image/")
       ? "image"
       : file.type.startsWith("video/")
-      ? "video"
-      : "other";
+        ? "video"
+        : "other";
+    const uploadResult = await uploadBytes(bytes, fileName);
+    const publicUrl = uploadResult.url;
 
     await pool
       .request()
