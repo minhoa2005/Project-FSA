@@ -27,6 +27,7 @@ import {
   Image as ImageIcon,
   X,
 } from "lucide-react";
+import Image from "next/image";
 
 interface PostCardProps {
   post: any;
@@ -121,9 +122,11 @@ export default function PostCard({ post, isOwner, onChanged }: PostCardProps) {
               className="relative overflow-hidden rounded-lg border"
             >
               {isImage && (
-                <img
+                <Image
                   src={url}
                   alt={file.name}
+                  width={500}
+                  height={500}
                   className="h-40 w-full object-cover"
                 />
               )}
@@ -135,7 +138,7 @@ export default function PostCard({ post, isOwner, onChanged }: PostCardProps) {
                 />
               )}
               {!isImage && !isVideo && (
-                <div className="h-40 w-full bg-muted px-2 py-1 text-xs">
+                <div className="h-40 w-full px-2 py-1 text-xs">
                   {file.name}
                 </div>
               )}
@@ -159,7 +162,7 @@ export default function PostCard({ post, isOwner, onChanged }: PostCardProps) {
   };
 
   return (
-    <Card className="overflow-hidden bg-white shadow-sm">
+    <Card className="overflow-hidden shadow-sm">
       <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
         <div className="flex items-center gap-2">
           <Avatar className="h-10 w-10">
@@ -224,17 +227,18 @@ export default function PostCard({ post, isOwner, onChanged }: PostCardProps) {
             {/* nhiều ảnh */}
             {images.length > 0 && (
               <div
-                className={`grid gap-1 overflow-hidden rounded-lg ${
-                  images.length === 1
-                    ? "grid-cols-1"
-                    : "grid-cols-2"
-                }`}
+                className={`grid gap-1 overflow-hidden rounded-lg ${images.length === 1
+                  ? "grid-cols-1"
+                  : "grid-cols-2"
+                  }`}
               >
                 {images.map((m: any) => (
-                  <img
+                  <Image
                     key={m.id}
                     src={m.url}
                     alt=""
+                    width={1200}
+                    height={800}
                     className="max-h-[400px] w-full object-cover"
                   />
                 ))}
@@ -294,9 +298,11 @@ export default function PostCard({ post, isOwner, onChanged }: PostCardProps) {
                         className="relative overflow-hidden rounded-lg border"
                       >
                         {m.type === "image" ? (
-                          <img
+                          <Image
                             src={m.url}
                             alt=""
+                            width={500}
+                            height={500}
                             className="h-32 w-full object-cover"
                           />
                         ) : (
@@ -307,7 +313,7 @@ export default function PostCard({ post, isOwner, onChanged }: PostCardProps) {
                           />
                         )}
 
-                        <button
+                        <Button
                           type="button"
                           onClick={() =>
                             setRemovedMediaIds((prev) =>
@@ -316,10 +322,10 @@ export default function PostCard({ post, isOwner, onChanged }: PostCardProps) {
                                 : [...prev, m.id],
                             )
                           }
-                          className="absolute right-1 top-1 inline-flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/80"
+                          className="absolute right-1 top-1 inline-flex h-6 w-6 items-center justify-center rounded-full "
                         >
                           <X className="h-3 w-3" />
-                        </button>
+                        </Button>
                       </div>
                     ))}
                 </div>
@@ -327,9 +333,9 @@ export default function PostCard({ post, isOwner, onChanged }: PostCardProps) {
             )}
 
             {/* thêm media mới */}
-            <div className="rounded-lg border bg-gray-50 px-3 py-2">
+            <div className="rounded-lg border px-3 py-2">
               <div className="flex items-center justify-between">
-                <span className="flex items-center gap-1 text-xs font-medium text-gray-600">
+                <span className="flex items-center gap-1 text-xs font-medium ">
                   <ImageIcon className="h-4 w-4" />
                   Thêm ảnh / video mới
                 </span>
@@ -368,11 +374,11 @@ export default function PostCard({ post, isOwner, onChanged }: PostCardProps) {
       </CardContent>
 
       <CardFooter className="flex flex-col gap-1 border-t px-2 pb-2 pt-1">
-        <div className="flex items-center justify-between px-1 text-xs text-muted-foreground">
+        <div className="flex items-center justify-between px-1 text-xs text-muted-foreground gap-3">
           <span>0 lượt thích</span>
           <span>0 bình luận</span>
         </div>
-        <div className="mt-1 grid grid-cols-3 gap-1 text-xs">
+        <div className="mt-1 grid grid-cols-3 gap-4 text-xs">
           <Button
             variant="ghost"
             size="sm"

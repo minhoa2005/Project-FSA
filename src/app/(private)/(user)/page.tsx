@@ -65,19 +65,16 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-100">
-      <div className="mx-auto grid max-w-5xl grid-cols-1 gap-4 py-4 md:grid-cols-[minmax(0,2fr)_minmax(260px,1fr)]">
-        {/* Cột giữa - newsfeed */}
-        <div className="space-y-4">
-          {/* Ô tạo bài viết giống Facebook */}
+    <div className="min-h-screen">
+      <div className="grid grid-cols-3 gap-4">
+        <div className="col-span-2 mt-3 p-3">
           <CreatePost
             currentUser={user}
             onPostCreated={loadPosts}
           />
 
-          {/* Danh sách bài viết */}
           {loadingPosts ? (
-            <div className="rounded-xl bg-white p-4 text-sm shadow-sm">
+            <div className="rounded-xl p-4 text-sm shadow-sm">
               Đang tải bài viết...
             </div>
           ) : (
@@ -90,7 +87,7 @@ export default function HomePage() {
         </div>
 
         {/* Cột phải - sidebar (bạn bè đang online, gợi ý...) */}
-        <div className="hidden md:block">
+        <div className="col-span-1">
           <ContactsSidebar />
         </div>
       </div>
