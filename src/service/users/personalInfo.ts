@@ -4,10 +4,13 @@ import { connectDB } from "@/config/db";
 import { getCookie } from "@/config/cookie";
 import { verifyToken } from "@/config/jwt";
 import bcrypt from 'bcryptjs';
+import { payloadType } from "@/types/config/tokenTypes";
+import { get } from "http";
+import { upload } from "../image/imageService";
 
 const pool = await connectDB();
 
-export const verifyUser = async () => {
+const verifyUser = async () => {
     const token = await getCookie();
     const verifyUser = verifyToken(token);
     if (!verifyUser || verifyUser.role !== 'User') {
@@ -21,10 +24,10 @@ const getPersonalInfo = async () => {
         unauthorized();
     }
     try {
-        const token = await getCookie();
+        const token: string = await getCookie();
         const decoded = verifyToken(token);
-        const id = decoded.id;
-        const role = decoded.role;
+        const id: string = decoded.id;
+        const role: string = decoded.role;
         const result = await pool.request().input('id', id).query(
             `
             select a.email, p.fullName, p.phoneNumber, p.dob from Account a
@@ -54,7 +57,7 @@ const getPersonalInfo = async () => {
     }
 }
 
-const updateInfo = async (data) => {
+const updateInfo = async (data: { fullName: string, phoneNumber: string, dob: string }) => {
     if (!await verifyUser()) {
         unauthorized();
     }
@@ -87,14 +90,14 @@ const updateInfo = async (data) => {
     }
 }
 
-const changePassword = async (oldPassword, newPassword) => {
+const changePassword = async (oldPassword: string, newPassword: string) => {
     if (!await verifyUser()) {
         unauthorized();
     }
     try {
-        const token = await getCookie();
+        const token: string = await getCookie();
         const decoded = verifyToken(token);
-        const id = decoded.id;
+        const id: string = decoded.id;
         const salt = await bcrypt.genSalt(10);
         const newPassHash = await bcrypt.hash(newPassword, salt);
         const checkOldPass = await pool.request().input('id', id).query(`select password from Account where id = @id`);
@@ -128,4 +131,41 @@ const changePassword = async (oldPassword, newPassword) => {
         }
     }
 }
-export { getPersonalInfo, updateInfo, changePassword, verifyUser };
+
+const updateAvatar = async (avatarUrl: string) => {
+    if (!await verifyUser()) {
+        unauthorized();
+    }
+    try {
+        const token: string = await getCookie();
+        const decoded = verifyToken(token);
+        const id: string = decoded.id;
+        const uploadResult = await upload(avatarUrl, `user_avatar_${id}.jpeg`);
+        if (uploadResult.success) {
+            const result = await pool.request().input('id', id).input('imgUrl', uploadResult.upload.url).query(`
+                    update UserProfile
+                    set imgUrl = @imgUrl
+                    where accountId = @id
+                `);
+            if (result.rowsAffected[0] === 0) {
+                return {
+                    success: false,
+                    message: "User not found"
+                }
+            }
+            return { success: true };
+        }
+        return {
+            success: false,
+            message: "Lỗi tải ảnh lên"
+        }
+    }
+    catch (error) {
+        console.error('Error updating avatar:', error);
+        return {
+            success: false,
+            message: "Lỗi câp nhật ảnh đại diện"
+        }
+    }
+}
+export { getPersonalInfo, updateInfo, changePassword, verifyUser, updateAvatar };
