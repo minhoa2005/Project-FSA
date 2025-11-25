@@ -1,7 +1,19 @@
+// PostCard.tsx
+
 "use client";
 
 import { useState } from "react";
 import { updateBlog, deleteBlog } from "@/service/users/postActions";
+
+// === CODE CẦN THAY ĐỔI / THÊM (1) ===
+// 1. Loại bỏ import cũ và import Custom Hook + Components từ Social_Interactions.tsx
+// Giả định Social_Interactions.tsx nằm trong "@/components/post/Social_Interactions"
+import { 
+    usePostInteractions, 
+    CommentSection, 
+    ShareDialog 
+} from "@/components/post/Social_Interactions" 
+// ===================================
 
 import {
   Card,
@@ -39,6 +51,39 @@ export default function PostCard({ post, isOwner, onChanged }: PostCardProps) {
   const [editing, setEditing] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
+  // === CODE CẦN THÊM  ===
+  const handleInteractionUpdate = (updatedPost: any) => {
+      // Hàm callback này được gọi mỗi khi có tương tác (like/comment/share)
+      // gọi API cập nhật dữ liệu ở đây
+      console.log("Post data updated by interaction (e.g., call API):", updatedPost);
+  };
+
+  const {
+      isLiked,
+      showComments,
+      showShareDialog,
+      currentLikes,
+      totalComments,
+      localPostComments,
+      handleLike,
+      setShowComments,
+      setShowShareDialog,
+      handleAddComment,
+      handleAddReply,
+      handleLikeComment,
+      handleShare,
+  } = usePostInteractions(
+      { 
+          id: post.id,
+          likes: post.likes || 0, 
+          shares: post.shares || 0, 
+          comments: post.comments || [],
+          text: post.text 
+      }, 
+      handleInteractionUpdate
+  );
+  // ===================================
+
   // state dùng cho edit media
   const [removedMediaIds, setRemovedMediaIds] = useState<number[]>([]);
   const [newFiles, setNewFiles] = useState<File[]>([]);
@@ -55,6 +100,7 @@ export default function PostCard({ post, isOwner, onChanged }: PostCardProps) {
       .join("")
       .toUpperCase() || "U";
 
+ 
   const handleUpdate = async (formData: FormData) => {
     try {
       setSubmitting(true);
@@ -160,9 +206,11 @@ export default function PostCard({ post, isOwner, onChanged }: PostCardProps) {
       </div>
     );
   };
+ 
 
   return (
     <Card className="overflow-hidden shadow-sm">
+      {/* ... CardHeader và CardContent giữ nguyên ... */}
       <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
         <div className="flex items-center gap-2">
           <Avatar className="h-10 w-10">
@@ -216,6 +264,7 @@ export default function PostCard({ post, isOwner, onChanged }: PostCardProps) {
       </CardHeader>
 
       <CardContent className="space-y-3 pb-2">
+        {/* ... Phần chỉnh sửa / hiển thị nội dung giữ nguyên ... */}
         {!editing ? (
           <>
             {post.text && (
@@ -374,20 +423,35 @@ export default function PostCard({ post, isOwner, onChanged }: PostCardProps) {
       </CardContent>
 
       <CardFooter className="flex flex-col gap-1 border-t px-2 pb-2 pt-1">
+        
+       
         <div className="flex items-center justify-between px-1 text-xs text-muted-foreground gap-3">
-          <span>0 lượt thích</span>
-          <span>0 bình luận</span>
+          <span>{currentLikes} lượt thích</span>
+          <span>{totalComments} bình luận</span>
         </div>
+        
+       
         <div className="mt-1 grid grid-cols-3 gap-4 text-xs">
+          {/* Nút THÍCH */}
           <Button
+            onClick={handleLike} 
             variant="ghost"
             size="sm"
-            className="flex items-center justify-center gap-1 rounded-md py-1 text-muted-foreground hover:bg-muted"
+            className={`flex items-center justify-center gap-1 rounded-md py-1 transition-colors ${
+              isLiked 
+                ? "text-blue-500 hover:text-blue-600 hover:bg-blue-50" 
+                : "text-muted-foreground hover:bg-muted" 
+            }`}
           >
-            <ThumbsUp className="h-4 w-4" />
+            <ThumbsUp 
+              className={`h-4 w-4 ${isLiked ? "fill-blue-500" : ""}`} 
+            />
             Thích
           </Button>
+          
+          {/* Nút BÌNH LUẬN */}
           <Button
+            onClick={() => setShowComments(!showComments)} 
             variant="ghost"
             size="sm"
             className="flex items-center justify-center gap-1 rounded-md py-1 text-muted-foreground hover:bg-muted"
@@ -395,7 +459,10 @@ export default function PostCard({ post, isOwner, onChanged }: PostCardProps) {
             <MessageCircle className="h-4 w-4" />
             Bình luận
           </Button>
+          
+          {/* Nút CHIA SẺ */}
           <Button
+            onClick={() => setShowShareDialog(true)} 
             variant="ghost"
             size="sm"
             className="flex items-center justify-center gap-1 rounded-md py-1 text-muted-foreground hover:bg-muted"
@@ -404,6 +471,24 @@ export default function PostCard({ post, isOwner, onChanged }: PostCardProps) {
             Chia sẻ
           </Button>
         </div>
+        
+        {/*Thêm Conditional Rendering cho CommentSection và ShareDialog */}
+        {showComments && (
+          <CommentSection
+            comments={localPostComments} 
+            onAddComment={handleAddComment} 
+            onLikeComment={handleLikeComment} 
+            onAddReply={handleAddReply} 
+          />
+        )}
+
+        {showShareDialog && (
+          <ShareDialog
+            onClose={() => setShowShareDialog(false)} 
+            onShare={handleShare} 
+          />
+        )}
+
       </CardFooter>
     </Card>
   );

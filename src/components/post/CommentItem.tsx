@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ThumbsUp, Send } from "lucide-react";
-import { ImageWithFallback } from "./figma/ImageWithFallback";
+
 
 export interface CommentData {
   id: string;
@@ -70,11 +70,7 @@ export function CommentItem({
   return (
     <div className="mb-3">
       <div className="flex gap-2">
-        <ImageWithFallback
-          src={comment.avatar}
-          alt={comment.author}
-          className="w-8 h-8 rounded-full object-cover flex-shrink-0"
-        />
+        
         <div className="flex-1">
           {/* Comment bubble */}
           <div className="bg-gray-100 rounded-2xl px-3 py-2">
@@ -118,11 +114,7 @@ export function CommentItem({
           {/* Reply Form */}
           {showReplyForm && (
             <form onSubmit={handleReplySubmit} className="flex items-center gap-2 mt-2">
-              <ImageWithFallback
-                src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop"
-                alt="Your avatar"
-                className="w-7 h-7 rounded-full object-cover"
-              />
+              
               <div className="flex-1 relative">
                 <input
                   type="text"

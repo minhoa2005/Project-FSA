@@ -79,7 +79,7 @@ export function ShareDialog({ onClose, onShare }: ShareDialogProps) {
                 onClick={() => handleShare(option.id)}
                 className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 transition-colors"
               >
-                <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
+                <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center ">
                   <Icon className="w-5 h-5 text-gray-700" />
                 </div>
                 <div className="text-left flex-1">
