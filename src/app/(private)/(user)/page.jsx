@@ -1,9 +1,9 @@
 // src/app/(private)/(user)/page.jsx
 import { getAllBlogs } from '@/service/users/post'
 import CreatePostTrigger from '@/components/post/CreatePostTrigger'
-import PostCard from '@/components/post/PostCard'
 import ContactsSidebar from '@/components/blog/ContactsSidebar'
-import { PostCard } from '@/components/blog/PostCard'
+import PostCard from '@/components/post/PostCard'
+
 
 export default async function FeedPage() {
   const posts = await getAllBlogs()
