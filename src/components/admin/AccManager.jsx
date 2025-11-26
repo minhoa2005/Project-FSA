@@ -9,7 +9,7 @@ import {
     TableRow,
 } from "@/components/ui/table"
 import Link from "next/link"
-import { banAcc, filterAcc, getAllUser, unBanAcc } from "@/service/admin/accountManager";
+import { banAcc, filterAcc, getAllUser, getEmailAccById, resetPassByAdmin, unBanAcc } from "@/service/admin/accountManager";
 import { useEffect, useState } from "react";
 import { ToggleGroup, ToggleGroupItem } from "../ui/toggle-group";
 import { Ban, BookmarkIcon, Container, HeartIcon, KeyRound, Search, SlashIcon, StarIcon, Unlock } from "lucide-react";
@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "../ui/input-group";
 import { toast } from "sonner";
 import { debounce } from "@/lib/function";
+import { sendNewPassword } from "@/config/emailService";
 
 export function AccManager() {
     const [account, setAccount] = useState([]);
@@ -56,6 +57,31 @@ export function AccManager() {
         } catch (err) {
             console.log(err)
             toast.error("Lỗi mở khóa tài khoản!")
+        }
+    }
+
+    const handleResetPass = async (id) => {
+        try {
+            const res = await resetPassByAdmin(id);
+            if (res.success) {
+                const acc = await getEmailAccById(id)
+                const email = acc?.email
+                const username = acc?.username
+
+
+                const newPass = res.newPass
+                // console.log(newPass)
+                sendNewPassword(email, newPass)
+                toast.success(
+                    <div>
+                        Bạn đã đặt lại mật khẩu tài khoản <span className={'font-bold text-red-500'}>{username}</span> thành công!
+                    </div>
+                )
+            } else {
+                toast.error('Lỗi đặt lại mật khẩu')
+            }
+        } catch (err) {
+            console.log('err resset pass')
         }
     }
 
@@ -212,7 +238,7 @@ export function AccManager() {
                                                     </AlertDialogHeader>
                                                     <AlertDialogFooter>
                                                         <AlertDialogCancel>Hủy</AlertDialogCancel>
-                                                        <AlertDialogAction>Đặt lại mật khẩu</AlertDialogAction>
+                                                        <AlertDialogAction onClick={() => handleResetPass(a.id)}>Đặt lại mật khẩu</AlertDialogAction>
                                                     </AlertDialogFooter>
                                                 </AlertDialogContent>
                                             </AlertDialog>
