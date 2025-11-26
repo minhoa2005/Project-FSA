@@ -5,11 +5,16 @@ import path from "path";
 import { connectDB, sql } from "@/config/db";
 import { revalidatePath } from "next/cache";
 import { uploadBytes } from "../image/imageService";
+import { verifyUser } from "./personalInfo";
+import { unauthorized } from "next/navigation";
 
 const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads");
 const FEED_PATH = "/(private)/(user)";
 
 export async function createBlog(formData: FormData) {
+  if (!await verifyUser()) {
+    unauthorized();
+  }
   const pool = await connectDB();
 
   const textRaw = (formData.get("text") as string) || "";
@@ -40,13 +45,13 @@ export async function createBlog(formData: FormData) {
     if (!file || file.size === 0) continue;
 
     const bytes = Buffer.from(await file.arrayBuffer());
-    const safeName = file.name.replace(/\s+/g, "-");
-    const fileName = `${Date.now()}-${safeName}`;
+
     const type = file.type.startsWith("image/")
       ? "image"
       : file.type.startsWith("video/")
         ? "video"
         : "other";
+    const fileName = `${type}-${Date.now()}`;
     const uploadResult = await uploadBytes(bytes, fileName);
     const publicUrl = uploadResult.url;
     await pool
@@ -65,6 +70,9 @@ export async function createBlog(formData: FormData) {
 
 }
 export async function updateBlog(formData: FormData) {
+  if (!await verifyUser()) {
+    unauthorized();
+  }
   const pool = await connectDB();
 
   const blogId = Number(formData.get("blogId"));
@@ -106,13 +114,12 @@ export async function updateBlog(formData: FormData) {
     if (!file || file.size === 0) continue;
 
     const bytes = Buffer.from(await file.arrayBuffer());
-    const safeName = file.name.replace(/\s+/g, "-");
-    const fileName = `${Date.now()}-${safeName}`;
     const type = file.type.startsWith("image/")
       ? "image"
       : file.type.startsWith("video/")
         ? "video"
         : "other";
+    const fileName = `${type}-${Date.now()}`;
     const uploadResult = await uploadBytes(bytes, fileName);
     const publicUrl = uploadResult.url;
 
@@ -129,6 +136,9 @@ export async function updateBlog(formData: FormData) {
   revalidatePath(FEED_PATH);
 }
 export async function getBlogs() {
+  if (!await verifyUser()) {
+    unauthorized();
+  }
   const pool = await connectDB();
 
   // lấy blogs + user + media
