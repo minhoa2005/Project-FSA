@@ -178,35 +178,6 @@ CREATE TABLE BlogMedia (
     FOREIGN KEY (blogId) REFERENCES Blogs(id)
 );
 GO
--- Chạy lệnh này trong SQL Server Management Studio
-ALTER TABLE Comments 
-ADD parentId INT NULL;
-
-ALTER TABLE Comments
-ADD CONSTRAINT FK_Comments_Parent 
-FOREIGN KEY (parentId) REFERENCES Comments(id);
-
--- 1. Thêm cột parentId vào bảng Comments
-ALTER TABLE Comments 
-ADD parentId INT NULL;
-GO
-
--- 2. Tạo khóa ngoại để parentId tham chiếu chính bảng Comments
-ALTER TABLE Comments
-ADD CONSTRAINT FK_Comments_Parent 
-FOREIGN KEY (parentId) REFERENCES Comments(id);
-GO
-
--- 1. Tạo bảng CommentLikes
-CREATE TABLE CommentLikes (
-    userId INT NOT NULL,
-    commentId INT NOT NULL,
-    createdAt DATETIME DEFAULT GETDATE(),
-    PRIMARY KEY (userId, commentId),
-    FOREIGN KEY (userId) REFERENCES Account(id),
-    FOREIGN KEY (commentId) REFERENCES Comments(id) -- Đảm bảo bảng Comments đã tồn tại
-);
-GO
 
 CREATE PROCEDURE CleanupExpiredOTP
 AS
