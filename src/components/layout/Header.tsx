@@ -9,7 +9,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { useUser } from '@/context/AuthContext'
 import { getInitials } from '@/lib/formatter'
 import { useRouter } from 'next/navigation'
-
+import SearchDropdown from '@/components/layout/SearchDropdown'
 export default function Header() {
     const { theme, setTheme } = useTheme();
     const { logout, user } = useUser();
@@ -19,15 +19,7 @@ export default function Header() {
             <div className='p-2 flex justify-between items-center gap-4'>
                 <div className='flex gap-2 items-center LogoSearch flex-1'>
                     <Image src="/logo2.png" alt="Logo" width={50} height={50} />
-                    <div className="flex-1 max-w-md mr-6">
-                        <div className="relative">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <Input
-                                placeholder="Search..."
-                                className="pl-9 bg-secondary/50 border-0"
-                            />
-                        </div>
-                    </div>
+                    <SearchDropdown />
                 </div>
                 <div className='flex-1 flex justify-center items-center'>
                     <Button variant="ghost" className="p-6 w-[20%] cursor-pointer " onClick={() => { router.push('/') }}>
@@ -59,7 +51,7 @@ export default function Header() {
                                     Giao diện
                                 </DropdownMenuSubTrigger>
                                 <DropdownMenuPortal>
-                                    <DropdownMenuSubContent side="left" sideOffset={4}>
+                                    <DropdownMenuSubContent sideOffset={7}>
                                         <DropdownMenuRadioGroup value={theme} onValueChange={setTheme}>
                                             <DropdownMenuRadioItem value="light">
                                                 <Sun className="mr-2 h-4 w-4" />

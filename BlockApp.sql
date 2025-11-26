@@ -25,7 +25,6 @@ CREATE TABLE Account (
     email VARCHAR(100) UNIQUE NOT NULL,
     username VARCHAR(50) NOT NULL,
     password VARCHAR(255) NOT NULL,
-    roleId INT,
     isActive BIT DEFAULT 1,
     isVerified BIT DEFAULT 0,
     f2aEnabled BIT DEFAULT 0,
@@ -128,6 +127,7 @@ CREATE TABLE Messages (
     receiverId INT NOT NULL,
     roomId VARCHAR(50) NOT NULL,
     text NVARCHAR(MAX) NOT NULL,
+    type VARCHAR(20) Default 'text',
     createdAt DATETIME DEFAULT GETDATE(),
     FOREIGN KEY (senderId) REFERENCES Account(id),
     FOREIGN KEY (receiverId) REFERENCES Account(id)
@@ -178,12 +178,41 @@ CREATE TABLE BlogMedia (
     FOREIGN KEY (blogId) REFERENCES Blogs(id)
 );
 GO
+-- Chạy lệnh này trong SQL Server Management Studio
+ALTER TABLE Comments 
+ADD parentId INT NULL;
 
-CREATE TABLE Reports (
-    id INT IDENTITY(1,1) PRIMARY KEY,
-    blogId INT NULL,
-    reason VARCHAR(255) NOT NULL,
-    status VARCHAR(20) DEFAULT 'Pending',
+ALTER TABLE Comments
+ADD CONSTRAINT FK_Comments_Parent 
+FOREIGN KEY (parentId) REFERENCES Comments(id);
+
+-- 1. Thêm cột parentId vào bảng Comments
+ALTER TABLE Comments 
+ADD parentId INT NULL;
+GO
+
+-- 2. Tạo khóa ngoại để parentId tham chiếu chính bảng Comments
+ALTER TABLE Comments
+ADD CONSTRAINT FK_Comments_Parent 
+FOREIGN KEY (parentId) REFERENCES Comments(id);
+GO
+
+-- 1. Tạo bảng CommentLikes
+CREATE TABLE CommentLikes (
+    userId INT NOT NULL,
+    commentId INT NOT NULL,
     createdAt DATETIME DEFAULT GETDATE(),
-    FOREIGN KEY (blogId) REFERENCES Blogs(id),
-)
+    PRIMARY KEY (userId, commentId),
+    FOREIGN KEY (userId) REFERENCES Account(id),
+    FOREIGN KEY (commentId) REFERENCES Comments(id) -- Đảm bảo bảng Comments đã tồn tại
+);
+GO
+
+CREATE PROCEDURE CleanupExpiredOTP
+AS
+BEGIN
+    DELETE FROM OTP 
+    WHERE expireAt < DATEADD(DAY, -7, GETDATE())
+    OR (used = 1 AND usedAt < DATEADD(DAY, -7, GETDATE()));
+END;
+GO
