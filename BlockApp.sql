@@ -127,6 +127,7 @@ CREATE TABLE Messages (
     receiverId INT NOT NULL,
     roomId VARCHAR(50) NOT NULL,
     text NVARCHAR(MAX) NOT NULL,
+    type VARCHAR(20) Default 'text',
     createdAt DATETIME DEFAULT GETDATE(),
     FOREIGN KEY (senderId) REFERENCES Account(id),
     FOREIGN KEY (receiverId) REFERENCES Account(id)
@@ -176,4 +177,13 @@ CREATE TABLE BlogMedia (
     createdAt DATETIME DEFAULT GETDATE(),
     FOREIGN KEY (blogId) REFERENCES Blogs(id)
 );
+GO
+
+CREATE PROCEDURE CleanupExpiredOTP
+AS
+BEGIN
+    DELETE FROM OTP 
+    WHERE expireAt < DATEADD(DAY, -7, GETDATE())
+    OR (used = 1 AND usedAt < DATEADD(DAY, -7, GETDATE()));
+END;
 GO
