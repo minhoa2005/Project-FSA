@@ -173,7 +173,7 @@ export default function AccBan() {
                     </TableBody>
 
                 </Table>
-                : (<div className='text-center italic text-red-500'>
+                : (<div className='text-center italic text-red-500 dark:text-red-300'>
                     Không có tài khoản nào bị cấm
                 </div>)}
 

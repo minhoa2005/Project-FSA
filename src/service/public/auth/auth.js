@@ -45,7 +45,7 @@ const handleLogin = async (data) => {
             username: result.recordset[0].username,
             role: result.recordset[0].role,
             isActive: result.recordset[0].isActive,
-            imgUrl: profile.recordset[0].imgUrl || null
+            imgUrl: profile.recordset[0]?.imgUrl || null
         };
         const hashedPassword = result.recordset[0].password;
         const isMatch = await bcrypt.compare(password, hashedPassword);
