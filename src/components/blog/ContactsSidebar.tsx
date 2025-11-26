@@ -9,7 +9,7 @@ import { getInitials } from "@/lib/formatter";
 import ChatBox from "../chat/ChatBox";
 
 export default function ContactsSidebar() {
-  
+
   const [contacts, setContacts] = useState([]);
   const [activeChat, setActiveChat] = useState(null);
   useEffect(() => {
@@ -24,8 +24,8 @@ export default function ContactsSidebar() {
   }, []);
 
   return (
-    <div className="w-80 border-l bg-background/50">
-      <div className="p-4 border-b flex items-center justify-between mb-3">
+    <div className="border-l bg-background/50 h-full ">
+      <div className="p-4 border-b flex items-center justify-between mb-3 ">
         <h3>Người liên hệ</h3>
         <div className="flex gap-1">
           <Button variant="ghost" size="icon" className="h-8 w-8"><Search className="h-4 w-4" /></Button>

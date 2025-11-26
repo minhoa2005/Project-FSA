@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 
 import { useUser } from "@/context/AuthContext";
@@ -18,11 +18,10 @@ export default function HomePage() {
   const [posts, setPosts] = useState<any[]>([]);
   const [loadingPosts, setLoadingPosts] = useState(true);
 
-  // id tài khoản hiện tại (không fix cứng)
-  const currentUserId =
-    (user as any)?.id ?? (user as any)?.accountId ?? null;
+  // Lấy ID an toàn từ object user
+  const currentUserId = (user as any)?.id ?? (user as any)?.accountId ?? null;
 
-  // Nếu chưa đăng nhập thì đưa về trang login
+  // 1. Kiểm tra Auth & Redirect
   useEffect(() => {
     if (!loading && !authen) {
       router.push("/login");
@@ -33,7 +32,7 @@ export default function HomePage() {
   const loadPosts = async () => {
     try {
       setLoadingPosts(true);
-      const data = await getBlogs();
+      const data = await getBlogs(currentUserId);
       setPosts(data);
     } catch (err) {
       console.error("Error loading blogs:", err);
@@ -47,13 +46,20 @@ export default function HomePage() {
     if (authen) {
       void loadPosts();
     }
-  }, [authen]);
+  }, [currentUserId]); // Bỏ 'posts.length' khỏi dependency để tránh loop, chỉ phụ thuộc ID
 
-  // Trong lúc chờ auth
+  // 3. Gọi loadPosts khi đã có user ID
+  useEffect(() => {
+    if (authen && currentUserId) {
+      loadPosts();
+    }
+  }, [authen, currentUserId]);
+
+  // --- RENDER ---
+
+  // Đang kiểm tra đăng nhập (Global loading)
   if (loading) {
-    return (
-      <Loading />
-    );
+    return <Loading />;
   }
 
   // Nếu chưa login sẽ bị redirect, nên không render gì thêm

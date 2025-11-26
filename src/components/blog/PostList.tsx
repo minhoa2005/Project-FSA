@@ -28,6 +28,7 @@ export default function PostList({
           key={p.id}
           post={p}
           isOwner={p.creatorId === currentUserId}
+          currentUserId={currentUserId}
           onChanged={onPostsChanged}
         />
       ))}
