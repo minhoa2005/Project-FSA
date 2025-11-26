@@ -2,6 +2,9 @@ import { useState } from "react";
 import { ThumbsUp, Send } from "lucide-react";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
+import { useUser } from "@/context/AuthContext";
+import { getInitials } from "@/lib/formatter";
 
 
 export interface CommentData {
@@ -33,6 +36,7 @@ export function CommentItem({
     const [showReplyForm, setShowReplyForm] = useState(false);
     const [replyText, setReplyText] = useState("");
     const isLiked = likedComments.has(comment.id);
+    const { user } = useUser();
 
     // Xử lý like/unlike
     const handleLike = () => {
@@ -75,8 +79,14 @@ export function CommentItem({
 
                 <div className="flex-1">
                     {/* Comment bubble */}
-                    <div className="rounded-2xl px-3 py-2">
-                        <p className="text-sm">{comment.author}</p>
+                    <div className="rounded-2xl px-3 py-2 border">
+                        <div className="flex flex-row items-center mb-1 gap-2">
+                            <Avatar className="w-10 h-10 ">
+                                <AvatarImage src={user?.imgUrl} alt="A" />
+                                <AvatarFallback>{getInitials(user?.username)}</AvatarFallback>
+                            </Avatar>
+                            <p className="text-sm">{comment.author}</p>
+                        </div>
                         {/* Hiển thị "Trả lời [Tên]" nếu là reply */}
                         {comment.replyTo && (
                             <p className="text-xs mb-1">

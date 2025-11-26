@@ -32,7 +32,7 @@ export default function HomePage() {
   const loadPosts = async () => {
     try {
       setLoadingPosts(true);
-      const data = await getBlogs();
+      const data = await getBlogs(currentUserId);
       setPosts(data);
     } catch (err) {
       console.error("Error loading blogs:", err);

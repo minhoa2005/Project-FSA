@@ -63,9 +63,11 @@ export default function PostCard({
 
   // Hook tương tác xã hội (Like, Comment, Share)
   const {
+    isLiked,
     showComments,
     showShareDialog,
     localPostComments,
+    currentLikes,
     handleLike: triggerLikeLocal,
     setShowComments,
     setShowShareDialog,
@@ -85,9 +87,18 @@ export default function PostCard({
     () => { }
   );
 
+  const countTotalComments = (comments: any[]): number => {
+    if (!Array.isArray(comments)) return 0;
+    return comments.reduce((acc, comment) => {
+      // Cộng 1 cho comment hiện tại + số lượng replies của nó (đệ quy)
+      return acc + 1 + countTotalComments(comment.replies || []);
+    }, 0);
+  };
+
   // --- ACTIONS XỬ LÝ INTERACTION ---
 
   const onLikeClick = async () => {
+    console.log(post)
     triggerLikeLocal();
     try {
       await toggleLike(post.id, currentUserId);
@@ -472,15 +483,15 @@ export default function PostCard({
 
       <CardFooter className="flex flex-col gap-4 border-t px-2 pb-2 pt-1">
         <div className="flex items-center justify-between px-1 text-xs text-muted-foreground gap-5">
-          <span>{post.likes || 0} lượt thích</span>
-          <span>{post.comments || 0} bình luận</span>
+          <span>{currentLikes} lượt thích</span>
+          <span>{countTotalComments(localPostComments)} bình luận</span>
         </div>
         <div className="mt-1 grid grid-cols-3 gap-4 text-xs">
           <Button
             variant="ghost"
             size="sm"
             onClick={onLikeClick}
-            className={`flex items-center justify-center gap-1 rounded-md py-1 hover:bg-muted ${post.isLikedByCurrentUser ? "text-blue-600" : "text-muted-foreground"
+            className={`flex items-center justify-center gap-1 rounded-md py-1 hover:bg-muted ${isLiked ? "text-blue-600" : "text-muted-foreground"
               }`}
           >
             <ThumbsUp className="h-4 w-4" />
