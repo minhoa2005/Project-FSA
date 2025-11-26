@@ -181,6 +181,30 @@ CREATE TABLE BlogMedia (
 );
 GO
 
+GO
+-- Chạy lệnh này trong SQL Server Management Studio
+
+CREATE TABLE CommentLikes (
+    userId INT NOT NULL,
+    commentId INT NOT NULL,
+    createdAt DATETIME DEFAULT GETDATE(),
+    PRIMARY KEY (userId, commentId),
+    FOREIGN KEY (userId) REFERENCES Account(id),
+    FOREIGN KEY (commentId) REFERENCES Comments(id) -- Đảm bảo bảng Comments đã tồn tại
+);
+GO
+
+ALTER TABLE Comments 
+ADD parentId INT NULL;
+
+ALTER TABLE Comments
+ADD CONSTRAINT FK_Comments_Parent 
+FOREIGN KEY (parentId) REFERENCES Comments(id);
+
+GO
+
+
+
 
 CREATE PROCEDURE CleanupExpiredOTP
 AS
