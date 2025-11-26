@@ -138,23 +138,13 @@ export async function updateBlog(formData: FormData) {
 
   revalidatePath(FEED_PATH);
 }
-export async function getBlogs() {
+export async function getBlogs(currentUserId?: number) {
   const pool = await connectDB();
 
-  // lấy blogs + user + media
-  const result = await pool.request().query(`
-    SELECT 
-      b.id AS blogId,
-      b.text,
-      b.creatorId,
-      b.createdAt,
-      b.updatedAt,
-      up.fullName,
-      up.imgUrl,
-      a.username,
-      m.id AS mediaId,
-      m.mediaUrl,
-      m.mediaType
+  // 1. Get Blogs
+  const blogsResult = await pool.request().query(`
+    SELECT b.id AS blogId, b.text, b.creatorId, b.createdAt, b.updatedAt,
+      up.fullName, up.imgUrl, a.username, m.id AS mediaId, m.mediaUrl, m.mediaType
     FROM Blogs b
     LEFT JOIN UserProfile up ON up.accountId = b.creatorId
     LEFT JOIN Account a ON a.id = b.creatorId
@@ -162,15 +152,55 @@ export async function getBlogs() {
     ORDER BY b.createdAt DESC, m.id ASC
   `);
 
-  const rows = result.recordset || [];
+  // 2. Count Post Likes
+  const likesCountResult = await pool.request().query(`SELECT blogId, COUNT(*) as count FROM [Like] GROUP BY blogId`);
+  const likesMap = new Map<number, number>();
+  likesCountResult.recordset.forEach((r: any) => likesMap.set(r.blogId, r.count));
 
-  const map = new Map<number, any>();
+  // 3. Get Comments
+  const commentsResult = await pool.request().query(`
+    SELECT c.id, c.blogId, c.text, c.createdAt, c.parentId, up.fullName, up.imgUrl, a.username
+    FROM Comments c
+    LEFT JOIN UserProfile up ON up.accountId = c.userId
+    LEFT JOIN Account a ON a.id = c.userId
+    ORDER BY c.createdAt ASC
+  `);
+
+  // 4. Count Comment Likes
+  const commentLikesCountResult = await pool.request().query(`SELECT commentId, COUNT(*) as count FROM CommentLikes GROUP BY commentId`);
+  const commentLikesMap = new Map<number, number>();
+  commentLikesCountResult.recordset.forEach((r: any) => commentLikesMap.set(r.commentId, r.count));
+
+  // 5. Check User Status (Post Like & Comment Like)
+  const userLikedPostSet = new Set<number>();
+  const userLikedCommentSet = new Set<number>();
+
+  if (currentUserId) {
+    const userPostLikes = await pool.request().input("uid", sql.Int, currentUserId)
+      .query("SELECT blogId FROM [Like] WHERE userId = @uid");
+    console.log(userPostLikes.recordset);
+    userPostLikes.recordset.forEach((r: any) => userLikedPostSet.add(r.blogId));
+
+    const userCommentLikes = await pool.request().input("uid", sql.Int, currentUserId)
+      .query("SELECT commentId FROM CommentLikes WHERE userId = @uid");
+    userCommentLikes.recordset.forEach((r: any) => userLikedCommentSet.add(r.commentId));
+  }
+
+  // Mapping
+  const commentsByBlog = new Map<number, any[]>();
+  commentsResult.recordset.forEach((c: any) => {
+    if (!commentsByBlog.has(c.blogId)) commentsByBlog.set(c.blogId, []);
+    commentsByBlog.get(c.blogId).push(c);
+  });
+
+  const blogMap = new Map<number, any>();
+  const rows = blogsResult.recordset || [];
 
   for (const row of rows) {
-    const blogId = row.blogId as number;
-
-    if (!map.has(blogId)) {
-      map.set(blogId, {
+    const blogId = row.blogId;
+    if (!blogMap.has(blogId)) {
+      const rawComments = commentsByBlog.get(blogId) || [];
+      blogMap.set(blogId, {
         id: blogId,
         text: row.text,
         creatorId: row.creatorId,
@@ -179,21 +209,19 @@ export async function getBlogs() {
         fullName: row.fullName,
         username: row.username,
         imgUrl: row.imgUrl,
-        media: [] as any[],
+        media: [],
+        likes: likesMap.get(blogId) || 0,
+        isLikedByCurrentUser: userLikedPostSet.has(blogId),
+        comments: buildCommentTree(rawComments, userLikedCommentSet, commentLikesMap),
+        shares: 0,
       });
     }
-
     if (row.mediaId) {
-      const post = map.get(blogId);
-      post.media.push({
-        id: row.mediaId,
-        url: row.mediaUrl,
-        type: row.mediaType, // 'image' | 'video'
-      });
+      blogMap.get(blogId).media.push({ id: row.mediaId, url: row.mediaUrl, type: row.mediaType });
     }
   }
 
-  return Array.from(map.values());
+  return Array.from(blogMap.values());
 }
 export async function deleteBlog(formData: FormData) {
   const pool = await connectDB();
@@ -212,3 +240,105 @@ export async function deleteBlog(formData: FormData) {
 
   revalidatePath("/(private)/(user)");
 }
+
+
+
+function buildCommentTree(comments: any[], userLikedCommentIds: Set<number>, commentLikeCounts: Map<number, number>) {
+  try {
+    const map = new Map();
+    const roots: any[] = [];
+
+    comments.forEach((c) => {
+      map.set(c.id, {
+        id: String(c.id),
+        author: c.fullName || c.username || "User",
+        avatar: c.imgUrl || "",
+        content: c.text,
+        timestamp: new Date(c.createdAt).toLocaleString("vi-VN"),
+        likes: commentLikeCounts.get(c.id) || 0,
+        isLiked: userLikedCommentIds.has(c.id),
+        replies: [],
+        parentId: c.parentId,
+      });
+    });
+    map.forEach((node) => {
+      if (node.parentId) {
+        const parent = map.get(node.parentId);
+        if (parent) {
+          node.replyTo = parent.author;
+          parent.replies.push(node);
+        } else {
+          console.warn(`[buildCommentTree] Parent ${node.parentId} not found for comment ${node.id}`);
+        }
+      } else {
+        roots.push(node);
+      }
+    });
+    return roots;
+  } catch (error) {
+    console.error("[buildCommentTree] Error:", error);
+    throw error;
+  }
+}
+
+export async function toggleLike(blogId: number, userId: number) {
+  try {
+    if (!userId) throw new Error("User ID required");
+    const pool = await connectDB();
+    const check = await pool.request().input("userId", sql.Int, userId).input("blogId", sql.Int, blogId)
+      .query("SELECT * FROM [Like] WHERE userId = @userId AND blogId = @blogId");
+    if (check.recordset.length > 0) {
+      await pool.request().input("userId", sql.Int, userId).input("blogId", sql.Int, blogId)
+        .query("DELETE FROM [Like] WHERE userId = @userId AND blogId = @blogId");
+    } else {
+      await pool.request().input("userId", sql.Int, userId).input("blogId", sql.Int, blogId)
+        .query("INSERT INTO [Like] (userId, blogId) VALUES (@userId, @blogId)");
+    }
+    revalidatePath(FEED_PATH);
+  } catch (error) {
+    console.error("[toggleLike] Error:", error);
+    throw error;
+  }
+}
+
+// 2. Like Comment
+export async function toggleCommentLike(commentId: number, userId: number) {
+  try {
+    if (!userId) throw new Error("User ID required");
+    const pool = await connectDB();
+    const check = await pool.request().input("userId", sql.Int, userId).input("commentId", sql.Int, commentId)
+      .query("SELECT * FROM CommentLikes WHERE userId = @userId AND commentId = @commentId");
+    if (check.recordset.length > 0) {
+      await pool.request().input("userId", sql.Int, userId).input("commentId", sql.Int, commentId)
+        .query("DELETE FROM CommentLikes WHERE userId = @userId AND commentId = @commentId");
+    } else {
+      await pool.request().input("userId", sql.Int, userId).input("commentId", sql.Int, commentId)
+        .query("INSERT INTO CommentLikes (userId, commentId) VALUES (@userId, @commentId)");
+    }
+    revalidatePath(FEED_PATH);
+  } catch (error) {
+    console.error("[toggleCommentLike] Error:", error);
+    throw error;
+  }
+}
+
+export async function addComment(blogId: number, userId: number, text: string, parentId?: number) {
+  try {
+    if (!userId) throw new Error("User ID required");
+    if (!text || !text.trim()) {
+      console.warn("[addComment] Empty text, skipping");
+      return;
+    }
+
+    const pool = await connectDB();
+    await pool.request()
+      .input("userId", sql.Int, userId).input("blogId", sql.Int, blogId)
+      .input("text", sql.NVarChar(sql.MAX), text).input("parentId", sql.Int, parentId || null)
+      .query(`INSERT INTO Comments (userId, blogId, text, parentId) VALUES (@userId, @blogId, @text, @parentId)`);
+    revalidatePath(FEED_PATH);
+  } catch (error) {
+    console.error("[addComment] Error:", error);
+    throw error;
+  }
+}
+

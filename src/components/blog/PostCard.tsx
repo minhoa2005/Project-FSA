@@ -1,7 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { updateBlog, deleteBlog } from "@/service/users/postActions";
+import {
+  updateBlog,
+  deleteBlog,
+  toggleLike,
+  addComment,
+  toggleCommentLike,
+} from "@/service/users/postActions";
 
 import {
   Card,
@@ -24,32 +30,117 @@ import {
   ThumbsUp,
   MessageCircle,
   Share2,
-  Image as ImageIcon,
   X,
   Flag,
 } from "lucide-react";
 import Image from "next/image";
 import ReportModal from "../report/ReportModal";
-
-
+import {
+  usePostInteractions,
+  findRootCommentId,
+} from "@/components/post/Social_Interactions";
+import { CommentSection } from "@/components/post/CommentSection";
+import { ShareDialog } from "@/components/post/ShareDialog";
 
 interface PostCardProps {
   post: any;
   isOwner: boolean;
+  currentUserId: number;
   onChanged?: () => void;
 }
 
-export default function PostCard({ post, isOwner, onChanged }: PostCardProps) {
+export default function PostCard({
+  post,
+  isOwner,
+  currentUserId,
+  onChanged,
+}: PostCardProps) {
   const [editing, setEditing] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-
-  // state dùng cho edit media
   const [removedMediaIds, setRemovedMediaIds] = useState<number[]>([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [newFiles, setNewFiles] = useState<File[]>([]);
 
-  const createdAt = new Date(post.createdAt).toLocaleString("vi-VN");
+  // Hook tương tác xã hội (Like, Comment, Share)
+  const {
+    isLiked,
+    showComments,
+    showShareDialog,
+    localPostComments,
+    currentLikes,
+    handleLike: triggerLikeLocal,
+    setShowComments,
+    setShowShareDialog,
+    handleAddComment: triggerAddCommentLocal,
+    handleAddReply: triggerAddReplyLocal,
+    handleLikeComment: triggerLikeCommentLocal,
+    handleShare,
+  } = usePostInteractions(
+    {
+      id: String(post.id),
+      likes: post.likes || 0,
+      shares: post.shares || 0,
+      comments: post.comments || [],
+      text: post.text,
+      isLiked: post.isLikedByCurrentUser,
+    },
+    () => { }
+  );
 
+  const countTotalComments = (comments: any[]): number => {
+    if (!Array.isArray(comments)) return 0;
+    return comments.reduce((acc, comment) => {
+      // Cộng 1 cho comment hiện tại + số lượng replies của nó (đệ quy)
+      return acc + 1 + countTotalComments(comment.replies || []);
+    }, 0);
+  };
+
+  // --- ACTIONS XỬ LÝ INTERACTION ---
+
+  const onLikeClick = async () => {
+    console.log(post)
+    triggerLikeLocal();
+    try {
+      await toggleLike(post.id, currentUserId);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const onAddCommentClick = async (text: string) => {
+    triggerAddCommentLocal(text);
+    try {
+      await addComment(post.id, currentUserId, text);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const onAddReplyClick = async (targetId: string, text: string) => {
+    triggerAddReplyLocal(targetId, text);
+    try {
+      const rootId =
+        findRootCommentId(localPostComments, targetId) || targetId;
+      await addComment(post.id, currentUserId, text, Number(rootId));
+    } catch (e) {
+      console.error("Reply error:", e);
+    }
+  };
+
+  const onLikeCommentClick = async (cmtId: string) => {
+    triggerLikeCommentLocal(cmtId);
+    const commentIdNum = Number(cmtId);
+    if (isNaN(commentIdNum)) return;
+    try {
+      await toggleCommentLike(commentIdNum, currentUserId);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  // --- XỬ LÝ DỮ LIỆU HIỂN THỊ ---
+
+  const createdAt = new Date(post.createdAt).toLocaleString("vi-VN");
   const displayName =
     post.fullName || post.username || `User #${post.creatorId}`;
   const avatarUrl = post.imgUrl || post.avatarUrl || "";
@@ -59,18 +150,28 @@ export default function PostCard({ post, isOwner, onChanged }: PostCardProps) {
       .map((w: string) => w[0])
       .join("")
       .toUpperCase() || "U";
-  const handleReportClick = (e) => {
-    setIsModalOpen(true); // Mở modal báo cáo
+
+  const images = (post.media || []).filter(
+    (m: any) => m.type === "image" && !removedMediaIds.includes(m.id)
+  );
+  const videos = (post.media || []).filter(
+    (m: any) => m.type === "video" && !removedMediaIds.includes(m.id)
+  );
+
+  // --- CÁC HÀM XỬ LÝ SỰ KIỆN (HANDLERS) ---
+
+  const handleReportClick = (e: any) => {
+    setIsModalOpen(true);
   };
 
   const handleUpdate = async (formData: FormData) => {
     try {
       setSubmitting(true);
-
-      // thêm list id media cần xóa vào formData (cho chắc)
+      // thêm list id media cần xóa vào formData
       if (removedMediaIds.length > 0) {
         formData.set("removeMediaIds", removedMediaIds.join(","));
       }
+      // TODO: Nếu có xử lý upload file mới (newFiles), cần append vào formData ở đây
 
       await updateBlog(formData);
       setEditing(false);
@@ -85,8 +186,7 @@ export default function PostCard({ post, isOwner, onChanged }: PostCardProps) {
   };
 
   const handleDelete = async () => {
-    if (!confirm("Xóa bài viết này?")) return;
-
+    if (!confirm("Bạn có chắc chắn muốn xóa bài viết này không?")) return;
     try {
       setSubmitting(true);
       const fd = new FormData();
@@ -100,30 +200,20 @@ export default function PostCard({ post, isOwner, onChanged }: PostCardProps) {
     }
   };
 
-  const images = (post.media || []).filter(
-    (m: any) => m.type === "image" && !removedMediaIds.includes(m.id),
-  );
-  const videos = (post.media || []).filter(
-    (m: any) => m.type === "video" && !removedMediaIds.includes(m.id),
-  );
-
-  const handleNewFilesChange = (
-    e: React.ChangeEvent<HTMLInputElement>,
-  ) => {
+  const handleNewFilesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const list = Array.from(e.target.files || []);
     setNewFiles(list);
   };
 
+  // Phần render preview file mới (tạm thời chưa dùng trong JSX của bạn, nhưng cứ để đây nếu cần)
   const renderNewFilesPreview = () => {
     if (!newFiles.length) return null;
-
     return (
       <div className="mt-2 grid grid-cols-2 gap-2">
         {newFiles.map((file, idx) => {
           const url = URL.createObjectURL(file);
           const isImage = file.type.startsWith("image/");
           const isVideo = file.type.startsWith("video/");
-
           return (
             <div
               key={idx}
@@ -150,13 +240,10 @@ export default function PostCard({ post, isOwner, onChanged }: PostCardProps) {
                   {file.name}
                 </div>
               )}
-
               <button
                 type="button"
                 onClick={() =>
-                  setNewFiles((prev) =>
-                    prev.filter((_, i) => i !== idx),
-                  )
+                  setNewFiles((prev) => prev.filter((_, i) => i !== idx))
                 }
                 className="absolute right-1 top-1 inline-flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/80"
               >
@@ -168,6 +255,8 @@ export default function PostCard({ post, isOwner, onChanged }: PostCardProps) {
       </div>
     );
   };
+
+  // --- RENDER JSX ---
 
   return (
     <Card className="overflow-hidden shadow-sm">
@@ -233,9 +322,7 @@ export default function PostCard({ post, isOwner, onChanged }: PostCardProps) {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48 text-sm">
               <DropdownMenuItem
-                onSelect={(e) => {
-                  handleReportClick(e)
-                }}
+                onSelect={handleReportClick}
                 className="flex items-center gap-2"
               >
                 <Flag className="h-4 w-4" />
@@ -255,12 +342,10 @@ export default function PostCard({ post, isOwner, onChanged }: PostCardProps) {
               </p>
             )}
 
-            {/* nhiều ảnh */}
+            {/* Render Images */}
             {images.length > 0 && (
               <div
-                className={`grid gap-1 overflow-hidden rounded-lg ${images.length === 1
-                  ? "grid-cols-1"
-                  : "grid-cols-2"
+                className={`grid gap-1 overflow-hidden rounded-lg ${images.length === 1 ? "grid-cols-1" : "grid-cols-2"
                   }`}
               >
                 {images.map((m: any) => (
@@ -276,7 +361,7 @@ export default function PostCard({ post, isOwner, onChanged }: PostCardProps) {
               </div>
             )}
 
-            {/* nhiều video */}
+            {/* Render Videos */}
             {videos.length > 0 && (
               <div className="space-y-2">
                 {videos.map((m: any) => (
@@ -291,6 +376,7 @@ export default function PostCard({ post, isOwner, onChanged }: PostCardProps) {
             )}
           </>
         ) : (
+          // --- EDIT MODE ---
           <form
             action={handleUpdate}
             className="space-y-3"
@@ -310,7 +396,7 @@ export default function PostCard({ post, isOwner, onChanged }: PostCardProps) {
               placeholder="Bạn đang nghĩ gì?"
             />
 
-            {/* media hiện tại (có nút X để xóa) */}
+            {/* Edit: Existing Media (with remove button) */}
             {(images.length > 0 || videos.length > 0) && (
               <div className="space-y-2">
                 <div className="text-xs font-medium text-muted-foreground">
@@ -320,8 +406,7 @@ export default function PostCard({ post, isOwner, onChanged }: PostCardProps) {
                 <div className="grid grid-cols-2 gap-2">
                   {(post.media || [])
                     .filter(
-                      (m: any) =>
-                        !removedMediaIds.includes(m.id),
+                      (m: any) => !removedMediaIds.includes(m.id)
                     )
                     .map((m: any) => (
                       <div
@@ -350,10 +435,12 @@ export default function PostCard({ post, isOwner, onChanged }: PostCardProps) {
                             setRemovedMediaIds((prev) =>
                               prev.includes(m.id)
                                 ? prev
-                                : [...prev, m.id],
+                                : [...prev, m.id]
                             )
                           }
-                          className="absolute right-1 top-1 inline-flex h-6 w-6 items-center justify-center rounded-full "
+                          className="absolute right-1 top-1 inline-flex h-6 w-6 items-center justify-center rounded-full"
+                          variant="destructive"
+                          size="icon"
                         >
                           <X className="h-3 w-3" />
                         </Button>
@@ -363,24 +450,9 @@ export default function PostCard({ post, isOwner, onChanged }: PostCardProps) {
               </div>
             )}
 
-            {/* thêm media mới */}
-            <div className="rounded-lg border px-3 py-2">
-              <div className="flex items-center justify-between">
-                <span className="flex items-center gap-1 text-xs font-medium ">
-                  <ImageIcon className="h-4 w-4" />
-                  Thêm ảnh / video mới
-                </span>
-                <input
-                  type="file"
-                  name="newMedia"
-                  multiple
-                  accept="image/*,video/*"
-                  onChange={handleNewFilesChange}
-                  className="text-xs"
-                />
-              </div>
-              {renderNewFilesPreview()}
-            </div>
+            {/* Nếu muốn cho phép upload thêm file khi edit, bỏ comment dòng dưới */}
+            {/* <input type="file" multiple onChange={handleNewFilesChange} /> */}
+            {/* {renderNewFilesPreview()} */}
 
             <div className="flex justify-end gap-2 pt-1">
               <Button
@@ -390,7 +462,6 @@ export default function PostCard({ post, isOwner, onChanged }: PostCardProps) {
                 onClick={() => {
                   setEditing(false);
                   setRemovedMediaIds([]);
-                  setNewFiles([]);
                 }}
                 disabled={submitting}
               >
@@ -403,21 +474,25 @@ export default function PostCard({ post, isOwner, onChanged }: PostCardProps) {
           </form>
         )}
       </CardContent>
+
       <ReportModal
         blogId={post.id}
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
       />
-      <CardFooter className="flex flex-col gap-1 border-t px-2 pb-2 pt-1">
-        <div className="flex items-center justify-between px-1 text-xs text-muted-foreground gap-3">
-          <span>0 lượt thích</span>
-          <span>0 bình luận</span>
+
+      <CardFooter className="flex flex-col gap-4 border-t px-2 pb-2 pt-1">
+        <div className="flex items-center justify-between px-1 text-xs text-muted-foreground gap-5">
+          <span>{currentLikes} lượt thích</span>
+          <span>{countTotalComments(localPostComments)} bình luận</span>
         </div>
         <div className="mt-1 grid grid-cols-3 gap-4 text-xs">
           <Button
             variant="ghost"
             size="sm"
-            className="flex items-center justify-center gap-1 rounded-md py-1 text-muted-foreground hover:bg-muted"
+            onClick={onLikeClick}
+            className={`flex items-center justify-center gap-1 rounded-md py-1 hover:bg-muted ${isLiked ? "text-blue-600" : "text-muted-foreground"
+              }`}
           >
             <ThumbsUp className="h-4 w-4" />
             Thích
@@ -425,6 +500,7 @@ export default function PostCard({ post, isOwner, onChanged }: PostCardProps) {
           <Button
             variant="ghost"
             size="sm"
+            onClick={() => setShowComments(!showComments)}
             className="flex items-center justify-center gap-1 rounded-md py-1 text-muted-foreground hover:bg-muted"
           >
             <MessageCircle className="h-4 w-4" />
@@ -433,12 +509,28 @@ export default function PostCard({ post, isOwner, onChanged }: PostCardProps) {
           <Button
             variant="ghost"
             size="sm"
+            onClick={() => setShowShareDialog(true)}
             className="flex items-center justify-center gap-1 rounded-md py-1 text-muted-foreground hover:bg-muted"
           >
             <Share2 className="h-4 w-4" />
             Chia sẻ
           </Button>
         </div>
+
+        {showComments && (
+          <CommentSection
+            comments={localPostComments}
+            onAddComment={onAddCommentClick}
+            onLikeComment={onLikeCommentClick}
+            onAddReply={onAddReplyClick}
+          />
+        )}
+        {showShareDialog && (
+          <ShareDialog
+            onClose={() => setShowShareDialog(false)}
+            onShare={handleShare}
+          />
+        )}
       </CardFooter>
     </Card>
   );

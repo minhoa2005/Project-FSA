@@ -30,7 +30,6 @@ CREATE TABLE Account (
     f2aEnabled BIT DEFAULT 0,
     createdAt DATETIME DEFAULT GETDATE(),
     updatedAt DATETIME DEFAULT GETDATE(),
-    FOREIGN KEY (roleId) REFERENCES Role(id)
 );
 GO
 
@@ -83,6 +82,7 @@ CREATE TABLE OTP (
     userId INT NOT NULL,
     used BIT DEFAULT 0,
     createdAt DATETIME DEFAULT GETDATE(),
+    usedAt DATETIME NULL,           
     expireAt DATETIME NOT NULL,
     FOREIGN KEY (userId) REFERENCES Account(id)
 );
@@ -140,12 +140,13 @@ IF NOT EXISTS (SELECT 1 FROM Role WHERE roleName = 'Admin')
     INSERT INTO Role (roleName) VALUES ('Admin');
 GO
 
+
 DECLARE @adminRoleId INT = (SELECT id FROM Role WHERE roleName = 'Admin');
 
 IF NOT EXISTS (SELECT 1 FROM Account WHERE username = 'admin' OR email = 'admin@local')
 BEGIN
-    INSERT INTO Account (email, username, password, roleId, isActive)
-    VALUES ('admin@local', 'admin', '$2b$10$IJZep4/g/MohiMHD3NrYBu/WoKx..DnFSs.q2f2k2Fn58Tmd4eyVe', @adminRoleId, 1);
+    INSERT INTO Account (email, username, password, isActive)
+    VALUES ('admin@local', 'admin', '$2b$10$IJZep4/g/MohiMHD3NrYBu/WoKx..DnFSs.q2f2k2Fn58Tmd4eyVe', 1);
 
     DECLARE @adminAccountId INT = SCOPE_IDENTITY();
 
@@ -156,6 +157,7 @@ BEGIN
     VALUES (@adminAccountId, 'Default Admin', NULL, NULL);
 END;
 GO
+
 
 CREATE TRIGGER trg_Update_Account
 ON Account
@@ -179,11 +181,36 @@ CREATE TABLE BlogMedia (
 );
 GO
 
+GO
+-- Chạy lệnh này trong SQL Server Management Studio
+
+CREATE TABLE CommentLikes (
+    userId INT NOT NULL,
+    commentId INT NOT NULL,
+    createdAt DATETIME DEFAULT GETDATE(),
+    PRIMARY KEY (userId, commentId),
+    FOREIGN KEY (userId) REFERENCES Account(id),
+    FOREIGN KEY (commentId) REFERENCES Comments(id) -- Đảm bảo bảng Comments đã tồn tại
+);
+GO
+
+ALTER TABLE Comments 
+ADD parentId INT NULL;
+
+ALTER TABLE Comments
+ADD CONSTRAINT FK_Comments_Parent 
+FOREIGN KEY (parentId) REFERENCES Comments(id);
+
+GO
+
+
+
+
 CREATE PROCEDURE CleanupExpiredOTP
 AS
 BEGIN
     DELETE FROM OTP 
     WHERE expireAt < DATEADD(DAY, -7, GETDATE())
-    OR (used = 1 AND usedAt < DATEADD(DAY, -7, GETDATE()));
+      OR (used = 1 AND usedAt < DATEADD(DAY, -7, GETDATE()));
 END;
 GO
