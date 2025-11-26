@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Send } from "lucide-react";
 
 import { CommentItem, CommentData } from "./CommentItem";
+import { Input } from "../ui/input";
+import { Button } from "../ui/button";
 
 interface CommentSectionProps {
     comments: CommentData[];
@@ -42,7 +44,7 @@ export function CommentSection({
     };
 
     return (
-        <div className="px-4 py-3 bg-gray-50">
+        <div className="px-4 py-3 w-full border-t">
             {/* Danh sách comments - Sử dụng CommentItem đệ quy */}
             <div className="mb-3">
                 {comments.map((comment) => (
@@ -58,23 +60,23 @@ export function CommentSection({
             </div>
 
             {/* Form nhập comment mới */}
-            <form onSubmit={handleSubmit} className="flex items-center gap-2">
-
+            <form onSubmit={handleSubmit} className="flex  gap-2">
                 <div className="flex-1 relative">
-                    <input
+                    <Input
                         type="text"
                         value={commentText}
                         onChange={(e) => setCommentText(e.target.value)}
                         placeholder="Viết bình luận..."
-                        className="w-full bg-gray-100 rounded-full px-4 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-4 py-6 pr-10 "
                     />
-                    <button
+                    <Button
                         type="submit"
                         disabled={!commentText.trim()}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 text-blue-500 disabled:text-gray-400 hover:text-blue-600 disabled:cursor-not-allowed"
+                        className="absolute right-2 top-1/2 -translate-y-1/2  disabled:cursor-not-allowed"
+                        variant="ghost"
                     >
-                        <Send className="w-5 h-5" />
-                    </button>
+                        <Send className="w-2 h-2" />
+                    </Button>
                 </div>
             </form>
         </div>

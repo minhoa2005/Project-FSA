@@ -30,7 +30,6 @@ CREATE TABLE Account (
     f2aEnabled BIT DEFAULT 0,
     createdAt DATETIME DEFAULT GETDATE(),
     updatedAt DATETIME DEFAULT GETDATE(),
-    FOREIGN KEY (roleId) REFERENCES Role(id)
 );
 GO
 

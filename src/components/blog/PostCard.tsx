@@ -150,7 +150,6 @@ export default function PostCard({
   // --- CÁC HÀM XỬ LÝ SỰ KIỆN (HANDLERS) ---
 
   const handleReportClick = (e: any) => {
-    e.preventDefault();
     setIsModalOpen(true);
   };
 
@@ -471,10 +470,10 @@ export default function PostCard({
         onClose={() => setIsModalOpen(false)}
       />
 
-      <CardFooter className="flex flex-col gap-1 border-t px-2 pb-2 pt-1">
-        <div className="flex items-center justify-between px-1 text-xs text-muted-foreground gap-3">
+      <CardFooter className="flex flex-col gap-4 border-t px-2 pb-2 pt-1">
+        <div className="flex items-center justify-between px-1 text-xs text-muted-foreground gap-5">
           <span>{post.likes || 0} lượt thích</span>
-          <span>{post.comments} bình luận</span>
+          <span>{post.comments || 0} bình luận</span>
         </div>
         <div className="mt-1 grid grid-cols-3 gap-4 text-xs">
           <Button
