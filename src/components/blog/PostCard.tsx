@@ -1,10 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { updateBlog, deleteBlog, toggleLike, addComment, toggleCommentLike } from "@/service/users/postActions";
-import { usePostInteractions, CommentSection, ShareDialog } from "@/components/post/Social_Interactions";
+import { updateBlog, deleteBlog } from "@/service/users/postActions";
 
-import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card";
+import {
+  Card,
+  CardHeader,
+  CardContent,
+  CardFooter,
+} from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -31,14 +35,12 @@ import ReportModal from "../report/ReportModal";
 interface PostCardProps {
   post: any;
   isOwner: boolean;
-  currentUserId: number;
   onChanged?: () => void;
 }
 
-export default function PostCard({ post, isOwner, currentUserId, onChanged }: PostCardProps) {
+export default function PostCard({ post, isOwner, onChanged }: PostCardProps) {
   const [editing, setEditing] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // state dùng cho edit media
   const [removedMediaIds, setRemovedMediaIds] = useState<number[]>([]);
@@ -57,35 +59,41 @@ export default function PostCard({ post, isOwner, currentUserId, onChanged }: Po
       .toUpperCase() || "U";
 
   const handleUpdate = async (formData: FormData) => {
-    try { 
-        setSubmitting(true); 
-        if(removedMediaIds.length) formData.set("removeMediaIds", removedMediaIds.join(",")); 
-        await updateBlog(formData); 
-        setEditing(false); 
-        setRemovedMediaIds([]); 
-        onChanged?.(); 
-    } catch(e) { console.error(e); } finally { setSubmitting(false); }
-  };
-
-  // --- LOGIC DELETE ĐÃ SỬA ---
-  const handleDelete = async () => { 
-    if(!confirm("Bạn có chắc chắn muốn xóa bài viết này không?")) return;
-    
     try {
-        setSubmitting(true);
-        // [SỬA LỖI Ở ĐÂY] Tạo FormData riêng biệt
-        const fd = new FormData();
-        fd.append("blogId", String(post.id));
-        
-        await deleteBlog(fd); // Truyền biến fd (đã có dữ liệu) vào
-        onChanged?.(); 
-    } catch(e) {
-        console.error("Delete error:", e);
+      setSubmitting(true);
+
+      // thêm list id media cần xóa vào formData (cho chắc)
+      if (removedMediaIds.length > 0) {
+        formData.set("removeMediaIds", removedMediaIds.join(","));
+      }
+
+      await updateBlog(formData);
+      setEditing(false);
+      setRemovedMediaIds([]);
+      setNewFiles([]);
+      onChanged?.();
+    } catch (err) {
+      console.error("Update post error:", err);
     } finally {
-        setSubmitting(false);
+      setSubmitting(false);
     }
   };
-  // ---------------------------
+
+  const handleDelete = async () => {
+    if (!confirm("Xóa bài viết này?")) return;
+
+    try {
+      setSubmitting(true);
+      const fd = new FormData();
+      fd.append("blogId", String(post.id));
+      await deleteBlog(fd);
+      onChanged?.();
+    } catch (err) {
+      console.error("Delete post error:", err);
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   const images = (post.media || []).filter(
     (m: any) => m.type === "image" && !removedMediaIds.includes(m.id),
@@ -158,10 +166,20 @@ export default function PostCard({ post, isOwner, currentUserId, onChanged }: Po
 
   return (
     <Card className="overflow-hidden shadow-sm">
-      <CardHeader className="flex flex-row items-start justify-between pb-2">
+      <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
         <div className="flex items-center gap-2">
-            <Avatar><AvatarImage src={avatarUrl}/><AvatarFallback>{displayName[0]}</AvatarFallback></Avatar>
-            <div><div className="text-sm font-semibold">{displayName}</div><div className="text-xs text-muted-foreground">{new Date(post.createdAt).toLocaleString("vi-VN")}</div></div>
+          <Avatar className="h-10 w-10">
+            {avatarUrl ? (
+              <AvatarImage src={avatarUrl} alt={displayName} />
+            ) : null}
+            <AvatarFallback>{avatarFallback}</AvatarFallback>
+          </Avatar>
+          <div className="leading-tight">
+            <div className="text-sm font-semibold">{displayName}</div>
+            <div className="text-xs text-muted-foreground">
+              {createdAt}
+            </div>
+          </div>
         </div>
 
         {isOwner && (
@@ -202,12 +220,6 @@ export default function PostCard({ post, isOwner, currentUserId, onChanged }: Po
 
       <CardContent className="space-y-3 pb-2">
         {!editing ? (
-            <>
-                <p className="whitespace-pre-wrap text-sm">{post.text}</p>
-                {images.length>0 && <div className="grid grid-cols-2 gap-1">{images.map((m:any)=><Image key={m.id} src={m.url} width={500} height={300} alt="" className="w-full object-cover"/>)}</div>}
-                {videos.length>0 && <div className="space-y-2">{videos.map((m:any)=><video key={m.id} src={m.url} controls className="max-h-[400px] w-full rounded-lg"/>)}</div>}
-            </>
-        ) : <form action={handleUpdate}><Textarea name="text" defaultValue={post.text}/><Button type="submit" disabled={submitting}>Lưu</Button></form>}
           <>
             {post.text && (
               <p className="whitespace-pre-wrap text-sm leading-relaxed">
@@ -363,15 +375,38 @@ export default function PostCard({ post, isOwner, currentUserId, onChanged }: Po
           </form>
         )}
       </CardContent>
+
       <CardFooter className="flex flex-col gap-1 border-t px-2 pb-2 pt-1">
-        <div className="flex justify-between px-1 text-xs text-muted-foreground"><span>{currentLikes} Thích</span><span>{totalComments} Bình luận</span></div>
-        <div className="grid grid-cols-3 gap-4 text-xs mt-1">
-          <Button onClick={onLikeClick} variant="ghost" size="sm" className={isLiked ? "text-blue-500" : "text-muted-foreground"}><ThumbsUp className={`h-4 w-4 mr-1 ${isLiked?"fill-blue-500":""}`}/>Thích</Button>
-          <Button onClick={()=>setShowComments(!showComments)} variant="ghost" size="sm"><MessageCircle className="h-4 w-4 mr-1"/>Bình luận</Button>
-          <Button onClick={()=>setShowShareDialog(true)} variant="ghost" size="sm"><Share2 className="h-4 w-4 mr-1"/>Chia sẻ</Button>
+        <div className="flex items-center justify-between px-1 text-xs text-muted-foreground gap-3">
+          <span>0 lượt thích</span>
+          <span>0 bình luận</span>
         </div>
-        {showComments && <CommentSection comments={localPostComments} onAddComment={onAddCommentClick} onLikeComment={onLikeCommentClick} onAddReply={onAddReplyClick}/>}
-        {showShareDialog && <ShareDialog onClose={()=>setShowShareDialog(false)} onShare={handleShare}/>}
+        <div className="mt-1 grid grid-cols-3 gap-4 text-xs">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="flex items-center justify-center gap-1 rounded-md py-1 text-muted-foreground hover:bg-muted"
+          >
+            <ThumbsUp className="h-4 w-4" />
+            Thích
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="flex items-center justify-center gap-1 rounded-md py-1 text-muted-foreground hover:bg-muted"
+          >
+            <MessageCircle className="h-4 w-4" />
+            Bình luận
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="flex items-center justify-center gap-1 rounded-md py-1 text-muted-foreground hover:bg-muted"
+          >
+            <Share2 className="h-4 w-4" />
+            Chia sẻ
+          </Button>
+        </div>
       </CardFooter>
     </Card>
   );
