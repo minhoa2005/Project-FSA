@@ -2,7 +2,11 @@
 
 import { useState } from "react";
 import { updateBlog, deleteBlog, toggleLike, addComment, toggleCommentLike } from "@/service/users/postActions";
-import { usePostInteractions, CommentSection, ShareDialog } from "@/components/post/Social_Interactions";
+
+// [QUAN TRỌNG] Import đúng đường dẫn
+import { usePostInteractions, findRootCommentId } from "@/components/post/Social_Interactions";
+import { CommentSection } from "@/components/post/CommentSection"; // Import trực tiếp component UI
+import { ShareDialog } from "@/components/post/ShareDialog";     // Import trực tiếp component UI
 
 import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -39,30 +43,49 @@ export default function PostCard({ post, isOwner, currentUserId, onChanged }: Po
   );
 
   // --- ACTIONS ---
+  
   const onLikeClick = async () => {
     triggerLikeLocal();
     try { await toggleLike(post.id, currentUserId); } catch(e) { console.error(e); }
   };
+
   const onAddCommentClick = async (text: string) => {
     triggerAddCommentLocal(text);
     try { await addComment(post.id, currentUserId, text); } catch(e) { console.error(e); }
   };
-  const onAddReplyClick = async (parentId: string, text: string) => {
-    triggerAddReplyLocal(parentId, text);
-    try { await addComment(post.id, currentUserId, text, Number(parentId)); } catch(e) { console.error(e); }
-  };
-  const onLikeCommentClick = async (cmtId: string, liked: boolean) => {
-    triggerLikeCommentLocal(cmtId, liked);
-    // Fix lỗi NaN khi like comment mới tạo
-    const commentIdNum = Number(cmtId);
-    if (isNaN(commentIdNum)) return;
-    try { await toggleCommentLike(commentIdNum, currentUserId); } catch(e) { console.error(e); }
+
+  const onAddReplyClick = async (targetId: string, text: string) => {
+    triggerAddReplyLocal(targetId, text);
+    try { 
+        const rootId = findRootCommentId(localPostComments, targetId) || targetId;
+        await addComment(post.id, currentUserId, text, Number(rootId)); 
+    } catch(e) { 
+        console.error("Reply error:", e); 
+    }
   };
 
-  // Logic Edit
+  // [THAY ĐỔI] Logic Like Comment Toggle
+  // Không cần tham số 'liked' nữa, vì hook đã tự xử lý toggle
+  const onLikeCommentClick = async (cmtId: string) => {
+    // 1. Update UI ngay lập tức
+    triggerLikeCommentLocal(cmtId);
+
+    // 2. Gọi API Toggle
+    const commentIdNum = Number(cmtId);
+    if (isNaN(commentIdNum)) return;
+    try { 
+        await toggleCommentLike(commentIdNum, currentUserId); 
+    } catch(e) { 
+        console.error(e); 
+        // Nếu lỗi mạng, có thể gọi lại triggerLikeCommentLocal(cmtId) để rollback UI
+    }
+  };
+
+  // ... Logic Edit/Delete giữ nguyên ...
   const [removedMediaIds, setRemovedMediaIds] = useState<number[]>([]);
   const displayName = post.fullName || post.username || `User`;
   const avatarUrl = post.imgUrl || "";
+  
   const handleUpdate = async (formData: FormData) => {
     try { 
         setSubmitting(true); 
@@ -74,25 +97,16 @@ export default function PostCard({ post, isOwner, currentUserId, onChanged }: Po
     } catch(e) { console.error(e); } finally { setSubmitting(false); }
   };
 
-  // --- LOGIC DELETE ĐÃ SỬA ---
   const handleDelete = async () => { 
     if(!confirm("Bạn có chắc chắn muốn xóa bài viết này không?")) return;
-    
     try {
         setSubmitting(true);
-        // [SỬA LỖI Ở ĐÂY] Tạo FormData riêng biệt
         const fd = new FormData();
         fd.append("blogId", String(post.id));
-        
-        await deleteBlog(fd); // Truyền biến fd (đã có dữ liệu) vào
+        await deleteBlog(fd); 
         onChanged?.(); 
-    } catch(e) {
-        console.error("Delete error:", e);
-    } finally {
-        setSubmitting(false);
-    }
+    } catch(e) { console.error(e); } finally { setSubmitting(false); }
   };
-  // ---------------------------
 
   const images = (post.media || []).filter((m: any) => m.type === "image" && !removedMediaIds.includes(m.id));
   const videos = (post.media || []).filter((m: any) => m.type === "video" && !removedMediaIds.includes(m.id));
@@ -122,6 +136,8 @@ export default function PostCard({ post, isOwner, currentUserId, onChanged }: Po
           <Button onClick={()=>setShowComments(!showComments)} variant="ghost" size="sm"><MessageCircle className="h-4 w-4 mr-1"/>Bình luận</Button>
           <Button onClick={()=>setShowShareDialog(true)} variant="ghost" size="sm"><Share2 className="h-4 w-4 mr-1"/>Chia sẻ</Button>
         </div>
+        
+        {/* Truyền onLikeCommentClick (chỉ nhận ID) xuống UI */}
         {showComments && <CommentSection comments={localPostComments} onAddComment={onAddCommentClick} onLikeComment={onLikeCommentClick} onAddReply={onAddReplyClick}/>}
         {showShareDialog && <ShareDialog onClose={()=>setShowShareDialog(false)} onShare={handleShare}/>}
       </CardFooter>
