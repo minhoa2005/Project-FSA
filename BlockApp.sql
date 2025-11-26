@@ -173,7 +173,7 @@ CREATE TABLE BlogMedia (
     id INT IDENTITY(1,1) PRIMARY KEY,
     blogId INT NOT NULL,
     mediaUrl VARCHAR(255) NOT NULL,
-    mediaType VARCHAR(20) NOT NULL, -- 'image' hoặc 'video'
+    mediaType VARCHAR(20) NOT NULL,
     createdAt DATETIME DEFAULT GETDATE(),
     FOREIGN KEY (blogId) REFERENCES Blogs(id)
 );
