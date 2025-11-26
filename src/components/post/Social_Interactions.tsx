@@ -1,186 +1,79 @@
-// Social_Interactions.tsx
-
 import { useState } from "react";
-
 import { CommentSection } from "./CommentSection"; 
 import { ShareDialog } from "./ShareDialog"; 
 import { CommentData } from "./CommentItem"; 
 
-// --- Các Hàm Tiện Ích Tương Tác Xã Hội (Đã trích xuất) ---
-
-// Hàm đệ quy để tìm và thêm reply vào đúng comment
-const addReplyToComment = (
-  comments: CommentData[], 
-  parentId: string, 
-  newReply: CommentData
-): CommentData[] => {
-  return comments.map(comment => {
-    if (comment.id === parentId) {
-      return {
-        ...comment,
-        replies: [...(comment.replies || []), newReply]
-      };
-    } else if (comment.replies && comment.replies.length > 0) {
-      return {
-        ...comment,
-        replies: addReplyToComment(comment.replies, parentId, newReply)
-      };
-    }
-    return comment;
-  });
+// --- Helpers ---
+const addReplyToComment = (comments: CommentData[], parentId: string, newReply: CommentData): CommentData[] => {
+    return comments.map(c => c.id === parentId ? {...c, replies: [...(c.replies||[]), newReply]} : (c.replies ? {...c, replies: addReplyToComment(c.replies, parentId, newReply)} : c));
 };
-
-// Hàm đệ quy để tìm tên tác giả của comment theo ID
-const findCommentAuthor = (comments: CommentData[], commentId: string): string | null => {
-  for (const comment of comments) {
-    if (comment.id === commentId) {
-      return comment.author;
-    }
-    if (comment.replies && comment.replies.length > 0) {
-      const found = findCommentAuthor(comment.replies, commentId);
-      if (found) return found;
-    }
-  }
-  return null;
+const updateCommentLikes = (comments: CommentData[], commentId: string, isLiked: boolean): CommentData[] => {
+    return comments.map(c => c.id === commentId ? {...c, likes: isLiked ? c.likes + 1 : Math.max(0, c.likes - 1), isLiked: isLiked} : (c.replies ? {...c, replies: updateCommentLikes(c.replies, commentId, isLiked)} : c));
 };
-
-// Hàm đệ quy để tìm và cập nhật likes của comment/reply
-const updateCommentLikes = (
-  comments: CommentData[],
-  commentId: string,
-  isLiked: boolean // true = like, false = unlike
-): CommentData[] => {
-  return comments.map(comment => {
-    if (comment.id === commentId) {
-      const newLikes = isLiked ? comment.likes + 1 : comment.likes - 1;
-      return { ...comment, likes: Math.max(0, newLikes) };
-    } else if (comment.replies && comment.replies.length > 0) {
-      return {
-        ...comment,
-        replies: updateCommentLikes(comment.replies, commentId, isLiked)
-      };
-    }
-    return comment;
-  });
+const findCommentAuthor = (comments: CommentData[], id: string): string|null => {
+    for(const c of comments){ if(c.id===id) return c.author; if(c.replies){const f=findCommentAuthor(c.replies,id);if(f)return f;}} return null;
 };
+const countAllComments = (comments: CommentData[]): number => comments.reduce((t, c) => t + 1 + (c.replies ? countAllComments(c.replies) : 0), 0);
 
-// Đếm tổng số comments (bao gồm cả replies ở mọi cấp)
-const countAllComments = (comments: CommentData[]): number => {
-  return comments.reduce((total, comment) => {
-    const repliesCount = comment.replies ? countAllComments(comment.replies) : 0;
-    return total + 1 + repliesCount;
-  }, 0);
-};
-
-// Định nghĩa kiểu dữ liệu cho Post mà hook nhận vào
-interface InitialPostData {
+export interface InitialPostData {
     id: string;
     likes: number;
     shares: number;
     comments: CommentData[];
-    // Thêm các thuộc tính khác của bài viết nếu cần
-    text?: string; 
+    text?: string;
+    isLiked?: boolean; // Nhận trạng thái like từ DB
 }
 
-// --- Custom Hook Chứa Logic Tương Tác (usePostInteractions) ---
-
-// Hook này sẽ được PostCard sử dụng
 export function usePostInteractions(initialPost: InitialPostData, onInteractionUpdate: (updatedPost: InitialPostData) => void) {
-  // localPost chứa state likes/shares/comments được cập nhật
   const [localPost, setLocalPost] = useState(initialPost);
-  const [isLiked, setIsLiked] = useState(false); // Trạng thái nút Like
+  
+  // Khởi tạo state từ DB
+  const [isLiked, setIsLiked] = useState(initialPost.isLiked || false); 
   const [showComments, setShowComments] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
 
-  // Xử lý Like bài viết
   const handleLike = () => {
-    const newLikedStatus = !isLiked;
-    const newLikeCount = newLikedStatus ? localPost.likes + 1 : localPost.likes - 1;
-    
-    const updatedPost = { ...localPost, likes: newLikeCount };
-    setLocalPost(updatedPost);
-    setIsLiked(newLikedStatus);
-    onInteractionUpdate(updatedPost);
+    const newStatus = !isLiked;
+    setIsLiked(newStatus);
+    const newCount = newStatus ? localPost.likes + 1 : Math.max(0, localPost.likes - 1);
+    const updated = { ...localPost, likes: newCount, isLiked: newStatus };
+    setLocalPost(updated);
+    onInteractionUpdate(updated);
   };
 
-  // Xử lý thêm Comment
-  const handleAddComment = (commentText: string) => {
-    const newComment: CommentData = {
-      id: Date.now().toString(),
-      author: "Bạn", // Giả định
-      avatar: "", // Giả định
-      content: commentText,
-      timestamp: new Date().toLocaleString("vi-VN"), // Giả định
-      likes: 0,
-      replies: []
-    };
-    
-    const updatedPost = {
-      ...localPost,
-      comments: [...localPost.comments, newComment]
-    };
-    setLocalPost(updatedPost);
-    onInteractionUpdate(updatedPost);
+  const handleAddComment = (text: string) => {
+    const newC: CommentData = { id: `temp-${Date.now()}`, author: "Bạn", avatar: "", content: text, timestamp: "Vừa xong", likes: 0, replies: [] };
+    const updated = { ...localPost, comments: [...localPost.comments, newC] };
+    setLocalPost(updated);
+    onInteractionUpdate(updated);
   };
 
-  // Xử lý thêm Reply
-  const handleAddReply = (parentCommentId: string, replyContent: string) => {
-    const replyToAuthor = findCommentAuthor(localPost.comments, parentCommentId);
-    
-    const newReply: CommentData = {
-      id: Date.now().toString(),
-      author: "Bạn", // Giả định
-      avatar: "", // Giả định
-      content: replyContent,
-      timestamp: new Date().toLocaleString("vi-VN"), // Giả định
-      likes: 0,
-      replyTo: replyToAuthor || undefined,
-      replies: []
-    };
-
-    const updatedComments = addReplyToComment(localPost.comments, parentCommentId, newReply);
-    const updatedPost = { ...localPost, comments: updatedComments };
-    setLocalPost(updatedPost);
-    onInteractionUpdate(updatedPost);
+  const handleAddReply = (parentId: string, text: string) => {
+    const replyTo = findCommentAuthor(localPost.comments, parentId);
+    const newR: CommentData = { id: `temp-${Date.now()}`, author: "Bạn", avatar: "", content: text, timestamp: "Vừa xong", likes: 0, replyTo: replyTo || undefined, replies: [] };
+    const updated = { ...localPost, comments: addReplyToComment(localPost.comments, parentId, newR) };
+    setLocalPost(updated);
+    onInteractionUpdate(updated);
   };
 
-  // Xử lý Like Comment/Reply
-  const handleLikeComment = (commentId: string, liked: boolean) => {
-    const updatedComments = updateCommentLikes(localPost.comments, commentId, liked);
-    const updatedPost = { ...localPost, comments: updatedComments };
-    setLocalPost(updatedPost);
-    onInteractionUpdate(updatedPost);
+  const handleLikeComment = (cmtId: string, liked: boolean) => {
+    const updated = { ...localPost, comments: updateCommentLikes(localPost.comments, cmtId, liked) };
+    setLocalPost(updated);
+    onInteractionUpdate(updated);
   };
 
-  // Xử lý Share
-  const handleShare = (shareType: string) => {
-    const updatedPost = { ...localPost, shares: localPost.shares + 1 };
-    setLocalPost(updatedPost);
-    onInteractionUpdate(updatedPost);
+  const handleShare = (type: string) => {
+    setLocalPost(prev => ({...prev, shares: prev.shares + 1}));
     setShowShareDialog(false);
   };
 
-  const totalComments = countAllComments(localPost.comments);
-
   return {
-    // States
-    isLiked,
-    showComments,
-    showShareDialog,
-    currentLikes: localPost.likes,
-    totalComments,
+    isLiked, showComments, showShareDialog, 
+    currentLikes: localPost.likes, 
+    totalComments: countAllComments(localPost.comments), 
     localPostComments: localPost.comments,
-    
-    // Handlers
-    handleLike,
-    setShowComments,
-    setShowShareDialog,
-    handleAddComment,
-    handleAddReply,
-    handleLikeComment,
-    handleShare,
+    handleLike, setShowComments, setShowShareDialog, handleAddComment, handleAddReply, handleLikeComment, handleShare
   };
 }
 
-// Export các component con để PostCard có thể sử dụng
 export { CommentSection, ShareDialog };
