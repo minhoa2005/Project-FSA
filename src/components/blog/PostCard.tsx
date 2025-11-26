@@ -3,17 +3,17 @@
 import { useState } from "react";
 import { updateBlog, deleteBlog, toggleLike, addComment, toggleCommentLike } from "@/service/users/postActions";
 
-// [QUAN TRỌNG] Import đúng đường dẫn
 import { usePostInteractions, findRootCommentId } from "@/components/post/Social_Interactions";
-import { CommentSection } from "@/components/post/CommentSection"; // Import trực tiếp component UI
-import { ShareDialog } from "@/components/post/ShareDialog";     // Import trực tiếp component UI
+import { CommentSection } from "@/components/post/CommentSection"; 
+import { ShareDialog } from "@/components/post/ShareDialog";     
 
 import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, ThumbsUp, MessageCircle, Share2 } from "lucide-react";
+// [FIX] Thêm import X, ImageIcon
+import { MoreHorizontal, ThumbsUp, MessageCircle, Share2, X, ImageIcon } from "lucide-react";
 import Image from "next/image";
 
 interface PostCardProps {
@@ -26,6 +26,7 @@ interface PostCardProps {
 export default function PostCard({ post, isOwner, currentUserId, onChanged }: PostCardProps) {
   const [editing, setEditing] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [removedMediaIds, setRemovedMediaIds] = useState<number[]>([]);
 
   const {
       isLiked, showComments, showShareDialog, currentLikes, totalComments, localPostComments,
@@ -64,25 +65,17 @@ export default function PostCard({ post, isOwner, currentUserId, onChanged }: Po
     }
   };
 
-  // [THAY ĐỔI] Logic Like Comment Toggle
-  // Không cần tham số 'liked' nữa, vì hook đã tự xử lý toggle
   const onLikeCommentClick = async (cmtId: string) => {
-    // 1. Update UI ngay lập tức
     triggerLikeCommentLocal(cmtId);
-
-    // 2. Gọi API Toggle
     const commentIdNum = Number(cmtId);
     if (isNaN(commentIdNum)) return;
     try { 
         await toggleCommentLike(commentIdNum, currentUserId); 
     } catch(e) { 
         console.error(e); 
-        // Nếu lỗi mạng, có thể gọi lại triggerLikeCommentLocal(cmtId) để rollback UI
     }
   };
 
-  // ... Logic Edit/Delete giữ nguyên ...
-  const [removedMediaIds, setRemovedMediaIds] = useState<number[]>([]);
   const displayName = post.fullName || post.username || `User`;
   const avatarUrl = post.imgUrl || "";
   
@@ -120,14 +113,11 @@ export default function PostCard({ post, isOwner, currentUserId, onChanged }: Po
         </div>
         {isOwner && <DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreHorizontal className="h-4 w-4"/></Button></DropdownMenuTrigger><DropdownMenuContent><DropdownMenuItem onClick={()=>setEditing(true)}>Sửa</DropdownMenuItem><DropdownMenuItem onClick={handleDelete} className="text-destructive">Xóa</DropdownMenuItem></DropdownMenuContent></DropdownMenu>}
       </CardHeader>
+      
+      {/* [FIX] Sửa lại logic render CardContent để tránh Syntax Error */}
       <CardContent className="space-y-3 pb-2">
         {!editing ? (
-            <>
-                <p className="whitespace-pre-wrap text-sm">{post.text}</p>
-                {images.length>0 && <div className="grid grid-cols-2 gap-1">{images.map((m:any)=><Image key={m.id} src={m.url} width={500} height={300} alt="" className="w-full object-cover"/>)}</div>}
-                {videos.length>0 && <div className="space-y-2">{videos.map((m:any)=><video key={m.id} src={m.url} controls className="max-h-[400px] w-full rounded-lg"/>)}</div>}
-            </>
-        ) : <form action={handleUpdate}><Textarea name="text" defaultValue={post.text}/><Button type="submit" disabled={submitting}>Lưu</Button></form>}
+          // --- VIEW MODE ---
           <>
             {post.text && (
               <p className="whitespace-pre-wrap text-sm leading-relaxed">
@@ -135,7 +125,7 @@ export default function PostCard({ post, isOwner, currentUserId, onChanged }: Po
               </p>
             )}
 
-            {/* nhiều ảnh */}
+            {/* Render Images */}
             {images.length > 0 && (
               <div
                 className={`grid gap-1 overflow-hidden rounded-lg ${images.length === 1
@@ -156,7 +146,7 @@ export default function PostCard({ post, isOwner, currentUserId, onChanged }: Po
               </div>
             )}
 
-            {/* nhiều video */}
+            {/* Render Videos */}
             {videos.length > 0 && (
               <div className="space-y-2">
                 {videos.map((m: any) => (
@@ -171,6 +161,7 @@ export default function PostCard({ post, isOwner, currentUserId, onChanged }: Po
             )}
           </>
         ) : (
+          // --- EDIT MODE ---
           <form
             action={handleUpdate}
             className="space-y-3"
@@ -190,7 +181,7 @@ export default function PostCard({ post, isOwner, currentUserId, onChanged }: Po
               placeholder="Bạn đang nghĩ gì?"
             />
 
-            {/* media hiện tại (có nút X để xóa) */}
+            {/* Edit: Existing Media (with remove button) */}
             {(images.length > 0 || videos.length > 0) && (
               <div className="space-y-2">
                 <div className="text-xs font-medium text-muted-foreground">
@@ -200,8 +191,7 @@ export default function PostCard({ post, isOwner, currentUserId, onChanged }: Po
                 <div className="grid grid-cols-2 gap-2">
                   {(post.media || [])
                     .filter(
-                      (m: any) =>
-                        !removedMediaIds.includes(m.id),
+                      (m: any) => !removedMediaIds.includes(m.id),
                     )
                     .map((m: any) => (
                       <div
@@ -228,12 +218,12 @@ export default function PostCard({ post, isOwner, currentUserId, onChanged }: Po
                           type="button"
                           onClick={() =>
                             setRemovedMediaIds((prev) =>
-                              prev.includes(m.id)
-                                ? prev
-                                : [...prev, m.id],
+                              prev.includes(m.id) ? prev : [...prev, m.id],
                             )
                           }
-                          className="absolute right-1 top-1 inline-flex h-6 w-6 items-center justify-center rounded-full "
+                          className="absolute right-1 top-1 inline-flex h-6 w-6 items-center justify-center rounded-full"
+                          variant="destructive"
+                          size="icon"
                         >
                           <X className="h-3 w-3" />
                         </Button>
@@ -243,24 +233,9 @@ export default function PostCard({ post, isOwner, currentUserId, onChanged }: Po
               </div>
             )}
 
-            {/* thêm media mới */}
-            <div className="rounded-lg border px-3 py-2">
-              <div className="flex items-center justify-between">
-                <span className="flex items-center gap-1 text-xs font-medium ">
-                  <ImageIcon className="h-4 w-4" />
-                  Thêm ảnh / video mới
-                </span>
-                <input
-                  type="file"
-                  name="newMedia"
-                  multiple
-                  accept="image/*,video/*"
-                  onChange={handleNewFilesChange}
-                  className="text-xs"
-                />
-              </div>
-              {renderNewFilesPreview()}
-            </div>
+            {/* Note: Phần thêm file mới (handleNewFilesChange) đã được ẩn tạm thời vì 
+                bạn chưa khai báo hàm này trong PostCard. Nếu cần tính năng này, 
+                bạn cần thêm state newFiles và hàm handleFileChange tương ứng. */}
 
             <div className="flex justify-end gap-2 pt-1">
               <Button
@@ -270,7 +245,6 @@ export default function PostCard({ post, isOwner, currentUserId, onChanged }: Po
                 onClick={() => {
                   setEditing(false);
                   setRemovedMediaIds([]);
-                  setNewFiles([]);
                 }}
                 disabled={submitting}
               >
@@ -283,6 +257,7 @@ export default function PostCard({ post, isOwner, currentUserId, onChanged }: Po
           </form>
         )}
       </CardContent>
+
       <CardFooter className="flex flex-col gap-1 border-t px-2 pb-2 pt-1">
         <div className="flex justify-between px-1 text-xs text-muted-foreground"><span>{currentLikes} Thích</span><span>{totalComments} Bình luận</span></div>
         <div className="grid grid-cols-3 gap-4 text-xs mt-1">
@@ -291,7 +266,6 @@ export default function PostCard({ post, isOwner, currentUserId, onChanged }: Po
           <Button onClick={()=>setShowShareDialog(true)} variant="ghost" size="sm"><Share2 className="h-4 w-4 mr-1"/>Chia sẻ</Button>
         </div>
         
-        {/* Truyền onLikeCommentClick (chỉ nhận ID) xuống UI */}
         {showComments && <CommentSection comments={localPostComments} onAddComment={onAddCommentClick} onLikeComment={onLikeCommentClick} onAddReply={onAddReplyClick}/>}
         {showShareDialog && <ShareDialog onClose={()=>setShowShareDialog(false)} onShare={handleShare}/>}
       </CardFooter>
