@@ -160,7 +160,7 @@ export async function getBlogs() {
     LEFT JOIN BlogMedia m ON m.blogId = b.id
     ORDER BY b.createdAt DESC, m.id ASC
   `);
-
+    
   const rows = result.recordset || [];
 
   const map = new Map<number, any>();
