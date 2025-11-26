@@ -4,6 +4,7 @@ import fs from "fs/promises";
 import path from "path";
 import { connectDB, sql } from "@/config/db";
 import { revalidatePath } from "next/cache";
+import { removeVietnameseSigns } from "@/lib/formatter";
 
 const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads");
 const FEED_PATH = "/(private)/(user)";
@@ -41,7 +42,7 @@ export async function createBlog(formData: FormData) {
     if (!file || file.size === 0) continue;
 
     const bytes = Buffer.from(await file.arrayBuffer());
-    const safeName = file.name.replace(/\s+/g, "-");
+    const safeName = removeVietnameseSigns(file.name).replace(/\s+/g, "-");
     const fileName = `${Date.now()}-${safeName}`;
     const filePath = path.join(UPLOAD_DIR, fileName);
 
@@ -51,8 +52,8 @@ export async function createBlog(formData: FormData) {
     const type = file.type.startsWith("image/")
       ? "image"
       : file.type.startsWith("video/")
-      ? "video"
-      : "other";
+        ? "video"
+        : "other";
 
     await pool
       .request()
@@ -64,10 +65,10 @@ export async function createBlog(formData: FormData) {
       );
   }
 
-  
+
   revalidatePath(FEED_PATH);
 
-  
+
 }
 export async function updateBlog(formData: FormData) {
   const pool = await connectDB();
@@ -112,7 +113,7 @@ export async function updateBlog(formData: FormData) {
     if (!file || file.size === 0) continue;
 
     const bytes = Buffer.from(await file.arrayBuffer());
-    const safeName = file.name.replace(/\s+/g, "-");
+    const safeName = removeVietnameseSigns(file.name).replace(/\s+/g, "-");
     const fileName = `${Date.now()}-${safeName}`;
     const filePath = path.join(UPLOAD_DIR, fileName);
 
@@ -122,8 +123,8 @@ export async function updateBlog(formData: FormData) {
     const type = file.type.startsWith("image/")
       ? "image"
       : file.type.startsWith("video/")
-      ? "video"
-      : "other";
+        ? "video"
+        : "other";
 
     await pool
       .request()

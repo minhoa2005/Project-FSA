@@ -157,6 +157,14 @@ const formatDate = (date) => {
     return [year, month, day].join('-');
 }
 
+function removeVietnameseSigns(str) {
+    return str
+        .normalize('NFD') // tách chữ và dấu
+        .replace(/[\u0300-\u036f]/g, '') // loại bỏ các dấu
+        .replace(/đ/g, 'd') // chuyển đ -> d
+        .replace(/Đ/g, 'D'); // chuyển Đ -> D
+}
+
 export {
     getInitials,
     formatPrice,
@@ -167,5 +175,6 @@ export {
     formatTimeLeft,
     formatString,
     formatName,
-    formatDate
+    formatDate,
+    removeVietnameseSigns,
 }

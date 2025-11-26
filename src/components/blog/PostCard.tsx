@@ -26,8 +26,12 @@ import {
   Share2,
   Image as ImageIcon,
   X,
+  Flag,
 } from "lucide-react";
 import Image from "next/image";
+import ReportModal from "../report/ReportModal";
+
+
 
 interface PostCardProps {
   post: any;
@@ -38,6 +42,7 @@ interface PostCardProps {
 export default function PostCard({ post, isOwner, onChanged }: PostCardProps) {
   const [editing, setEditing] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // state dùng cho edit media
   const [removedMediaIds, setRemovedMediaIds] = useState<number[]>([]);
@@ -54,6 +59,9 @@ export default function PostCard({ post, isOwner, onChanged }: PostCardProps) {
       .map((w: string) => w[0])
       .join("")
       .toUpperCase() || "U";
+  const handleReportClick = (e) => {
+    setIsModalOpen(true); // Mở modal báo cáo
+  };
 
   const handleUpdate = async (formData: FormData) => {
     try {
@@ -179,7 +187,7 @@ export default function PostCard({ post, isOwner, onChanged }: PostCardProps) {
           </div>
         </div>
 
-        {isOwner && (
+        {isOwner ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -209,6 +217,29 @@ export default function PostCard({ post, isOwner, onChanged }: PostCardProps) {
                 }}
               >
                 Xóa bài viết
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 rounded-full hover:bg-muted"
+              >
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48 text-sm">
+              <DropdownMenuItem
+                onSelect={(e) => {
+                  handleReportClick(e)
+                }}
+                className="flex items-center gap-2"
+              >
+                <Flag className="h-4 w-4" />
+                Báo cáo bài viết
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -372,7 +403,11 @@ export default function PostCard({ post, isOwner, onChanged }: PostCardProps) {
           </form>
         )}
       </CardContent>
-
+      <ReportModal
+        blogId={post.id}
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+      />
       <CardFooter className="flex flex-col gap-1 border-t px-2 pb-2 pt-1">
         <div className="flex items-center justify-between px-1 text-xs text-muted-foreground gap-3">
           <span>0 lượt thích</span>

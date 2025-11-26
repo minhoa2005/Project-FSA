@@ -37,9 +37,6 @@ export default function ChatBox({ user, onClose, avatar, name }) {
     if (!socket || !roomId) return;
 
     socket.emit("join_room", roomId);
-    
-    // Mark tin nhắn đã đọc khi vào room
-    socket.emit("mark_as_read", roomId);
 
     socket.on("receive_message", (msg) => {
       setMessages(prev => [...prev, msg]);
