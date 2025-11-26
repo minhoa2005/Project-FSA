@@ -1,24 +1,59 @@
-"use server"
+"use server";
+
 import { getCookie } from "@/config/cookie";
 import { connectDB, sql } from "@/config/db";
 import { verifyToken } from "@/config/jwt";
 import { verifyUser } from "./personalInfo";
+
 const pool = await connectDB();
 
-export async function getFollowingUsers(offset, limit) {
-  if (!await verifyUser()) {
-    unauthorized();
+// ==========================
+//        TYPES
+// ==========================
+export type FollowUser = {
+  id: number;
+  username: string;
+  email: string;
+  imgUrl: string | null;
+};
+
+export type Message = {
+  id: number;
+  senderId: number;
+  receiverId: number;
+  roomId: string;
+  text: string;
+  type: "text" | "image" | "file";
+  createdAt: string;
+};
+
+export type MessageListResult = {
+  roomId: string;
+  messages: Message[];
+};
+
+// ==========================
+//   GET FOLLOWING USERS
+// ==========================
+export async function getFollowingUsers(
+  offset: number,
+  limit: number
+): Promise<FollowUser[]> {
+  if (!(await verifyUser())) {
+    throw new Error("Unauthorized");
   }
+
   const token = await getCookie();
   const decoded = verifyToken(token);
-  const userId = decoded.id;
+  const userId: number = Number(decoded.id);
+  
   const result = await pool
     .request()
-    .input("userId", userId)
-    .input("offset", offset)
-    .input("limit", limit)
+    .input("userId", sql.Int, userId)
+    .input("offset", sql.Int, offset)
+    .input("limit", sql.Int, limit)
     .query(`
-      SELECT a.id, a.username, a.email , u.imgUrl
+      SELECT a.id, a.username, a.email, u.imgUrl
       FROM Follow f
       JOIN Account a ON f.followingId = a.id
       JOIN UserProfile u ON u.accountId = a.id
@@ -27,21 +62,27 @@ export async function getFollowingUsers(offset, limit) {
       OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY
     `);
 
-  return result.recordset;
+  return result.recordset as FollowUser[];
 }
 
-export async function insertMessage(receiverId, text, type) {
+// ==========================
+//       INSERT MESSAGE
+// ==========================
+export async function insertMessage(
+  receiverId: number,
+  text: string,
+  type: string
+): Promise<Message | { success: false }> {
   try {
     const token = await getCookie();
     const decoded = verifyToken(token);
-    const senderId = decoded.id;
+    const senderId: number = Number(decoded.id);
 
     const id1 = Math.min(senderId, receiverId);
     const id2 = Math.max(senderId, receiverId);
     const roomId = `${id1}_${id2}`;
 
-    const msgType = type && type !== "" ? type : "text"; // default type
-
+    const msgType = type?.trim() !== "" ? type : "text";
 
     const result = await pool
       .request()
@@ -62,7 +103,7 @@ export async function insertMessage(receiverId, text, type) {
       receiverId,
       roomId,
       text,
-      type: msgType,
+      type: msgType as "text" | "image" | "file",
       createdAt: result.recordset[0].createdAt,
     };
   } catch (err) {
@@ -71,44 +112,47 @@ export async function insertMessage(receiverId, text, type) {
   }
 }
 
-export async function getMessagesByFollowing(receiverId) {
+// ==========================
+//   GET MESSAGES IN ROOM
+// ==========================
+export async function getMessagesByFollowing(
+  receiverId: number
+): Promise<MessageListResult> {
   try {
     const token = await getCookie();
     const decoded = verifyToken(token);
-    const senderId = decoded.id;
+    const senderId: number = Number(decoded.id);
 
-    // Tạo roomId tự động
     const id1 = Math.min(senderId, receiverId);
     const id2 = Math.max(senderId, receiverId);
     const roomId = `${id1}_${id2}`;
 
-    // Lấy tất cả tin nhắn trong roomId
     const result = await pool
       .request()
       .input("roomId", sql.VarChar, roomId)
       .query(`
-      SELECT 
-      id,
-      senderId,
-      receiverId,
-      roomId,
-      text,
-      type,        -- thêm dòng này
-      createdAt
-      FROM Messages
-      WHERE roomId = @roomId
-      ORDER BY createdAt ASC
-  `);
+        SELECT 
+          id,
+          senderId,
+          receiverId,
+          roomId,
+          text,
+          type,
+          createdAt
+        FROM Messages
+        WHERE roomId = @roomId
+        ORDER BY createdAt ASC
+      `);
 
     return {
-      roomId,                 // trả luôn roomId cho frontend
-      messages: result.recordset
+      roomId,
+      messages: result.recordset as Message[],
     };
   } catch (err) {
     console.error("GET MESSAGES ERROR:", err);
     return {
       roomId: "",
-      messages: []
+      messages: [],
     };
   }
 }

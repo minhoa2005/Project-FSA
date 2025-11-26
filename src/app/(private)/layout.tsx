@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation';
 import React from 'react'
 
 export default async function layout({ children }) {
-    const cookie = await getCookie(process.env.COOKIE_NAME || 'project_fsa');
+    const cookie = await getCookie();
     if (!cookie) {
         redirect('/login');
     }
@@ -14,7 +14,7 @@ export default async function layout({ children }) {
         redirect('/login');
     }
     return (
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem> 
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
             {children}
         </ThemeProvider>
     )
