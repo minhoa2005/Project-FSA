@@ -8,9 +8,9 @@ export default function layout({ children }) {
 
     return (
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-            <PrivateRoute allowedRoles={'Admin'}>
+            <PrivateRoute allowedRoles={['Admin']}>
                 <SidebarProvider defaultOpen>
-                    <AppSidebar/>
+                    <AppSidebar />
                     <main className="flex-1 min-h-screen px-8 py-6 mx-2 pl-75">
                         {children}
                     </main>

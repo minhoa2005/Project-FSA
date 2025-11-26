@@ -51,7 +51,7 @@ export default function Header() {
                                     Giao diện
                                 </DropdownMenuSubTrigger>
                                 <DropdownMenuPortal>
-                                    <DropdownMenuSubContent side="left" sideOffset={4}>
+                                    <DropdownMenuSubContent sideOffset={7}>
                                         <DropdownMenuRadioGroup value={theme} onValueChange={setTheme}>
                                             <DropdownMenuRadioItem value="light">
                                                 <Sun className="mr-2 h-4 w-4" />
