@@ -2,8 +2,10 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
+
 import { useUser } from "@/context/AuthContext";
 import { getBlogs } from "@/service/users/postActions";
+
 import CreatePost from "@/components/blog/CreatePost";
 import PostList from "@/components/blog/PostList";
 import ContactsSidebar from "@/components/blog/ContactsSidebar";
@@ -12,6 +14,7 @@ import Loading from "./loading";
 export default function HomePage() {
   const router = useRouter();
   const { user, loading, authen } = useUser();
+
   const [posts, setPosts] = useState<any[]>([]);
   const [loadingPosts, setLoadingPosts] = useState(true);
 
@@ -25,21 +28,23 @@ export default function HomePage() {
     }
   }, [loading, authen, router]);
 
-  // 2. Hàm load bài viết (sử dụng useCallback để tránh tạo lại hàm không cần thiết)
-  const loadPosts = useCallback(async () => {
-    if (!currentUserId) return; 
-
+  // Hàm load posts từ server action
+  const loadPosts = async () => {
     try {
-      // Giữ loadingPosts = true chỉ khi mảng posts đang rỗng (lần đầu load)
-      // Nếu muốn hiển thị loading mỗi khi refresh list thì bỏ điều kiện posts.length
-      if (posts.length === 0) setLoadingPosts(true);
-      
-      const data = await getBlogs(currentUserId);
+      setLoadingPosts(true);
+      const data = await getBlogs();
       setPosts(data);
     } catch (err) {
-      console.error("Lỗi tải bài viết:", err);
+      console.error("Error loading blogs:", err);
     } finally {
       setLoadingPosts(false);
+    }
+  };
+
+  // Khi đã xác thực xong thì load posts
+  useEffect(() => {
+    if (authen) {
+      void loadPosts();
     }
   }, [currentUserId]); // Bỏ 'posts.length' khỏi dependency để tránh loop, chỉ phụ thuộc ID
 
@@ -48,7 +53,7 @@ export default function HomePage() {
     if (authen && currentUserId) {
       loadPosts();
     }
-  }, [authen, currentUserId, loadPosts]);
+  }, [authen, currentUserId]);
 
   // --- RENDER ---
 
@@ -57,21 +62,23 @@ export default function HomePage() {
     return <Loading />;
   }
 
-  // Chưa đăng nhập (sẽ bị useEffect đẩy sang login, return null để tránh flash UI)
+  // Nếu chưa login sẽ bị redirect, nên không render gì thêm
   if (!authen || !currentUserId) {
-    return null; 
+    return null;
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 container mx-auto pt-4">
-        {/* Cột chính: Tạo bài & Danh sách bài */}
-        <div className="md:col-span-2 space-y-4">
-          <CreatePost currentUser={user} onPostCreated={loadPosts} />
-          
+    <div className="min-h-screen">
+      <div className="grid grid-cols-3 gap-4">
+        <div className="col-span-2 mt-3 p-3">
+          <CreatePost
+            currentUser={user}
+            onPostCreated={loadPosts}
+          />
+
           {loadingPosts ? (
-            <div className="flex justify-center p-8">
-                <span className="text-sm text-muted-foreground">Đang tải bảng tin...</span>
+            <div className="rounded-xl p-4 text-sm shadow-sm">
+              Đang tải bài viết...
             </div>
           ) : (
             <PostList
@@ -82,8 +89,8 @@ export default function HomePage() {
           )}
         </div>
 
-        {/* Cột bên phải: Danh bạ / Sidebar */}
-        <div className="hidden md:block md:col-span-1">
+        {/* Cột phải - sidebar (bạn bè đang online, gợi ý...) */}
+        <div className="col-span-1">
           <ContactsSidebar />
         </div>
       </div>
