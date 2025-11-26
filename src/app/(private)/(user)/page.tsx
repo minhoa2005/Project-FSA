@@ -9,6 +9,7 @@ import { getBlogs } from "@/service/users/postActions";
 import CreatePost from "@/components/blog/CreatePost";
 import PostList from "@/components/blog/PostList";
 import ContactsSidebar from "@/components/blog/ContactsSidebar";
+import Loading from "./loading";
 
 export default function HomePage() {
   const router = useRouter();
@@ -51,11 +52,7 @@ export default function HomePage() {
   // Trong lúc chờ auth
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-100">
-        <div className="rounded-lg bg-white px-4 py-3 text-sm shadow">
-          Đang tải...
-        </div>
-      </div>
+      <Loading />
     );
   }
 
