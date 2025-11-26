@@ -1,222 +1,119 @@
 "use client";
 
 import { useState } from "react";
-import { updateBlog, deleteBlog } from "@/service/users/postActions";
+import { updateBlog, deleteBlog, toggleLike, addComment, toggleCommentLike } from "@/service/users/postActions";
+import { usePostInteractions, CommentSection, ShareDialog } from "@/components/post/Social_Interactions";
 
-import {
-  Card,
-  CardHeader,
-  CardContent,
-  CardFooter,
-} from "@/components/ui/card";
+import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
-import {
-  MoreHorizontal,
-  ThumbsUp,
-  MessageCircle,
-  Share2,
-  Image as ImageIcon,
-  X,
-} from "lucide-react";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import { MoreHorizontal, ThumbsUp, MessageCircle, Share2 } from "lucide-react";
 import Image from "next/image";
 
 interface PostCardProps {
   post: any;
   isOwner: boolean;
+  currentUserId: number;
   onChanged?: () => void;
 }
 
-export default function PostCard({ post, isOwner, onChanged }: PostCardProps) {
+export default function PostCard({ post, isOwner, currentUserId, onChanged }: PostCardProps) {
   const [editing, setEditing] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  // state dùng cho edit media
+  const {
+      isLiked, showComments, showShareDialog, currentLikes, totalComments, localPostComments,
+      handleLike: triggerLikeLocal, setShowComments, setShowShareDialog, 
+      handleAddComment: triggerAddCommentLocal, handleAddReply: triggerAddReplyLocal, 
+      handleLikeComment: triggerLikeCommentLocal, handleShare,
+  } = usePostInteractions(
+      { 
+          id: String(post.id),
+          likes: post.likes || 0, shares: post.shares || 0, 
+          comments: post.comments || [], text: post.text,
+          isLiked: post.isLikedByCurrentUser 
+      }, 
+      () => {}
+  );
+
+  // --- ACTIONS ---
+  const onLikeClick = async () => {
+    triggerLikeLocal();
+    try { await toggleLike(post.id, currentUserId); } catch(e) { console.error(e); }
+  };
+  const onAddCommentClick = async (text: string) => {
+    triggerAddCommentLocal(text);
+    try { await addComment(post.id, currentUserId, text); } catch(e) { console.error(e); }
+  };
+  const onAddReplyClick = async (parentId: string, text: string) => {
+    triggerAddReplyLocal(parentId, text);
+    try { await addComment(post.id, currentUserId, text, Number(parentId)); } catch(e) { console.error(e); }
+  };
+  const onLikeCommentClick = async (cmtId: string, liked: boolean) => {
+    triggerLikeCommentLocal(cmtId, liked);
+    // Fix lỗi NaN khi like comment mới tạo
+    const commentIdNum = Number(cmtId);
+    if (isNaN(commentIdNum)) return;
+    try { await toggleCommentLike(commentIdNum, currentUserId); } catch(e) { console.error(e); }
+  };
+
+  // Logic Edit
   const [removedMediaIds, setRemovedMediaIds] = useState<number[]>([]);
-  const [newFiles, setNewFiles] = useState<File[]>([]);
-
-  const createdAt = new Date(post.createdAt).toLocaleString("vi-VN");
-
-  const displayName =
-    post.fullName || post.username || `User #${post.creatorId}`;
-  const avatarUrl = post.imgUrl || post.avatarUrl || "";
-  const avatarFallback =
-    displayName
-      .split(" ")
-      .map((w: string) => w[0])
-      .join("")
-      .toUpperCase() || "U";
-
+  const displayName = post.fullName || post.username || `User`;
+  const avatarUrl = post.imgUrl || "";
   const handleUpdate = async (formData: FormData) => {
+    try { 
+        setSubmitting(true); 
+        if(removedMediaIds.length) formData.set("removeMediaIds", removedMediaIds.join(",")); 
+        await updateBlog(formData); 
+        setEditing(false); 
+        setRemovedMediaIds([]); 
+        onChanged?.(); 
+    } catch(e) { console.error(e); } finally { setSubmitting(false); }
+  };
+
+  // --- LOGIC DELETE ĐÃ SỬA ---
+  const handleDelete = async () => { 
+    if(!confirm("Bạn có chắc chắn muốn xóa bài viết này không?")) return;
+    
     try {
-      setSubmitting(true);
-
-      // thêm list id media cần xóa vào formData (cho chắc)
-      if (removedMediaIds.length > 0) {
-        formData.set("removeMediaIds", removedMediaIds.join(","));
-      }
-
-      await updateBlog(formData);
-      setEditing(false);
-      setRemovedMediaIds([]);
-      setNewFiles([]);
-      onChanged?.();
-    } catch (err) {
-      console.error("Update post error:", err);
+        setSubmitting(true);
+        // [SỬA LỖI Ở ĐÂY] Tạo FormData riêng biệt
+        const fd = new FormData();
+        fd.append("blogId", String(post.id));
+        
+        await deleteBlog(fd); // Truyền biến fd (đã có dữ liệu) vào
+        onChanged?.(); 
+    } catch(e) {
+        console.error("Delete error:", e);
     } finally {
-      setSubmitting(false);
+        setSubmitting(false);
     }
   };
+  // ---------------------------
 
-  const handleDelete = async () => {
-    if (!confirm("Xóa bài viết này?")) return;
-
-    try {
-      setSubmitting(true);
-      const fd = new FormData();
-      fd.append("blogId", String(post.id));
-      await deleteBlog(fd);
-      onChanged?.();
-    } catch (err) {
-      console.error("Delete post error:", err);
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const images = (post.media || []).filter(
-    (m: any) => m.type === "image" && !removedMediaIds.includes(m.id),
-  );
-  const videos = (post.media || []).filter(
-    (m: any) => m.type === "video" && !removedMediaIds.includes(m.id),
-  );
-
-  const handleNewFilesChange = (
-    e: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    const list = Array.from(e.target.files || []);
-    setNewFiles(list);
-  };
-
-  const renderNewFilesPreview = () => {
-    if (!newFiles.length) return null;
-
-    return (
-      <div className="mt-2 grid grid-cols-2 gap-2">
-        {newFiles.map((file, idx) => {
-          const url = URL.createObjectURL(file);
-          const isImage = file.type.startsWith("image/");
-          const isVideo = file.type.startsWith("video/");
-
-          return (
-            <div
-              key={idx}
-              className="relative overflow-hidden rounded-lg border"
-            >
-              {isImage && (
-                <Image
-                  src={url}
-                  alt={file.name}
-                  width={500}
-                  height={500}
-                  className="h-40 w-full object-cover"
-                />
-              )}
-              {isVideo && (
-                <video
-                  src={url}
-                  controls
-                  className="h-40 w-full object-cover"
-                />
-              )}
-              {!isImage && !isVideo && (
-                <div className="h-40 w-full px-2 py-1 text-xs">
-                  {file.name}
-                </div>
-              )}
-
-              <button
-                type="button"
-                onClick={() =>
-                  setNewFiles((prev) =>
-                    prev.filter((_, i) => i !== idx),
-                  )
-                }
-                className="absolute right-1 top-1 inline-flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/80"
-              >
-                <X className="h-3 w-3" />
-              </button>
-            </div>
-          );
-        })}
-      </div>
-    );
-  };
+  const images = (post.media || []).filter((m: any) => m.type === "image" && !removedMediaIds.includes(m.id));
+  const videos = (post.media || []).filter((m: any) => m.type === "video" && !removedMediaIds.includes(m.id));
 
   return (
     <Card className="overflow-hidden shadow-sm">
-      <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
+      <CardHeader className="flex flex-row items-start justify-between pb-2">
         <div className="flex items-center gap-2">
-          <Avatar className="h-10 w-10">
-            {avatarUrl ? (
-              <AvatarImage src={avatarUrl} alt={displayName} />
-            ) : null}
-            <AvatarFallback>{avatarFallback}</AvatarFallback>
-          </Avatar>
-          <div className="leading-tight">
-            <div className="text-sm font-semibold">{displayName}</div>
-            <div className="text-xs text-muted-foreground">
-              {createdAt}
-            </div>
-          </div>
+            <Avatar><AvatarImage src={avatarUrl}/><AvatarFallback>{displayName[0]}</AvatarFallback></Avatar>
+            <div><div className="text-sm font-semibold">{displayName}</div><div className="text-xs text-muted-foreground">{new Date(post.createdAt).toLocaleString("vi-VN")}</div></div>
         </div>
-
-        {isOwner && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 rounded-full hover:bg-muted"
-                disabled={submitting}
-              >
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48 text-sm">
-              <DropdownMenuItem
-                onSelect={(e) => {
-                  e.preventDefault();
-                  setEditing(true);
-                }}
-              >
-                Chỉnh sửa bài viết
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                className="text-destructive"
-                onSelect={(e) => {
-                  e.preventDefault();
-                  void handleDelete();
-                }}
-              >
-                Xóa bài viết
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
+        {isOwner && <DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreHorizontal className="h-4 w-4"/></Button></DropdownMenuTrigger><DropdownMenuContent><DropdownMenuItem onClick={()=>setEditing(true)}>Sửa</DropdownMenuItem><DropdownMenuItem onClick={handleDelete} className="text-destructive">Xóa</DropdownMenuItem></DropdownMenuContent></DropdownMenu>}
       </CardHeader>
-
       <CardContent className="space-y-3 pb-2">
         {!editing ? (
+            <>
+                <p className="whitespace-pre-wrap text-sm">{post.text}</p>
+                {images.length>0 && <div className="grid grid-cols-2 gap-1">{images.map((m:any)=><Image key={m.id} src={m.url} width={500} height={300} alt="" className="w-full object-cover"/>)}</div>}
+                {videos.length>0 && <div className="space-y-2">{videos.map((m:any)=><video key={m.id} src={m.url} controls className="max-h-[400px] w-full rounded-lg"/>)}</div>}
+            </>
+        ) : <form action={handleUpdate}><Textarea name="text" defaultValue={post.text}/><Button type="submit" disabled={submitting}>Lưu</Button></form>}
           <>
             {post.text && (
               <p className="whitespace-pre-wrap text-sm leading-relaxed">
@@ -372,38 +269,15 @@ export default function PostCard({ post, isOwner, onChanged }: PostCardProps) {
           </form>
         )}
       </CardContent>
-
       <CardFooter className="flex flex-col gap-1 border-t px-2 pb-2 pt-1">
-        <div className="flex items-center justify-between px-1 text-xs text-muted-foreground gap-3">
-          <span>0 lượt thích</span>
-          <span>0 bình luận</span>
+        <div className="flex justify-between px-1 text-xs text-muted-foreground"><span>{currentLikes} Thích</span><span>{totalComments} Bình luận</span></div>
+        <div className="grid grid-cols-3 gap-4 text-xs mt-1">
+          <Button onClick={onLikeClick} variant="ghost" size="sm" className={isLiked ? "text-blue-500" : "text-muted-foreground"}><ThumbsUp className={`h-4 w-4 mr-1 ${isLiked?"fill-blue-500":""}`}/>Thích</Button>
+          <Button onClick={()=>setShowComments(!showComments)} variant="ghost" size="sm"><MessageCircle className="h-4 w-4 mr-1"/>Bình luận</Button>
+          <Button onClick={()=>setShowShareDialog(true)} variant="ghost" size="sm"><Share2 className="h-4 w-4 mr-1"/>Chia sẻ</Button>
         </div>
-        <div className="mt-1 grid grid-cols-3 gap-4 text-xs">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="flex items-center justify-center gap-1 rounded-md py-1 text-muted-foreground hover:bg-muted"
-          >
-            <ThumbsUp className="h-4 w-4" />
-            Thích
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="flex items-center justify-center gap-1 rounded-md py-1 text-muted-foreground hover:bg-muted"
-          >
-            <MessageCircle className="h-4 w-4" />
-            Bình luận
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="flex items-center justify-center gap-1 rounded-md py-1 text-muted-foreground hover:bg-muted"
-          >
-            <Share2 className="h-4 w-4" />
-            Chia sẻ
-          </Button>
-        </div>
+        {showComments && <CommentSection comments={localPostComments} onAddComment={onAddCommentClick} onLikeComment={onLikeCommentClick} onAddReply={onAddReplyClick}/>}
+        {showShareDialog && <ShareDialog onClose={()=>setShowShareDialog(false)} onShare={handleShare}/>}
       </CardFooter>
     </Card>
   );
