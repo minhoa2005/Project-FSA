@@ -7,6 +7,7 @@ import { getBlogs } from "@/service/users/postActions";
 import CreatePost from "@/components/blog/CreatePost";
 import PostList from "@/components/blog/PostList";
 import ContactsSidebar from "@/components/blog/ContactsSidebar";
+import Loading from "./loading";
 
 export default function HomePage() {
   const router = useRouter();
@@ -33,6 +34,17 @@ export default function HomePage() {
   useEffect(() => {
     if (authen && currentUserId) void loadPosts();
   }, [authen, currentUserId]);
+    if (authen) {
+      void loadPosts();
+    }
+  }, [authen]);
+
+  // Trong lúc chờ auth
+  if (loading) {
+    return (
+      <Loading />
+    );
+  }
 
   if (loading) return <div>Đang tải...</div>;
   if (!authen || !currentUserId) return null;
