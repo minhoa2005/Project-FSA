@@ -193,6 +193,9 @@ export default function CreatePostBox({
                 type="button"
                 className="flex flex-1 items-center justify-center gap-2 rounded-md px-2 py-2"
                 variant="ghost"
+                onClick={() => {
+                  fileInputRef.current?.click();
+                }}
               >
                 <ImageIcon className="h-4 w-4" />
                 <span>Ảnh/Video</span>
@@ -266,8 +269,8 @@ export default function CreatePostBox({
                 name="text"
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
-                placeholder={`${displayName} ơi, bạn đang nghĩ gì thế?`}
-                className="min-h-[140px] resize-none border-0 p-0 text-lg focus-visible:ring-0"
+                placeholder={`${displayName} ơi, bạn đang nghĩ gì thế ?`}
+                className="min-h-[140px] resize-none text-lg "
               />
 
               {/* thêm vào bài viết + nút chọn media */}
@@ -285,7 +288,7 @@ export default function CreatePostBox({
                     >
                       <ImageIcon className="h-4 w-4" />
                     </Button>
-                    <Button
+                    {/* <Button
                       type="button"
                       className="inline-flex h-8 w-8 items-center justify-center rounded-full cursor-pointer"
                       variant="outline"
@@ -305,7 +308,7 @@ export default function CreatePostBox({
                       variant="outline"
                     >
                       <MapPin className="h-4 w-4" />
-                    </Button>
+                    </Button> */}
                   </div>
                 </div>
 

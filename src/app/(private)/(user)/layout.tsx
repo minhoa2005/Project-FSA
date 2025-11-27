@@ -6,7 +6,7 @@ import React from 'react'
 
 export default async function layout({ children }) {
     return (
-        <div>
+        <div className=''>
             <PrivateRoute allowedRoles={['User']}>
                 <Header />
                 {children}
