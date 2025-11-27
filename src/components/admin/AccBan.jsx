@@ -35,6 +35,7 @@ export default function AccBan() {
             const res = await getAllAccBan()
             if (res.success) {
                 setAcc(res.data)
+                console.log(res.data)
             } else {
                 console.log("fetch all acc ban error!")
             }
@@ -94,7 +95,7 @@ export default function AccBan() {
                                 </TableCell>
 
                                 <TableCell>
-                                    {a.roleid === 1 ? 'Admin' : 'Khách'}
+                                    {a.roleId === 1 ? 'Admin' : 'Khách'}
                                 </TableCell>
 
                                 <TableCell>{new Date(a.createdAt).toLocaleString()}</TableCell>
@@ -107,65 +108,61 @@ export default function AccBan() {
 
                                 <TableCell className="text-right">
 
-                                    {a.roleid === 2 ?
-                                        <ToggleGroup type="multiple" variant="outline" spacing={2} size="sm">
-                                            {a.isActive === true ?
-                                                <ToggleGroupItem
-                                                    value="ban"
-                                                    aria-label="Toggle ban"
-                                                    className="data-[state=on]:bg-red-100 data-[state=on]:text-red-600"
-                                                >
-                                                    <AlertDialog>
-                                                        <AlertDialogTrigger asChild>
-                                                            <span ><Ban /></span>
-                                                        </AlertDialogTrigger>
-                                                        <AlertDialogContent>
-                                                            <AlertDialogHeader>
-                                                                <AlertDialogTitle>Bạn có chắc chắn muốn cấm tài khoản này?</AlertDialogTitle>
-                                                                <AlertDialogDescription>
-                                                                    Vui lòng xác nhận để tiếp tục hành động!
-                                                                </AlertDialogDescription>
-                                                            </AlertDialogHeader>
-                                                            <AlertDialogFooter>
-                                                                <AlertDialogCancel>Hủy</AlertDialogCancel>
-                                                                <AlertDialogAction onClick={() => handleBan(a.id)}>
-                                                                    Cấm
-                                                                </AlertDialogAction>
-                                                            </AlertDialogFooter>
-                                                        </AlertDialogContent>
-                                                    </AlertDialog>
-                                                </ToggleGroupItem>
-                                                :
-                                                <ToggleGroupItem
-                                                    value="unlock"
-                                                    aria-label="Toggle unlock"
-                                                    className="data-[state=on]:bg-green-100 data-[state=on]:text-green-600"
-                                                >
-                                                    <AlertDialog>
-                                                        <AlertDialogTrigger asChild>
-                                                            <span><Unlock /></span>
-                                                        </AlertDialogTrigger>
+                                    <ToggleGroup type="multiple" variant="outline" spacing={2} size="sm">
+                                        {a.isActive === true ?
+                                            <ToggleGroupItem
+                                                value="ban"
+                                                aria-label="Toggle ban"
+                                                className="data-[state=on]:bg-red-100 data-[state=on]:text-red-600"
+                                            >
+                                                <AlertDialog>
+                                                    <AlertDialogTrigger asChild>
+                                                        <span ><Ban /></span>
+                                                    </AlertDialogTrigger>
+                                                    <AlertDialogContent>
+                                                        <AlertDialogHeader>
+                                                            <AlertDialogTitle>Bạn có chắc chắn muốn cấm tài khoản này?</AlertDialogTitle>
+                                                            <AlertDialogDescription>
+                                                                Vui lòng xác nhận để tiếp tục hành động!
+                                                            </AlertDialogDescription>
+                                                        </AlertDialogHeader>
+                                                        <AlertDialogFooter>
+                                                            <AlertDialogCancel>Hủy</AlertDialogCancel>
+                                                            <AlertDialogAction onClick={() => handleBan(a.id)}>
+                                                                Cấm
+                                                            </AlertDialogAction>
+                                                        </AlertDialogFooter>
+                                                    </AlertDialogContent>
+                                                </AlertDialog>
+                                            </ToggleGroupItem>
+                                            :
+                                            <ToggleGroupItem
+                                                value="unlock"
+                                                aria-label="Toggle unlock"
+                                                className="data-[state=on]:bg-green-100 data-[state=on]:text-green-600"
+                                            >
+                                                <AlertDialog>
+                                                    <AlertDialogTrigger asChild>
+                                                        <span><Unlock /></span>
+                                                    </AlertDialogTrigger>
 
-                                                        <AlertDialogContent>
-                                                            <AlertDialogHeader>
-                                                                <AlertDialogTitle>Bạn có chắc chắn muốn mở khóa tài khoản này?</AlertDialogTitle>
-                                                                <AlertDialogDescription>
-                                                                    Vui lòng xác nhận để tiếp tục hành động!
-                                                                </AlertDialogDescription>
-                                                            </AlertDialogHeader>
+                                                    <AlertDialogContent>
+                                                        <AlertDialogHeader>
+                                                            <AlertDialogTitle>Bạn có chắc chắn muốn mở khóa tài khoản này?</AlertDialogTitle>
+                                                            <AlertDialogDescription>
+                                                                Vui lòng xác nhận để tiếp tục hành động!
+                                                            </AlertDialogDescription>
+                                                        </AlertDialogHeader>
 
-                                                            <AlertDialogFooter>
-                                                                <AlertDialogCancel>Hủy</AlertDialogCancel>
-                                                                <AlertDialogAction onClick={() => handleUnBan(a.id)}>Mở khóa</AlertDialogAction>
-                                                            </AlertDialogFooter>
-                                                        </AlertDialogContent>
-                                                    </AlertDialog>
-                                                </ToggleGroupItem>
-                                            }
-                                        </ToggleGroup>
-                                        :
-                                        ''
-                                    }
+                                                        <AlertDialogFooter>
+                                                            <AlertDialogCancel>Hủy</AlertDialogCancel>
+                                                            <AlertDialogAction onClick={() => handleUnBan(a.id)}>Mở khóa</AlertDialogAction>
+                                                        </AlertDialogFooter>
+                                                    </AlertDialogContent>
+                                                </AlertDialog>
+                                            </ToggleGroupItem>
+                                        }
+                                    </ToggleGroup>
 
                                 </TableCell>
                             </TableRow>

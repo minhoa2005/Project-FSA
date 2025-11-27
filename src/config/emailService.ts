@@ -85,11 +85,11 @@ const sendAccCreateByAdminToCus = async (to: string, password: string) => {
                     border-left:5px solid #007bff;
                     margin:20px 0;
                 ">
-                    <p style="margin:0; font-size:15px; color:#333;">
-                        <b>Email:</b> ${to}
+                    <p style="margin:0; font-size:15px; color: red">
+                        <b style ="color: red; font-bold">Email:</b> ${to}
                     </p>
-                    <p style="margin:0; font-size:15px; color:#333;">
-                        <b>Password:</b> ${password}
+                    <p style="margin:0; font-size:15px; color: red">
+                        <b style="color: red; font-bold">Password:</b> ${password}
                     </p>
                 </div>
 

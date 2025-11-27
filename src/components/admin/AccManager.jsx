@@ -151,7 +151,7 @@ export function AccManager() {
                             </TableCell>
 
                             <TableCell>
-                                {a.roleid === 1 ? 'Admin' : 'Khách'}
+                                {a.roleId === 1 ? 'Admin' : 'Khách'}
                             </TableCell>
 
                             <TableCell>{new Date(a.createdAt).toLocaleString()}</TableCell>
@@ -164,7 +164,7 @@ export function AccManager() {
 
                             <TableCell className="text-right">
 
-                                {a.roleid === 2 ?
+                                {a.roleId === 2 ?
                                     <ToggleGroup type="multiple" variant="outline" spacing={2} size="sm">
                                         {a.isActive === true ?
                                             <ToggleGroupItem
