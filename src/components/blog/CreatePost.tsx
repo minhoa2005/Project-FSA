@@ -90,11 +90,8 @@ export default function CreatePostBox({
 
       formData.set("creatorId", String(currentUser.id));
 
-      const response = await createBlog(formData);
-      if (!response.success) {
-        toast.error(response.message || "Đã có lỗi xảy ra khi tạo bài viết.");
-        return;
-      }
+      await createBlog(formData);
+
       toast.success("Đã tạo bài viết thành công!");
       setContent("");
       setFiles([]);
