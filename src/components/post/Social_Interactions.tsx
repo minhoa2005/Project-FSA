@@ -29,6 +29,7 @@ export const findRootCommentId = (comments: CommentData[], targetId: string): st
         if (c.id === targetId) return c.id;
         if (c.replies && hasCommentId(c.replies, targetId)) return c.id;
     }
+
     return null;
 };
 

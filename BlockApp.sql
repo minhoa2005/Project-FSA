@@ -90,7 +90,7 @@ GO
 
 CREATE TABLE Blogs (
     id INT IDENTITY(1,1) PRIMARY KEY,
-    text TEXT,
+    text NVARCHAR(MAX),
     image VARCHAR(255),
     video VARCHAR(255),
     creatorId INT NOT NULL,
@@ -133,6 +133,15 @@ CREATE TABLE Messages (
     FOREIGN KEY (receiverId) REFERENCES Account(id)
 );
 GO
+
+CREATE TABLE Reports (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    blogId INT NULL,
+    reason VARCHAR(255) NOT NULL,
+    status VARCHAR(20) DEFAULT 'Pending',
+    createdAt DATETIME DEFAULT GETDATE(),
+    FOREIGN KEY (blogId) REFERENCES Blogs(id),
+)
 
 GO
 

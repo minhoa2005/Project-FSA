@@ -24,6 +24,7 @@ import {
   X,
 } from "lucide-react";
 import Image from "next/image";
+import { toast } from "sonner";
 
 interface CurrentUser {
   id: number;
@@ -89,8 +90,12 @@ export default function CreatePostBox({
 
       formData.set("creatorId", String(currentUser.id));
 
-      await createBlog(formData);
-
+      const response = await createBlog(formData);
+      if (!response.success) {
+        toast.error(response.message || "Đã có lỗi xảy ra khi tạo bài viết.");
+        return;
+      }
+      toast.success("Đã tạo bài viết thành công!");
       setContent("");
       setFiles([]);
       if (fileInputRef.current) {

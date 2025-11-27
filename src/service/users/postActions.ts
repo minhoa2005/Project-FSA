@@ -10,133 +10,156 @@ const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads");
 const FEED_PATH = "/(private)/(user)";
 
 export async function createBlog(formData: FormData) {
-  const pool = await connectDB();
+  try {
+    const pool = await connectDB();
 
-  const textRaw = (formData.get("text") as string) || "";
-  const text = textRaw.trim() || null;
-  const creatorId = Number(formData.get("creatorId"));
+    const textRaw = (formData.get("text") as string) || "";
+    const text = textRaw.trim() || null;
+    const creatorId = Number(formData.get("creatorId"));
 
-  if (!creatorId) {
-    throw new Error("creatorId is required");
-  }
+    if (!creatorId) {
+      throw new Error("creatorId is required");
+    }
 
-  // 1. tạo blog
-  const result = await pool
-    .request()
-    .input("text", sql.NVarChar(sql.MAX), text) // dùng NVARCHAR để không bị ??? tiếng Việt
-    .input("creatorId", sql.Int, creatorId)
-    .query(`
+    // 1. tạo blog
+    const result = await pool
+      .request()
+      .input("text", sql.NVarChar(sql.MAX), text) // dùng NVARCHAR để không bị ??? tiếng Việt
+      .input("creatorId", sql.Int, creatorId)
+      .query(`
       INSERT INTO Blogs(text, creatorId)
       OUTPUT inserted.id
       VALUES (@text, @creatorId)
     `);
 
-  const blogId = result.recordset[0].id as number;
+    const blogId = result.recordset[0].id as number;
 
-  // 2. xử lý nhiều file media
-  const mediaFiles = formData.getAll("media") as File[];
+    // 2. xử lý nhiều file media
+    const mediaFiles = formData.getAll("media") as File[];
 
-  await fs.mkdir(UPLOAD_DIR, { recursive: true });
+    await fs.mkdir(UPLOAD_DIR, { recursive: true });
 
-  for (const file of mediaFiles) {
-    if (!file || file.size === 0) continue;
+    for (const file of mediaFiles) {
+      if (!file || file.size > 100 * 1024 * 1024) {
+        return {
+          success: false, message: "File vượt quá kích thước cho phép 100MB"
+        }
+      }
 
-    const bytes = Buffer.from(await file.arrayBuffer());
-    const safeName = removeVietnameseSigns(file.name).replace(/\s+/g, "-");
-    const fileName = `${Date.now()}-${safeName}`;
-    const filePath = path.join(UPLOAD_DIR, fileName);
+      const bytes = Buffer.from(await file.arrayBuffer());
+      const safeName = removeVietnameseSigns(file.name).replace(/\s+/g, "-");
+      const fileName = `${Date.now()}-${safeName}`;
+      const filePath = path.join(UPLOAD_DIR, fileName);
 
-    await fs.writeFile(filePath, bytes);
+      await fs.writeFile(filePath, bytes);
 
-    const publicUrl = `/uploads/${fileName}`;
-    const type = file.type.startsWith("image/")
-      ? "image"
-      : file.type.startsWith("video/")
-        ? "video"
-        : "other";
+      const publicUrl = `/uploads/${fileName}`;
+      const type = file.type.startsWith("image/")
+        ? "image"
+        : file.type.startsWith("video/")
+          ? "video"
+          : "other";
 
-    await pool
-      .request()
-      .input("blogId", sql.Int, blogId)
-      .input("url", sql.VarChar(255), publicUrl)
-      .input("type", sql.VarChar(20), type)
-      .query(
-        "INSERT INTO BlogMedia(blogId, mediaUrl, mediaType) VALUES (@blogId, @url, @type)",
-      );
+      await pool
+        .request()
+        .input("blogId", sql.Int, blogId)
+        .input("url", sql.VarChar(255), publicUrl)
+        .input("type", sql.VarChar(20), type)
+        .query(
+          "INSERT INTO BlogMedia(blogId, mediaUrl, mediaType) VALUES (@blogId, @url, @type)",
+        );
+    }
+    revalidatePath(FEED_PATH);
+    return {
+      success: true
+    }
+  } catch (error) {
+    console.error("Error in createBlog:", error);
+    return {
+      success: false, message: "Lỗi hệ thống, vui lòng thử lại sau"
+    }
   }
-
-
-  revalidatePath(FEED_PATH);
-
 
 }
 export async function updateBlog(formData: FormData) {
-  const pool = await connectDB();
+  try {
+    const pool = await connectDB();
 
-  const blogId = Number(formData.get("blogId"));
-  const textRaw = (formData.get("text") as string) || "";
-  const text = textRaw.trim() || null;
+    const blogId = Number(formData.get("blogId"));
+    const textRaw = (formData.get("text") as string) || "";
+    const text = textRaw.trim() || null;
 
-  const removeIdsRaw = (formData.get("removeMediaIds") as string) || "";
-  const removeIds = removeIdsRaw
-    .split(",")
-    .map((s) => parseInt(s.trim(), 10))
-    .filter((n) => !isNaN(n));
+    const removeIdsRaw = (formData.get("removeMediaIds") as string) || "";
+    const removeIds = removeIdsRaw
+      .split(",")
+      .map((s) => parseInt(s.trim(), 10))
+      .filter((n) => !isNaN(n));
 
-  if (!blogId) throw new Error("blogId is required");
+    if (!blogId) throw new Error("blogId is required");
 
-  // update text
-  await pool
-    .request()
-    .input("id", sql.Int, blogId)
-    .input("text", sql.NVarChar(sql.MAX), text)
-    .query(
-      "UPDATE Blogs SET text = @text, updatedAt = GETDATE() WHERE id = @id",
-    );
-
-  // xóa media cũ
-  if (removeIds.length > 0) {
+    // update text
     await pool
       .request()
+      .input("id", sql.Int, blogId)
+      .input("text", sql.NVarChar(sql.MAX), text)
       .query(
-        `DELETE FROM BlogMedia WHERE id IN (${removeIds
-          .map((n) => Number(n))
-          .join(",")})`,
+        "UPDATE Blogs SET text = @text, updatedAt = GETDATE() WHERE id = @id",
       );
+
+    // xóa media cũ
+    if (removeIds.length > 0) {
+      await pool
+        .request()
+        .query(
+          `DELETE FROM BlogMedia WHERE id IN (${removeIds
+            .map((n) => Number(n))
+            .join(",")})`,
+        );
+    }
+
+    // thêm media mới
+    const newMedia = formData.getAll("newMedia") as File[];
+    await fs.mkdir(UPLOAD_DIR, { recursive: true });
+
+    for (const file of newMedia) {
+      if (!file || file.size > 100 * 1024 * 1024) {
+        return {
+          success: false, message: "File vượt quá kích thước cho phép 100MB"
+        }
+      };
+
+      const bytes = Buffer.from(await file.arrayBuffer());
+      const safeName = removeVietnameseSigns(file.name).replace(/\s+/g, "-");
+      const fileName = `${Date.now()}-${safeName}`;
+      const filePath = path.join(UPLOAD_DIR, fileName);
+
+      await fs.writeFile(filePath, bytes);
+
+      const publicUrl = `/uploads/${fileName}`;
+      const type = file.type.startsWith("image/")
+        ? "image"
+        : file.type.startsWith("video/")
+          ? "video"
+          : "other";
+
+      await pool
+        .request()
+        .input("blogId", sql.Int, blogId)
+        .input("url", sql.VarChar(255), publicUrl)
+        .input("type", sql.VarChar(20), type)
+        .query(
+          "INSERT INTO BlogMedia(blogId, mediaUrl, mediaType) VALUES (@blogId, @url, @type)",
+        );
+    }
+
+    revalidatePath(FEED_PATH);
+    return { success: true };
+  } catch (error) {
+    console.error("Error in updateBlog:", error);
+    return {
+      success: false, message: "Lỗi hệ thống, vui lòng thử lại sau"
+    }
   }
-
-  // thêm media mới
-  const newMedia = formData.getAll("newMedia") as File[];
-  await fs.mkdir(UPLOAD_DIR, { recursive: true });
-
-  for (const file of newMedia) {
-    if (!file || file.size === 0) continue;
-
-    const bytes = Buffer.from(await file.arrayBuffer());
-    const safeName = removeVietnameseSigns(file.name).replace(/\s+/g, "-");
-    const fileName = `${Date.now()}-${safeName}`;
-    const filePath = path.join(UPLOAD_DIR, fileName);
-
-    await fs.writeFile(filePath, bytes);
-
-    const publicUrl = `/uploads/${fileName}`;
-    const type = file.type.startsWith("image/")
-      ? "image"
-      : file.type.startsWith("video/")
-        ? "video"
-        : "other";
-
-    await pool
-      .request()
-      .input("blogId", sql.Int, blogId)
-      .input("url", sql.VarChar(255), publicUrl)
-      .input("type", sql.VarChar(20), type)
-      .query(
-        "INSERT INTO BlogMedia(blogId, mediaUrl, mediaType) VALUES (@blogId, @url, @type)",
-      );
-  }
-
-  revalidatePath(FEED_PATH);
 }
 export async function getBlogs(currentUserId?: number) {
   const pool = await connectDB();
@@ -250,7 +273,7 @@ function buildCommentTree(comments: any[], userLikedCommentIds: Set<number>, com
 
     comments.forEach((c) => {
       map.set(c.id, {
-        id: String(c.id),
+        id: c.id,
         author: c.fullName || c.username || "User",
         avatar: c.imgUrl || "",
         content: c.text,

@@ -36,7 +36,6 @@ export function CommentItem({
     const [showReplyForm, setShowReplyForm] = useState(false);
     const [replyText, setReplyText] = useState("");
     const isLiked = likedComments.has(comment.id);
-    const { user } = useUser();
 
     // Xử lý like/unlike
     const handleLike = () => {
@@ -82,8 +81,8 @@ export function CommentItem({
                     <div className="rounded-2xl px-3 py-2 border">
                         <div className="flex flex-row items-center mb-1 gap-2">
                             <Avatar className="w-10 h-10 ">
-                                <AvatarImage src={user?.imgUrl} alt="A" />
-                                <AvatarFallback>{getInitials(user?.username)}</AvatarFallback>
+                                <AvatarImage src={comment?.avatar} alt="A" />
+                                <AvatarFallback>{getInitials(comment?.author)}</AvatarFallback>
                             </Avatar>
                             <p className="text-sm">{comment.author}</p>
                         </div>
