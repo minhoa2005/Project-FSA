@@ -273,7 +273,7 @@ function buildCommentTree(comments: any[], userLikedCommentIds: Set<number>, com
 
     comments.forEach((c) => {
       map.set(c.id, {
-        id: String(c.id),
+        id: c.id,
         author: c.fullName || c.username || "User",
         avatar: c.imgUrl || "",
         content: c.text,

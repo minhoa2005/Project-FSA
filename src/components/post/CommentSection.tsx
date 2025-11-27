@@ -43,6 +43,8 @@ export function CommentSection({
         onLikeComment(commentId, isLiked);
     };
 
+
+
     return (
         <div className="px-4 py-3 w-full border-t">
             {/* Danh sách comments - Sử dụng CommentItem đệ quy */}

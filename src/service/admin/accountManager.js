@@ -1,4 +1,5 @@
 "use server"
+import { randomPassword } from "@/lib/function";
 import bcrypt from "bcryptjs";
 const { connectDB } = require("@/config/db")
 
@@ -18,6 +19,14 @@ const getAllUser = async () => {
         console.log("error get info all account", err)
         return (null)
     }
+}
+
+export const getEmailAccById = async (id) => {
+    const result = await pool.request()
+        .input('id', id)
+        .query(`select * from account where id= @id`)
+        // console.log(result.recordset[0])
+    return result.recordset[0]
 }
 
 export const getAllEmail = async () => {
@@ -118,6 +127,23 @@ const unBanAcc = async (id) => {
     return result;
 }
 
+
+export const resetPassByAdmin = async (id) => {
+
+    const newPass = randomPassword();
+    // console.log(newPass)
+
+    const salt = await bcrypt.genSalt(10)
+    const hashPass = await bcrypt.hash(newPass, salt)
+
+    const result = await pool.request()
+        .input('id', id).input('pass', hashPass)
+        .query(`update account set password = @pass where id = @id`)
+    return {
+        success: result,
+        newPass: newPass
+    }
+}
 
 
 export { getAllUser, filterAcc, banAcc, unBanAcc, getAllAccBan }
