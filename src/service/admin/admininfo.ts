@@ -1,7 +1,6 @@
 "use server"
 
 import bcrypt from "bcryptjs";
-import { request } from "http";
 
 const { default: unauthorized } = require("@/app/unauthorized");
 const { getCookie } = require("@/config/cookie");

@@ -9,6 +9,7 @@ import { sendAccCreateByAdminToCus } from '@/config/emailService'
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '../ui/breadcrumb'
 import Link from 'next/link'
 import { SlashIcon } from 'lucide-react'
+import BreadcrumbAdmin from './Breadcrumb'
 
 export default function AccCreate() {
 
@@ -57,21 +58,7 @@ export default function AccCreate() {
 
     return (
         <div>
-            <Breadcrumb>
-                <BreadcrumbList className={'text-base py-3'}>
-                    <BreadcrumbItem>
-                        <BreadcrumbLink asChild>
-                            <Link href="/admin">Dashboard</Link>
-                        </BreadcrumbLink>
-                    </BreadcrumbItem>
-                    <BreadcrumbSeparator>
-                        <SlashIcon />
-                    </BreadcrumbSeparator>
-                    <BreadcrumbItem >
-                        <BreadcrumbPage className={'font-medium'}>Thêm tài khoản mới</BreadcrumbPage>
-                    </BreadcrumbItem>
-                </BreadcrumbList>
-            </Breadcrumb>
+            <BreadcrumbAdmin />
             <div className='flex items-center justify-center'>
                 <div className='flex-1 flex items-center justify-center'>
                     <Card className="w-200 border-0 shadow-none">
@@ -130,6 +117,6 @@ export default function AccCreate() {
                     </Card>
                 </div>
             </div >
-        </div>
+        </div >
     )
 }
