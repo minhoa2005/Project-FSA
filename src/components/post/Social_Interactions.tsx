@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 
 export interface CommentData {
     id: string;
+    userId?: number;
     author: string;
     avatar: string;
     content: string;
@@ -11,6 +12,7 @@ export interface CommentData {
     replies?: CommentData[];
     replyTo?: string;
     parentId?: string | number;
+    isHidden?: boolean; 
 }
 
 // --- Helpers ---
@@ -60,7 +62,6 @@ export function usePostInteractions(initialPost: InitialPostData, onInteractionU
     const [showComments, setShowComments] = useState(false);
     const [showShareDialog, setShowShareDialog] = useState(false);
 
-    // FIX LOOP: Dùng JSON.stringify để so sánh deep equality
     useEffect(() => {
         setLocalPost(prev => {
             if (JSON.stringify(prev) === JSON.stringify(initialPost)) return prev;
@@ -82,23 +83,22 @@ export function usePostInteractions(initialPost: InitialPostData, onInteractionU
         onInteractionUpdate(updated);
     };
 
-    // FIX: Nhận tempId từ UI để hiển thị ngay
     const handleAddComment = (text: string, tempId: string, currentUserInfo?: { name: string, avatar: string }) => {
-        const newC: CommentData = {
-            id: tempId,
-            author: currentUserInfo?.name || "Bạn",
-            avatar: currentUserInfo?.avatar || "",
-            content: text,
-            timestamp: "Đang gửi...",
-            likes: 0,
-            replies: []
+        const newC: CommentData = { 
+            id: tempId, 
+            author: currentUserInfo?.name || "Bạn", 
+            avatar: currentUserInfo?.avatar || "", 
+            content: text, 
+            timestamp: "Đang gửi...", 
+            likes: 0, 
+            replies: [],
+            isHidden: false
         };
         const updated = { ...localPost, comments: [...localPost.comments, newC] };
         setLocalPost(updated);
         onInteractionUpdate(updated);
     };
 
-    // FIX: Nhận tempId từ UI
     const handleAddReply = (targetId: string, text: string, tempId: string, currentUserInfo?: { name: string, avatar: string }) => {
         const rootParentId = findRootCommentId(localPost.comments, targetId);
         const effectiveRootId = rootParentId || targetId;
@@ -113,7 +113,8 @@ export function usePostInteractions(initialPost: InitialPostData, onInteractionU
             timestamp: "Đang gửi...",
             likes: 0,
             replyTo: isReplyingToChild ? (replyToAuthor || undefined) : undefined,
-            replies: []
+            replies: [],
+            isHidden: false
         };
 
         const updatedComments = localPost.comments.map(c => {
@@ -128,16 +129,11 @@ export function usePostInteractions(initialPost: InitialPostData, onInteractionU
         onInteractionUpdate(updated);
     };
 
-    // === NEW: Hàm thay thế tempId bằng realData sau khi Server trả về ===
     const handleCommentSuccess = (tempId: string, realData: CommentData) => {
         const replaceRecursive = (list: CommentData[]): CommentData[] => {
             return list.map(c => {
                 if (c.id === tempId) {
-                    // Giữ lại replies nếu trong lúc chờ user đã kịp reply vào comment ảo
-                    return {
-                        ...realData,
-                        replies: c.replies || []
-                    };
+                    return { ...realData, replies: c.replies || [] }; 
                 }
                 if (c.replies && c.replies.length > 0) {
                     return { ...c, replies: replaceRecursive(c.replies) };
@@ -145,11 +141,7 @@ export function usePostInteractions(initialPost: InitialPostData, onInteractionU
                 return c;
             });
         };
-
-        setLocalPost(prev => {
-            const updatedComments = replaceRecursive(prev.comments);
-            return { ...prev, comments: updatedComments };
-        });
+        setLocalPost(prev => ({ ...prev, comments: replaceRecursive(prev.comments) }));
     };
 
     const handleLikeComment = (cmtId: string) => {
@@ -169,11 +161,38 @@ export function usePostInteractions(initialPost: InitialPostData, onInteractionU
                 return c;
             });
         };
-
         const updated = { ...localPost, comments: toggleRecursive(localPost.comments) };
         setLocalPost(updated);
         onInteractionUpdate(updated);
     };
+
+    // --- XỬ LÝ SỬA COMMENT ---
+    const handleEditComment = (cmtId: string, newText: string) => {
+        const editRecursive = (list: CommentData[]): CommentData[] => {
+            return list.map(c => {
+                if (c.id === cmtId) return { ...c, content: newText };
+                if (c.replies && c.replies.length > 0) return { ...c, replies: editRecursive(c.replies) };
+                return c;
+            });
+        };
+        const updated = { ...localPost, comments: editRecursive(localPost.comments) };
+        setLocalPost(updated);
+        onInteractionUpdate(updated);
+    }
+
+    // --- XỬ LÝ ẨN/HIỆN COMMENT ---
+    const handleToggleHideComment = (cmtId: string) => {
+        const toggleHideRecursive = (list: CommentData[]): CommentData[] => {
+            return list.map(c => {
+                if (c.id === cmtId) return { ...c, isHidden: !c.isHidden };
+                if (c.replies && c.replies.length > 0) return { ...c, replies: toggleHideRecursive(c.replies) };
+                return c;
+            });
+        };
+        const updated = { ...localPost, comments: toggleHideRecursive(localPost.comments) };
+        setLocalPost(updated);
+        onInteractionUpdate(updated);
+    }
 
     const handleShare = (type: string) => {
         setLocalPost(prev => ({ ...prev, shares: prev.shares + 1 }));
@@ -185,11 +204,13 @@ export function usePostInteractions(initialPost: InitialPostData, onInteractionU
         currentLikes: localPost.likes,
         totalComments: countAllComments(localPost.comments),
         localPostComments: localPost.comments,
-        handleLike, setShowComments, setShowShareDialog,
-        handleAddComment,
-        handleAddReply,
-        handleCommentSuccess, // Export function này
+        handleLike, setShowComments, setShowShareDialog, 
+        handleAddComment, 
+        handleAddReply, 
+        handleCommentSuccess, 
         handleLikeComment,
+        handleEditComment, 
+        handleToggleHideComment, 
         handleShare,
         setLocalPost
     };
