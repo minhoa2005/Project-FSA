@@ -9,7 +9,7 @@ import { toast } from 'sonner'
 import InfoSectionSkeleton from './InfoSectionSkeleton'
 
 
-export default function InfoSection({ className }) {
+export default function InfoSection({ className }: { className?: string }) {
     const [fetching, setFetching] = useState(false);
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(false);

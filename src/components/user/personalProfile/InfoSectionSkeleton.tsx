@@ -1,4 +1,4 @@
-import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import React from 'react'
 
@@ -6,7 +6,7 @@ export default function InfoSectionSkeleton({ className }: { className?: string 
     return (
         <Card className={`${className}`}>
             <CardHeader>
-                <Skeleton className="h-8 w-56" />
+                <CardTitle className='text-2xl'>Thông tin cá nhân</CardTitle>
             </CardHeader>
             <CardContent>
                 <div className=''>

@@ -41,6 +41,7 @@ import {
 } from "@/components/post/Social_Interactions";
 import { CommentSection } from "@/components/post/CommentSection";
 import { ShareDialog } from "@/components/post/ShareDialog";
+import { toast } from "sonner";
 
 interface PostCardProps {
   post: any;
@@ -182,8 +183,19 @@ export default function PostCard({
     }
   };
 
+  const confirmDelete = () => {
+    toast('Bạn có chắc muốn xóa bài viết này?', {
+      action: {
+        label: 'Xoá',
+        onClick: () => {
+          handleDelete();
+        }
+      },
+      position: 'top-center',
+    })
+  }
+
   const handleDelete = async () => {
-    if (!confirm("Bạn có chắc chắn muốn xóa bài viết này không?")) return;
     try {
       setSubmitting(true);
       const fd = new FormData();
@@ -241,8 +253,7 @@ export default function PostCard({
               <DropdownMenuItem
                 className="text-destructive"
                 onSelect={(e) => {
-                  e.preventDefault();
-                  void handleDelete();
+                  void confirmDelete();
                 }}
               >
                 Xóa bài viết
@@ -317,7 +328,6 @@ export default function PostCard({
           <form
             action={handleUpdate}
             className="space-y-3"
-            encType="multipart/form-data"
           >
             <input type="hidden" name="blogId" value={post.id} />
             <input
