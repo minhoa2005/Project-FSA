@@ -49,6 +49,7 @@ CREATE TABLE AdminProfile (
     phoneNumber VARCHAR(15),
     dob DATE,
     imgUrl VARCHAR(255),
+    coverImg VARCHAR(255),
     createdAt DATETIME DEFAULT GETDATE(),
     updatedAt DATETIME DEFAULT GETDATE()
 );
@@ -61,6 +62,7 @@ CREATE TABLE UserProfile (
     phoneNumber VARCHAR(15),
     dob DATE,
     imgUrl VARCHAR(255),
+    coverImg VARCHAR(255),
     createdAt DATETIME DEFAULT GETDATE(),
     updatedAt DATETIME DEFAULT GETDATE()
 );
