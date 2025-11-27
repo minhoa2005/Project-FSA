@@ -5,6 +5,7 @@ import path from "path";
 import { connectDB, sql } from "@/config/db";
 import { revalidatePath } from "next/cache";
 import { removeVietnameseSigns } from "@/lib/formatter";
+import { Transaction } from "mssql";
 
 const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads");
 const FEED_PATH = "/(private)/(user)";
@@ -242,18 +243,31 @@ export async function getBlogs(currentUserId?: number) {
     return Array.from(blogMap.values())
   } catch (error) {
     console.error("[getBlogs] Error:", error);
-    return { success: false, message: error instanceof Error ? error.message : "Failed to fetch blogs", data: [] };
   }
 }
 
 export async function deleteBlog(formData: FormData) {
+  const pool = await connectDB();
+  const transaction = new sql.Transaction(pool);
   try {
-    const pool = await connectDB();
     const id = Number(formData.get("blogId"));
     if (!id) {
       return { success: false, message: "blogId is required" };
     }
+    await transaction.begin();
+    //Xoá comment likes
+    await pool.request().input("blogId", sql.Int, id).query(`
+        DELETE CL FROM CommentLikes CL JOIN Comments C ON CL.commentId = C.id WHERE C.blogId = @blogId
+      `);
+    //Xoa comments
+    await pool.request().input("blogId", sql.Int, id).query(`
+        DELETE FROM Comments WHERE blogId = @blogId
+      `);
 
+    //Xoa like
+    await pool.request().input("blogId", sql.Int, id).query(`
+        DELETE FROM [Like] WHERE blogId = @blogId
+      `)
     // xóa media
     await pool.request()
       .input("blogId", sql.Int, id)
@@ -265,8 +279,10 @@ export async function deleteBlog(formData: FormData) {
       .query(`DELETE FROM Blogs WHERE id = @id`);
 
     revalidatePath("/(private)/(user)");
+    await transaction.commit();
     return { success: true, message: "Blog deleted successfully" };
   } catch (error) {
+    await transaction.rollback();
     console.error("[deleteBlog] Error:", error);
     return { success: false, message: error instanceof Error ? error.message : "Failed to delete blog" };
   }
