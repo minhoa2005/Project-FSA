@@ -1,11 +1,13 @@
 import PersonalPage from '@/components/user/personalPage/PersonalPage'
+import { getPersonalInfoById } from '@/service/users/personalInfo';
 import React from 'react'
 
-export default function page({ params }: { params: { id: string } }) {
-    const
+export default async function page({ params }: { params: { id: string } }) {
+    const { id } = await params;
+    const data = await getPersonalInfoById(parseInt(id));
     return (
         <div>
-            <PersonalPage />
+            <PersonalPage data={data.data} />
         </div>
     )
 }

@@ -164,7 +164,7 @@ export default function PostCard({
   };
 
   const createdAt = new Date(post.createdAt).toLocaleString("vi-VN");
-  const displayName = post.fullName || post.username || `User #${post.creatorId}`;
+  const displayName = post.username || `User #${post.creatorId}`;
   const avatarUrl = post.imgUrl || post.avatarUrl || "";
   const avatarFallback = displayName.split(" ").map((w: string) => w[0]).join("").toUpperCase() || "U";
 

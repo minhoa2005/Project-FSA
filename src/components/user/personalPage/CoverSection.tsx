@@ -16,11 +16,11 @@ export default function CoverSection({ className, user }: { className?: string, 
                 <div className='absolute bottom-[-130px] left-5 grid grid-cols-2 gap-3' >
                     <Avatar className='w-40 h-40 border-4 border-primary'>
                         <AvatarImage src={user?.imgUrl} />
-                        <AvatarFallback>{getInitials(user?.username)}</AvatarFallback>
+                        <AvatarFallback>{getInitials(user?.fullName)}</AvatarFallback>
                     </Avatar>
                     <div className='self-center flex flex-col'>
-                        <p className='text-2xl font-semibold'>{user?.username}</p>
-                        <p>followers</p>
+                        <p className='text-2xl font-semibold'>{user?.fullName}</p>
+                        <p className='text-muted-foreground'>@{user?.username}</p>
                     </div>
                 </div>
             </div>

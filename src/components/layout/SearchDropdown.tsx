@@ -63,7 +63,7 @@ export default function SearchDropdown() {
           {results.users.map((user) => (
             <Link
               key={user.id}
-              href={`/personal/${user.username}`}
+              href={`/personal/${user.id}`}
               onClick={() => setQuery('')}
               className="flex items-center gap-3 p-3 hover:bg-accent transition-colors"
             >
