@@ -59,12 +59,12 @@ export default function PostCard({
   const [submitting, setSubmitting] = useState(false);
   const [removedMediaIds, setRemovedMediaIds] = useState<number[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  
+
   // Placeholder thông tin user hiện tại (Để hiển thị ngay lập tức)
   // Bạn nên thay bằng hook useUser() hoặc truyền từ props nếu có
-  const currentUserInfo = { 
-    name: "Bạn", 
-    avatar: "" 
+  const currentUserInfo = {
+    name: "Bạn",
+    avatar: ""
   };
 
   const {
@@ -109,19 +109,19 @@ export default function PostCard({
   const onAddCommentClick = async (text: string) => {
     // 1. Tạo Temp ID
     const tempId = `temp-${Date.now()}`;
-    
+
     // 2. Hiển thị ngay lập tức (Optimistic UI)
     triggerAddCommentLocal(text, tempId, currentUserInfo);
-    
+
     try {
       // 3. Gọi Server
       const result = await addComment(post.id, currentUserId, text);
-      
+
       // 4. Khi có kết quả từ Server, cập nhật ID thật
       if (result && result.success && result.data) {
         handleCommentSuccess(tempId, result.data);
       } else {
-         toast.error("Gửi bình luận thất bại");
+        toast.error("Gửi bình luận thất bại");
       }
     } catch (e) {
       console.error(e);
@@ -138,11 +138,11 @@ export default function PostCard({
 
     const tempId = `temp-${Date.now()}`;
     triggerAddReplyLocal(targetId, text, tempId, currentUserInfo);
-    
+
     try {
       const result = await addComment(post.id, currentUserId, text, Number(targetId));
       if (result && result.success && result.data) {
-          handleCommentSuccess(tempId, result.data);
+        handleCommentSuccess(tempId, result.data);
       }
     } catch (e) {
       console.error("Reply error:", e);
@@ -164,7 +164,7 @@ export default function PostCard({
   };
 
   const createdAt = new Date(post.createdAt).toLocaleString("vi-VN");
-  const displayName = post.fullName || post.username || `User #${post.creatorId}`;
+  const displayName = post.username || `User #${post.creatorId}`;
   const avatarUrl = post.imgUrl || post.avatarUrl || "";
   const avatarFallback = displayName.split(" ").map((w: string) => w[0]).join("").toUpperCase() || "U";
 

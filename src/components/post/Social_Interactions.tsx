@@ -9,7 +9,7 @@ export interface CommentData {
     likes: number;
     isLiked?: boolean;
     replies?: CommentData[];
-    replyTo?: string; 
+    replyTo?: string;
     parentId?: string | number;
 }
 
@@ -67,9 +67,9 @@ export function usePostInteractions(initialPost: InitialPostData, onInteractionU
             return initialPost;
         });
         setIsLiked(prev => {
-             const newStatus = initialPost.isLiked || false;
-             if (prev === newStatus) return prev;
-             return newStatus;
+            const newStatus = initialPost.isLiked || false;
+            if (prev === newStatus) return prev;
+            return newStatus;
         });
     }, [JSON.stringify(initialPost)]);
 
@@ -84,14 +84,14 @@ export function usePostInteractions(initialPost: InitialPostData, onInteractionU
 
     // FIX: Nhận tempId từ UI để hiển thị ngay
     const handleAddComment = (text: string, tempId: string, currentUserInfo?: { name: string, avatar: string }) => {
-        const newC: CommentData = { 
-            id: tempId, 
-            author: currentUserInfo?.name || "Bạn", 
-            avatar: currentUserInfo?.avatar || "", 
-            content: text, 
-            timestamp: "Đang gửi...", 
-            likes: 0, 
-            replies: [] 
+        const newC: CommentData = {
+            id: tempId,
+            author: currentUserInfo?.name || "Bạn",
+            avatar: currentUserInfo?.avatar || "",
+            content: text,
+            timestamp: "Đang gửi...",
+            likes: 0,
+            replies: []
         };
         const updated = { ...localPost, comments: [...localPost.comments, newC] };
         setLocalPost(updated);
@@ -108,9 +108,9 @@ export function usePostInteractions(initialPost: InitialPostData, onInteractionU
         const newR: CommentData = {
             id: tempId,
             author: currentUserInfo?.name || "Bạn",
-            avatar: currentUserInfo?.avatar || "", 
-            content: text, 
-            timestamp: "Đang gửi...", 
+            avatar: currentUserInfo?.avatar || "",
+            content: text,
+            timestamp: "Đang gửi...",
             likes: 0,
             replyTo: isReplyingToChild ? (replyToAuthor || undefined) : undefined,
             replies: []
@@ -134,10 +134,10 @@ export function usePostInteractions(initialPost: InitialPostData, onInteractionU
             return list.map(c => {
                 if (c.id === tempId) {
                     // Giữ lại replies nếu trong lúc chờ user đã kịp reply vào comment ảo
-                    return { 
-                        ...realData, 
-                        replies: c.replies || [] 
-                    }; 
+                    return {
+                        ...realData,
+                        replies: c.replies || []
+                    };
                 }
                 if (c.replies && c.replies.length > 0) {
                     return { ...c, replies: replaceRecursive(c.replies) };
@@ -185,12 +185,12 @@ export function usePostInteractions(initialPost: InitialPostData, onInteractionU
         currentLikes: localPost.likes,
         totalComments: countAllComments(localPost.comments),
         localPostComments: localPost.comments,
-        handleLike, setShowComments, setShowShareDialog, 
-        handleAddComment, 
-        handleAddReply, 
+        handleLike, setShowComments, setShowShareDialog,
+        handleAddComment,
+        handleAddReply,
         handleCommentSuccess, // Export function này
-        handleLikeComment, 
+        handleLikeComment,
         handleShare,
-        setLocalPost 
+        setLocalPost
     };
 }

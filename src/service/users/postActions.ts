@@ -54,8 +54,8 @@ export async function createBlog(formData: FormData) {
         const type = file.type.startsWith("image/")
           ? "image"
           : file.type.startsWith("video/")
-          ? "video"
-          : "other";
+            ? "video"
+            : "other";
 
         await pool
           .request()
@@ -67,7 +67,7 @@ export async function createBlog(formData: FormData) {
           );
       }
     }
-    
+
     revalidatePath(FEED_PATH);
     return { success: true, message: "Blog created successfully" };
   } catch (error) {
@@ -133,8 +133,8 @@ export async function updateBlog(formData: FormData) {
         const type = file.type.startsWith("image/")
           ? "image"
           : file.type.startsWith("video/")
-          ? "video"
-          : "other";
+            ? "video"
+            : "other";
 
         await pool
           .request()
@@ -167,7 +167,7 @@ export async function deleteBlog(formData: FormData) {
       return { success: false, message: "blogId is required" };
     }
     await transaction.begin();
-    
+
     await pool.request().input("blogId", sql.Int, id).query(`
         DELETE CL FROM CommentLikes CL JOIN Comments C ON CL.commentId = C.id WHERE C.blogId = @blogId
       `);
@@ -216,7 +216,7 @@ function buildCommentTree(comments: any[], userLikedCommentIds: Set<number>, com
         isLiked: userLikedCommentIds.has(c.id),
         replies: [],
         parentId: c.parentId,
-        replyTo: undefined 
+        replyTo: undefined
       });
     });
 
@@ -227,13 +227,13 @@ function buildCommentTree(comments: any[], userLikedCommentIds: Set<number>, com
         const directParent = map.get(node.parentId);
         if (directParent) {
           node.replyTo = directParent.author;
-          
+
           let rootAncestor = directParent;
           let current = directParent;
           let depth = 0;
           while (current.parentId && depth < 20) {
             const p = map.get(current.parentId);
-            if (!p) break; 
+            if (!p) break;
             current = p;
             depth++;
           }
@@ -241,15 +241,15 @@ function buildCommentTree(comments: any[], userLikedCommentIds: Set<number>, com
 
           rootAncestor.replies.push(node);
         } else {
-            roots.push(node);
+          roots.push(node);
         }
       }
     });
 
     roots.forEach(root => {
-        if (root.replies?.length > 0) {
-            root.replies.sort((a: any, b: any) => new Date(a.createdAtRaw).getTime() - new Date(b.createdAtRaw).getTime());
-        }
+      if (root.replies?.length > 0) {
+        root.replies.sort((a: any, b: any) => new Date(a.createdAtRaw).getTime() - new Date(b.createdAtRaw).getTime());
+      }
     });
 
     return roots;
@@ -395,7 +395,7 @@ export async function addComment(blogId: number, userId: number, text: string, p
 
     const validParentId = (parentId && !isNaN(parentId)) ? parentId : null;
     const pool = await connectDB();
-    
+
     // 1. Insert và lấy ID mới
     const insertResult = await pool.request()
       .input("userId", sql.Int, userId)
@@ -423,7 +423,7 @@ export async function addComment(blogId: number, userId: number, text: string, p
       `);
 
     const raw = fullCommentResult.recordset[0];
-    
+
     // Trigger update cache
     revalidatePath(FEED_PATH);
 
