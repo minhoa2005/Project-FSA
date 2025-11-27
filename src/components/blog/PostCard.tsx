@@ -118,6 +118,7 @@ export default function PostCard({
 
   // FIX: Gửi đúng ID của comment bị reply lên server
   const onAddReplyClick = async (targetId: string, text: string) => {
+    console.log("Adding reply to:", targetId, "with text:", text);
     triggerAddReplyLocal(targetId, text); // Client hiển thị ngay lập tức
     try {
       // Database cần biết chính xác ta reply ai để set parentId.

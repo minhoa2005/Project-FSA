@@ -255,6 +255,10 @@ export async function deleteBlog(formData: FormData) {
       return { success: false, message: "blogId is required" };
     }
     await transaction.begin();
+    //xoa reports
+    await pool.request().input("blogId", sql.Int, id).query(`
+        DELETE FROM Reports WHERE blogId = @blogId
+      `)
     //Xoá comment likes
     await pool.request().input("blogId", sql.Int, id).query(`
         DELETE CL FROM CommentLikes CL JOIN Comments C ON CL.commentId = C.id WHERE C.blogId = @blogId

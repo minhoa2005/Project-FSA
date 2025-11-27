@@ -112,10 +112,11 @@ export function usePostInteractions(initialPost: InitialPostData, onInteractionU
 
     // Logic Reply 2 cấp (Facebook Style)
     const handleAddReply = (targetId: string, text: string) => {
+        console.log("Adding reply to:", targetId, "with text:", text);
         // Tìm Root của thread này
         const rootParentId = findRootCommentId(localPost.comments, targetId);
         const effectiveRootId = rootParentId || targetId;
-        
+
         // Tìm tên người đang được reply (targetId)
         const replyToAuthor = findCommentAuthor(localPost.comments, targetId);
 
