@@ -317,7 +317,6 @@ export default function PostCard({
           <form
             action={handleUpdate}
             className="space-y-3"
-            encType="multipart/form-data"
           >
             <input type="hidden" name="blogId" value={post.id} />
             <input

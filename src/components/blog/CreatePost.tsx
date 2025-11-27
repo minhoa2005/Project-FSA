@@ -226,7 +226,6 @@ export default function CreatePostBox({
 
             <form
               action={handleSubmit}
-              encType="multipart/form-data"
               className="space-y-4"
             >
               {/* input file ẩn – để click bằng nút "Ảnh/Video" */}
