@@ -10,7 +10,7 @@ export interface CommentData {
     likes: number;
     isLiked?: boolean;
     replies?: CommentData[];
-    replyTo?: string; 
+    replyTo?: string;
     parentId?: string | number;
     isHidden?: boolean; 
 }
@@ -68,9 +68,9 @@ export function usePostInteractions(initialPost: InitialPostData, onInteractionU
             return initialPost;
         });
         setIsLiked(prev => {
-             const newStatus = initialPost.isLiked || false;
-             if (prev === newStatus) return prev;
-             return newStatus;
+            const newStatus = initialPost.isLiked || false;
+            if (prev === newStatus) return prev;
+            return newStatus;
         });
     }, [JSON.stringify(initialPost)]);
 
@@ -108,9 +108,9 @@ export function usePostInteractions(initialPost: InitialPostData, onInteractionU
         const newR: CommentData = {
             id: tempId,
             author: currentUserInfo?.name || "Bạn",
-            avatar: currentUserInfo?.avatar || "", 
-            content: text, 
-            timestamp: "Đang gửi...", 
+            avatar: currentUserInfo?.avatar || "",
+            content: text,
+            timestamp: "Đang gửi...",
             likes: 0,
             replyTo: isReplyingToChild ? (replyToAuthor || undefined) : undefined,
             replies: [],
@@ -212,6 +212,6 @@ export function usePostInteractions(initialPost: InitialPostData, onInteractionU
         handleEditComment, 
         handleToggleHideComment, 
         handleShare,
-        setLocalPost 
+        setLocalPost
     };
 }

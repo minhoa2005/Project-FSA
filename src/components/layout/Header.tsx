@@ -25,7 +25,7 @@ export default function Header() {
                     <Button variant="ghost" className="p-6 w-[20%] cursor-pointer " onClick={() => { router.push('/') }}>
                         <HomeIcon className="h-10 w-10" />
                     </Button>
-                    <Button variant="ghost" className="p-6 w-[20%] cursor-pointer" onClick={() => { router.push('/personal/page') }}>
+                    <Button variant="ghost" className="p-6 w-[20%] cursor-pointer" onClick={() => { router.push(`/personal/${user?.id}`) }}>
                         <User className="h-10 w-10" />
                     </Button>
                 </div>

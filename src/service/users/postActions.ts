@@ -112,14 +112,28 @@ export async function deleteBlog(formData: FormData) {
   const transaction = new sql.Transaction(pool);
   try {
     const id = Number(formData.get("blogId"));
-    if (!id) return { success: false, message: "blogId is required" };
-    
+    if (!id) {
+      return { success: false, message: "blogId is required" };
+    }
     await transaction.begin();
-    await pool.request().input("blogId", sql.Int, id).query("DELETE CL FROM CommentLikes CL JOIN Comments C ON CL.commentId = C.id WHERE C.blogId = @blogId");
-    await pool.request().input("blogId", sql.Int, id).query("DELETE FROM Comments WHERE blogId = @blogId");
-    await pool.request().input("blogId", sql.Int, id).query("DELETE FROM [Like] WHERE blogId = @blogId");
-    await pool.request().input("blogId", sql.Int, id).query("DELETE FROM BlogMedia WHERE blogId = @blogId");
-    await pool.request().input("id", sql.Int, id).query("DELETE FROM Blogs WHERE id = @id");
+
+    await pool.request().input("blogId", sql.Int, id).query(`
+        DELETE CL FROM CommentLikes CL JOIN Comments C ON CL.commentId = C.id WHERE C.blogId = @blogId
+      `);
+    await pool.request().input("blogId", sql.Int, id).query(`
+        DELETE FROM Comments WHERE blogId = @blogId
+      `);
+    await pool.request().input("blogId", sql.Int, id).query(`
+        DELETE FROM [Like] WHERE blogId = @blogId
+      `);
+    await pool.request()
+      .input("blogId", sql.Int, id)
+      .query(`DELETE FROM BlogMedia WHERE blogId = @blogId`);
+
+    await pool.request()
+      .input("id", sql.Int, id)
+      .query(`DELETE FROM Blogs WHERE id = @id`);
+
     await transaction.commit();
     
     revalidatePath(FEED_PATH);
@@ -164,28 +178,28 @@ function buildCommentTree(comments: any[], userLikedCommentIds: Set<number>, com
         const directParent = map.get(node.parentId);
         if (directParent) {
           node.replyTo = directParent.author;
-          
+
           let rootAncestor = directParent;
           let current = directParent;
           let depth = 0;
           while (current.parentId && depth < 20) {
             const p = map.get(current.parentId);
-            if (!p) break; 
+            if (!p) break;
             current = p;
             depth++;
           }
           rootAncestor = current;
           rootAncestor.replies.push(node);
         } else {
-            roots.push(node);
+          roots.push(node);
         }
       }
     });
 
     roots.forEach(root => {
-        if (root.replies?.length > 0) {
-            root.replies.sort((a: any, b: any) => new Date(a.createdAtRaw).getTime() - new Date(b.createdAtRaw).getTime());
-        }
+      if (root.replies?.length > 0) {
+        root.replies.sort((a: any, b: any) => new Date(a.createdAtRaw).getTime() - new Date(b.createdAtRaw).getTime());
+      }
     });
 
     return roots;

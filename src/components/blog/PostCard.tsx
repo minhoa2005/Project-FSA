@@ -126,7 +126,7 @@ export default function PostCard({
       if (result && result.success && result.data) {
         handleCommentSuccess(tempId, result.data);
       } else {
-         toast.error("Gửi bình luận thất bại");
+        toast.error("Gửi bình luận thất bại");
       }
     } catch (e) {
       console.error(e);
@@ -144,7 +144,7 @@ export default function PostCard({
     try {
       const result = await addComment(post.id, currentUserId, text, Number(targetId));
       if (result && result.success && result.data) {
-          handleCommentSuccess(tempId, result.data);
+        handleCommentSuccess(tempId, result.data);
       }
     } catch (e) {
       console.error("Reply error:", e);
@@ -209,7 +209,7 @@ export default function PostCard({
   };
 
   const createdAt = new Date(post.createdAt).toLocaleString("vi-VN");
-  const displayName = post.fullName || post.username || `User #${post.creatorId}`;
+  const displayName = post.username || `User #${post.creatorId}`;
   const avatarUrl = post.imgUrl || post.avatarUrl || "";
   const avatarFallback = displayName.split(" ").map((w: string) => w[0]).join("").toUpperCase() || "U";
   const images = (post.media || []).filter((m: any) => m.type === "image" && !removedMediaIds.includes(m.id));
