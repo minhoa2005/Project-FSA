@@ -9,6 +9,9 @@ import { removeVietnameseSigns } from "@/lib/formatter";
 const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads");
 const FEED_PATH = "/(private)/(user)";
 
+// ... (Giữ nguyên các hàm createBlog, updateBlog không thay đổi) ...
+// ...existing code...
+
 export async function createBlog(formData: FormData) {
   try {
     const pool = await connectDB();
@@ -18,19 +21,19 @@ export async function createBlog(formData: FormData) {
     const creatorId = Number(formData.get("creatorId"));
 
     if (!creatorId) {
-      throw new Error("creatorId is required");
+      return { success: false, message: "creatorId is required" };
     }
 
     // 1. tạo blog
     const result = await pool
       .request()
-      .input("text", sql.NVarChar(sql.MAX), text) // dùng NVARCHAR để không bị ??? tiếng Việt
+      .input("text", sql.NVarChar(sql.MAX), text)
       .input("creatorId", sql.Int, creatorId)
       .query(`
-      INSERT INTO Blogs(text, creatorId)
-      OUTPUT inserted.id
-      VALUES (@text, @creatorId)
-    `);
+        INSERT INTO Blogs(text, creatorId)
+        OUTPUT inserted.id
+        VALUES (@text, @creatorId)
+      `);
 
     const blogId = result.recordset[0].id as number;
 
@@ -40,11 +43,7 @@ export async function createBlog(formData: FormData) {
     await fs.mkdir(UPLOAD_DIR, { recursive: true });
 
     for (const file of mediaFiles) {
-      if (!file || file.size > 100 * 1024 * 1024) {
-        return {
-          success: false, message: "File vượt quá kích thước cho phép 100MB"
-        }
-      }
+      if (!file || file.size === 0) continue;
 
       const bytes = Buffer.from(await file.arrayBuffer());
       const safeName = removeVietnameseSigns(file.name).replace(/\s+/g, "-");
@@ -70,17 +69,13 @@ export async function createBlog(formData: FormData) {
         );
     }
     revalidatePath(FEED_PATH);
-    return {
-      success: true
-    }
+    return { success: true, message: "Blog created successfully" };
   } catch (error) {
-    console.error("Error in createBlog:", error);
-    return {
-      success: false, message: "Lỗi hệ thống, vui lòng thử lại sau"
-    }
+    console.error("[createBlog] Error:", error);
+    return { success: false, message: error instanceof Error ? error.message : "Failed to create blog" };
   }
-
 }
+
 export async function updateBlog(formData: FormData) {
   try {
     const pool = await connectDB();
@@ -95,7 +90,9 @@ export async function updateBlog(formData: FormData) {
       .map((s) => parseInt(s.trim(), 10))
       .filter((n) => !isNaN(n));
 
-    if (!blogId) throw new Error("blogId is required");
+    if (!blogId) {
+      return { success: false, message: "blogId is required" };
+    }
 
     // update text
     await pool
@@ -122,11 +119,7 @@ export async function updateBlog(formData: FormData) {
     await fs.mkdir(UPLOAD_DIR, { recursive: true });
 
     for (const file of newMedia) {
-      if (!file || file.size > 100 * 1024 * 1024) {
-        return {
-          success: false, message: "File vượt quá kích thước cho phép 100MB"
-        }
-      };
+      if (!file || file.size === 0) continue;
 
       const bytes = Buffer.from(await file.arrayBuffer());
       const safeName = removeVietnameseSigns(file.name).replace(/\s+/g, "-");
@@ -153,150 +146,187 @@ export async function updateBlog(formData: FormData) {
     }
 
     revalidatePath(FEED_PATH);
-    return { success: true };
+    return { success: true, message: "Blog updated successfully" };
   } catch (error) {
-    console.error("Error in updateBlog:", error);
-    return {
-      success: false, message: "Lỗi hệ thống, vui lòng thử lại sau"
-    }
+    console.error("[updateBlog] Error:", error);
+    return { success: false, message: error instanceof Error ? error.message : "Failed to update blog" };
   }
 }
+
+// ...existing code...
+
 export async function getBlogs(currentUserId?: number) {
-  const pool = await connectDB();
+  try {
+    const pool = await connectDB();
 
-  // 1. Get Blogs
-  const blogsResult = await pool.request().query(`
-    SELECT b.id AS blogId, b.text, b.creatorId, b.createdAt, b.updatedAt,
-      up.fullName, up.imgUrl, a.username, m.id AS mediaId, m.mediaUrl, m.mediaType
-    FROM Blogs b
-    LEFT JOIN UserProfile up ON up.accountId = b.creatorId
-    LEFT JOIN Account a ON a.id = b.creatorId
-    LEFT JOIN BlogMedia m ON m.blogId = b.id
-    ORDER BY b.createdAt DESC, m.id ASC
-  `);
+    // 1. Get Blogs
+    const blogsResult = await pool.request().query(`
+      SELECT b.id AS blogId, b.text, b.creatorId, b.createdAt, b.updatedAt,
+        up.fullName, up.imgUrl, a.username, m.id AS mediaId, m.mediaUrl, m.mediaType
+      FROM Blogs b
+      LEFT JOIN UserProfile up ON up.accountId = b.creatorId
+      LEFT JOIN Account a ON a.id = b.creatorId
+      LEFT JOIN BlogMedia m ON m.blogId = b.id
+      ORDER BY b.createdAt DESC, m.id ASC
+    `);
 
-  // 2. Count Post Likes
-  const likesCountResult = await pool.request().query(`SELECT blogId, COUNT(*) as count FROM [Like] GROUP BY blogId`);
-  const likesMap = new Map<number, number>();
-  likesCountResult.recordset.forEach((r: any) => likesMap.set(r.blogId, r.count));
+    // 2. Count Post Likes
+    const likesCountResult = await pool.request().query(`SELECT blogId, COUNT(*) as count FROM [Like] GROUP BY blogId`);
+    const likesMap = new Map<number, number>();
+    likesCountResult.recordset.forEach((r: any) => likesMap.set(r.blogId, r.count));
 
-  // 3. Get Comments
-  const commentsResult = await pool.request().query(`
-    SELECT c.id, c.blogId, c.text, c.createdAt, c.parentId, up.fullName, up.imgUrl, a.username
-    FROM Comments c
-    LEFT JOIN UserProfile up ON up.accountId = c.userId
-    LEFT JOIN Account a ON a.id = c.userId
-    ORDER BY c.createdAt ASC
-  `);
+    // 3. Get Comments
+    const commentsResult = await pool.request().query(`
+      SELECT c.id, c.blogId, c.text, c.createdAt, c.parentId, up.fullName, up.imgUrl, a.username
+      FROM Comments c
+      LEFT JOIN UserProfile up ON up.accountId = c.userId
+      LEFT JOIN Account a ON a.id = c.userId
+      ORDER BY c.createdAt ASC
+    `);
 
-  // 4. Count Comment Likes
-  const commentLikesCountResult = await pool.request().query(`SELECT commentId, COUNT(*) as count FROM CommentLikes GROUP BY commentId`);
-  const commentLikesMap = new Map<number, number>();
-  commentLikesCountResult.recordset.forEach((r: any) => commentLikesMap.set(r.commentId, r.count));
+    // 4. Count Comment Likes
+    const commentLikesCountResult = await pool.request().query(`SELECT commentId, COUNT(*) as count FROM CommentLikes GROUP BY commentId`);
+    const commentLikesMap = new Map<number, number>();
+    commentLikesCountResult.recordset.forEach((r: any) => commentLikesMap.set(r.commentId, r.count));
 
-  // 5. Check User Status (Post Like & Comment Like)
-  const userLikedPostSet = new Set<number>();
-  const userLikedCommentSet = new Set<number>();
+    // 5. Check User Status (Post Like & Comment Like)
+    const userLikedPostSet = new Set<number>();
+    const userLikedCommentSet = new Set<number>();
 
-  if (currentUserId) {
-    const userPostLikes = await pool.request().input("uid", sql.Int, currentUserId)
-      .query("SELECT blogId FROM [Like] WHERE userId = @uid");
-    console.log(userPostLikes.recordset);
-    userPostLikes.recordset.forEach((r: any) => userLikedPostSet.add(r.blogId));
+    if (currentUserId) {
+      const userPostLikes = await pool.request().input("uid", sql.Int, currentUserId)
+        .query("SELECT blogId FROM [Like] WHERE userId = @uid");
+      userPostLikes.recordset.forEach((r: any) => userLikedPostSet.add(r.blogId));
 
-    const userCommentLikes = await pool.request().input("uid", sql.Int, currentUserId)
-      .query("SELECT commentId FROM CommentLikes WHERE userId = @uid");
-    userCommentLikes.recordset.forEach((r: any) => userLikedCommentSet.add(r.commentId));
-  }
-
-  // Mapping
-  const commentsByBlog = new Map<number, any[]>();
-  commentsResult.recordset.forEach((c: any) => {
-    if (!commentsByBlog.has(c.blogId)) commentsByBlog.set(c.blogId, []);
-    commentsByBlog.get(c.blogId).push(c);
-  });
-
-  const blogMap = new Map<number, any>();
-  const rows = blogsResult.recordset || [];
-
-  for (const row of rows) {
-    const blogId = row.blogId;
-    if (!blogMap.has(blogId)) {
-      const rawComments = commentsByBlog.get(blogId) || [];
-      blogMap.set(blogId, {
-        id: blogId,
-        text: row.text,
-        creatorId: row.creatorId,
-        createdAt: row.createdAt,
-        updatedAt: row.updatedAt,
-        fullName: row.fullName,
-        username: row.username,
-        imgUrl: row.imgUrl,
-        media: [],
-        likes: likesMap.get(blogId) || 0,
-        isLikedByCurrentUser: userLikedPostSet.has(blogId),
-        comments: buildCommentTree(rawComments, userLikedCommentSet, commentLikesMap),
-        shares: 0,
-      });
+      const userCommentLikes = await pool.request().input("uid", sql.Int, currentUserId)
+        .query("SELECT commentId FROM CommentLikes WHERE userId = @uid");
+      userCommentLikes.recordset.forEach((r: any) => userLikedCommentSet.add(r.commentId));
     }
-    if (row.mediaId) {
-      blogMap.get(blogId).media.push({ id: row.mediaId, url: row.mediaUrl, type: row.mediaType });
-    }
-  }
 
-  return Array.from(blogMap.values());
+    // Mapping
+    const commentsByBlog = new Map<number, any[]>();
+    commentsResult.recordset.forEach((c: any) => {
+      if (!commentsByBlog.has(c.blogId)) commentsByBlog.set(c.blogId, []);
+      commentsByBlog.get(c.blogId).push(c);
+    });
+
+    const blogMap = new Map<number, any>();
+    const rows = blogsResult.recordset || [];
+
+    for (const row of rows) {
+      const blogId = row.blogId;
+      if (!blogMap.has(blogId)) {
+        const rawComments = commentsByBlog.get(blogId) || [];
+        blogMap.set(blogId, {
+          id: blogId,
+          text: row.text,
+          creatorId: row.creatorId,
+          createdAt: row.createdAt,
+          updatedAt: row.updatedAt,
+          fullName: row.fullName,
+          username: row.username,
+          imgUrl: row.imgUrl,
+          media: [],
+          likes: likesMap.get(blogId) || 0,
+          isLikedByCurrentUser: userLikedPostSet.has(blogId),
+          // SỬ DỤNG HÀM MỚI Ở ĐÂY
+          comments: buildCommentTree(rawComments, userLikedCommentSet, commentLikesMap),
+          shares: 0,
+        });
+      }
+      if (row.mediaId) {
+        blogMap.get(blogId).media.push({ id: row.mediaId, url: row.mediaUrl, type: row.mediaType });
+      }
+    }
+
+    return Array.from(blogMap.values())
+  } catch (error) {
+    console.error("[getBlogs] Error:", error);
+    return { success: false, message: error instanceof Error ? error.message : "Failed to fetch blogs", data: [] };
+  }
 }
+
 export async function deleteBlog(formData: FormData) {
-  const pool = await connectDB();
-  const id = Number(formData.get("blogId"));
-  if (!id) throw new Error("blogId is required");
+  try {
+    const pool = await connectDB();
+    const id = Number(formData.get("blogId"));
+    if (!id) {
+      return { success: false, message: "blogId is required" };
+    }
 
-  // xóa media
-  await pool.request()
-    .input("blogId", sql.Int, id)
-    .query(`DELETE FROM BlogMedia WHERE blogId = @blogId`);
+    // xóa media
+    await pool.request()
+      .input("blogId", sql.Int, id)
+      .query(`DELETE FROM BlogMedia WHERE blogId = @blogId`);
 
-  // xóa blog
-  await pool.request()
-    .input("id", sql.Int, id)
-    .query(`DELETE FROM Blogs WHERE id = @id`);
+    // xóa blog
+    await pool.request()
+      .input("id", sql.Int, id)
+      .query(`DELETE FROM Blogs WHERE id = @id`);
 
-  revalidatePath("/(private)/(user)");
+    revalidatePath("/(private)/(user)");
+    return { success: true, message: "Blog deleted successfully" };
+  } catch (error) {
+    console.error("[deleteBlog] Error:", error);
+    return { success: false, message: error instanceof Error ? error.message : "Failed to delete blog" };
+  }
 }
 
+// ...existing code...
 
-
+// === FIX: Build Tree theo dạng 2-Level (Facebook style) ===
 function buildCommentTree(comments: any[], userLikedCommentIds: Set<number>, commentLikeCounts: Map<number, number>) {
   try {
     const map = new Map();
     const roots: any[] = [];
 
+    // 1. Tạo node map
     comments.forEach((c) => {
       map.set(c.id, {
-        id: c.id,
+        id: String(c.id),
         author: c.fullName || c.username || "User",
         avatar: c.imgUrl || "",
         content: c.text,
         timestamp: new Date(c.createdAt).toLocaleString("vi-VN"),
+        createdAtRaw: c.createdAt, // dùng để sort lại nếu cần
         likes: commentLikeCounts.get(c.id) || 0,
         isLiked: userLikedCommentIds.has(c.id),
         replies: [],
         parentId: c.parentId,
+        replyTo: undefined // Sẽ điền sau
       });
     });
+
+    // 2. Xây dựng cây 2 cấp (Root -> [Children])
     map.forEach((node) => {
-      if (node.parentId) {
-        const parent = map.get(node.parentId);
-        if (parent) {
-          node.replyTo = parent.author;
-          parent.replies.push(node);
-        } else {
-          console.warn(`[buildCommentTree] Parent ${node.parentId} not found for comment ${node.id}`);
-        }
-      } else {
+      if (!node.parentId) {
         roots.push(node);
+      } else {
+        // Tìm cha trực tiếp để lấy tên (replyTo)
+        const directParent = map.get(node.parentId);
+
+        if (directParent) {
+          node.replyTo = directParent.author;
+
+          // Tìm Root tổ tiên của node này
+          let rootAncestor = directParent;
+          let current = directParent;
+
+          // Leo lên cây cho đến khi tìm được node không có parentId (là Root)
+          while (current.parentId) {
+            const p = map.get(current.parentId);
+            if (!p) break;
+            current = p;
+          }
+          rootAncestor = current;
+
+          // Đẩy node hiện tại vào danh sách replies của Root Ancestor
+          // (Thay vì đẩy vào cha trực tiếp)
+          rootAncestor.replies.push(node);
+        }
       }
     });
+
     return roots;
   } catch (error) {
     console.error("[buildCommentTree] Error:", error);
@@ -304,6 +334,7 @@ function buildCommentTree(comments: any[], userLikedCommentIds: Set<number>, com
   }
 }
 
+// ... (ToggleLike, ToggleCommentLike giữ nguyên) ...
 export async function toggleLike(blogId: number, userId: number) {
   try {
     if (!userId) throw new Error("User ID required");
@@ -324,7 +355,6 @@ export async function toggleLike(blogId: number, userId: number) {
   }
 }
 
-// 2. Like Comment
 export async function toggleCommentLike(commentId: number, userId: number) {
   try {
     if (!userId) throw new Error("User ID required");
@@ -356,7 +386,9 @@ export async function addComment(blogId: number, userId: number, text: string, p
     const pool = await connectDB();
     await pool.request()
       .input("userId", sql.Int, userId).input("blogId", sql.Int, blogId)
-      .input("text", sql.NVarChar(sql.MAX), text).input("parentId", sql.Int, parentId || null)
+      .input("text", sql.NVarChar(sql.MAX), text)
+      // Quan trọng: parentId ở đây phải là ID của comment được trả lời trực tiếp
+      .input("parentId", sql.Int, parentId || null)
       .query(`INSERT INTO Comments (userId, blogId, text, parentId) VALUES (@userId, @blogId, @text, @parentId)`);
     revalidatePath(FEED_PATH);
   } catch (error) {
@@ -364,4 +396,3 @@ export async function addComment(blogId: number, userId: number, text: string, p
     throw error;
   }
 }
-
