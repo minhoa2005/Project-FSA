@@ -9,6 +9,7 @@ import { Ban, KeyRound, SlashIcon, Unlock } from 'lucide-react'
 import Link from "next/link"
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
+import BreadcrumbAdmin from './Breadcrumb'
 
 export default function AccBan() {
     const [acc, setAcc] = useState([])
@@ -49,21 +50,7 @@ export default function AccBan() {
     }, [])
     return (
         <div className="bg-background">
-            <Breadcrumb>
-                <BreadcrumbList className={'text-base py-3'}>
-                    <BreadcrumbItem>
-                        <BreadcrumbLink asChild>
-                            <Link href="/admin">Dashboard</Link>
-                        </BreadcrumbLink>
-                    </BreadcrumbItem>
-                    <BreadcrumbSeparator>
-                        <SlashIcon />
-                    </BreadcrumbSeparator>
-                    <BreadcrumbItem >
-                        <BreadcrumbPage className={'font-medium'}>Tài khoản bị khóa</BreadcrumbPage>
-                    </BreadcrumbItem>
-                </BreadcrumbList>
-            </Breadcrumb>
+            <BreadcrumbAdmin />
 
             {/* <div className="grid w-full max-w-sm gap-6">
                 <InputGroup>
@@ -167,7 +154,7 @@ export default function AccBan() {
                             <PaginationEllipsis />
                         </PaginationItem>
                         <PaginationItem>
-                            <PaginationNext href="#" size="sm"/>
+                            <PaginationNext href="#" size="sm" />
                         </PaginationItem>
                     </PaginationContent>
                 </Pagination>

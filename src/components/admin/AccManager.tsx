@@ -14,13 +14,14 @@ import { useEffect, useState } from "react";
 import { ToggleGroup, ToggleGroupItem } from "../ui/toggle-group";
 import { Ban, BookmarkIcon, Container, HeartIcon, KeyRound, Search, SlashIcon, StarIcon, Unlock } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "../ui/alert-dialog";
-import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "../ui/breadcrumb";
+
 import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "../ui/pagination";
 import { cn } from "@/lib/utils";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "../ui/input-group";
 import { toast } from "sonner";
 import { debounce } from "@/lib/function";
 import { sendNewPassword } from "@/config/emailService";
+import BreadcrumbAdmin from "./Breadcrumb";
 
 interface Account {
     id: number
@@ -117,21 +118,7 @@ export function AccManager() {
     }, [search])
     return (
         <div className="bg-background">
-            <Breadcrumb>
-                <BreadcrumbList className={'text-base py-3'}>
-                    <BreadcrumbItem>
-                        <BreadcrumbLink asChild>
-                            <Link href="/admin">Dashboard</Link>
-                        </BreadcrumbLink>
-                    </BreadcrumbItem>
-                    <BreadcrumbSeparator>
-                        <SlashIcon />
-                    </BreadcrumbSeparator>
-                    <BreadcrumbItem >
-                        <BreadcrumbPage className={'font-medium'}>Danh sách người dùng</BreadcrumbPage>
-                    </BreadcrumbItem>
-                </BreadcrumbList>
-            </Breadcrumb>
+            <BreadcrumbAdmin/>
             <div className="grid w-full max-w-sm gap-6">
                 <InputGroup>
                     <InputGroupInput placeholder="Tìm kiếm theo tên đăng nhập..." onChange={(e) => debouncedSearch(e.target.value)} />
