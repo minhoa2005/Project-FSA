@@ -98,7 +98,6 @@ export default function PostCard({
   // --- ACTIONS XỬ LÝ INTERACTION ---
 
   const onLikeClick = async () => {
-    console.log(post)
     triggerLikeLocal();
     try {
       await toggleLike(post.id, currentUserId);
@@ -116,12 +115,13 @@ export default function PostCard({
     }
   };
 
+  // FIX: Gửi đúng ID của comment bị reply lên server
   const onAddReplyClick = async (targetId: string, text: string) => {
-    triggerAddReplyLocal(targetId, text);
+    triggerAddReplyLocal(targetId, text); // Client hiển thị ngay lập tức
     try {
-      const rootId =
-        findRootCommentId(localPostComments, targetId) || targetId;
-      await addComment(post.id, currentUserId, text, Number(rootId));
+      // Database cần biết chính xác ta reply ai để set parentId.
+      // parentId trong DB = targetId
+      await addComment(post.id, currentUserId, text, Number(targetId));
     } catch (e) {
       console.error("Reply error:", e);
     }
@@ -167,12 +167,9 @@ export default function PostCard({
   const handleUpdate = async (formData: FormData) => {
     try {
       setSubmitting(true);
-      // thêm list id media cần xóa vào formData
       if (removedMediaIds.length > 0) {
         formData.set("removeMediaIds", removedMediaIds.join(","));
       }
-      // TODO: Nếu có xử lý upload file mới (newFiles), cần append vào formData ở đây
-
       await updateBlog(formData);
       setEditing(false);
       setRemovedMediaIds([]);
@@ -200,64 +197,7 @@ export default function PostCard({
     }
   };
 
-  const handleNewFilesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const list = Array.from(e.target.files || []);
-    setNewFiles(list);
-  };
-
-  // Phần render preview file mới (tạm thời chưa dùng trong JSX của bạn, nhưng cứ để đây nếu cần)
-  const renderNewFilesPreview = () => {
-    if (!newFiles.length) return null;
-    return (
-      <div className="mt-2 grid grid-cols-2 gap-2">
-        {newFiles.map((file, idx) => {
-          const url = URL.createObjectURL(file);
-          const isImage = file.type.startsWith("image/");
-          const isVideo = file.type.startsWith("video/");
-          return (
-            <div
-              key={idx}
-              className="relative overflow-hidden rounded-lg border"
-            >
-              {isImage && (
-                <Image
-                  src={url}
-                  alt={file.name}
-                  width={500}
-                  height={500}
-                  className="h-40 w-full object-cover"
-                />
-              )}
-              {isVideo && (
-                <video
-                  src={url}
-                  controls
-                  className="h-40 w-full object-cover"
-                />
-              )}
-              {!isImage && !isVideo && (
-                <div className="h-40 w-full px-2 py-1 text-xs">
-                  {file.name}
-                </div>
-              )}
-              <button
-                type="button"
-                onClick={() =>
-                  setNewFiles((prev) => prev.filter((_, i) => i !== idx))
-                }
-                className="absolute right-1 top-1 inline-flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/80"
-              >
-                <X className="h-3 w-3" />
-              </button>
-            </div>
-          );
-        })}
-      </div>
-    );
-  };
-
   // --- RENDER JSX ---
-
   return (
     <Card className="overflow-hidden shadow-sm">
       <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
@@ -341,7 +281,6 @@ export default function PostCard({
                 {post.text}
               </p>
             )}
-
             {/* Render Images */}
             {images.length > 0 && (
               <div
@@ -360,7 +299,6 @@ export default function PostCard({
                 ))}
               </div>
             )}
-
             {/* Render Videos */}
             {videos.length > 0 && (
               <div className="space-y-2">
@@ -376,7 +314,6 @@ export default function PostCard({
             )}
           </>
         ) : (
-          // --- EDIT MODE ---
           <form
             action={handleUpdate}
             className="space-y-3"
@@ -396,7 +333,6 @@ export default function PostCard({
               placeholder="Bạn đang nghĩ gì?"
             />
 
-            {/* Edit: Existing Media (with remove button) */}
             {(images.length > 0 || videos.length > 0) && (
               <div className="space-y-2">
                 <div className="text-xs font-medium text-muted-foreground">
@@ -449,11 +385,6 @@ export default function PostCard({
                 </div>
               </div>
             )}
-
-            {/* Nếu muốn cho phép upload thêm file khi edit, bỏ comment dòng dưới */}
-            {/* <input type="file" multiple onChange={handleNewFilesChange} /> */}
-            {/* {renderNewFilesPreview()} */}
-
             <div className="flex justify-end gap-2 pt-1">
               <Button
                 type="button"

@@ -1,5 +1,5 @@
 import { useState } from "react";
-// Import các type nếu cần (giả định CommentData đã có hoặc define ở đây)
+
 export interface CommentData {
     id: string;
     author: string;
@@ -7,30 +7,35 @@ export interface CommentData {
     content: string;
     timestamp: string;
     likes: number;
-    isLiked?: boolean; // Quan trọng: trường này để biết trạng thái hiện tại
+    isLiked?: boolean;
     replies?: CommentData[];
-    replyTo?: string;
+    replyTo?: string; // Tên người được trả lời
 }
 
 // --- Helpers ---
 
-// Helper đệ quy tìm ID (để dùng cho hàm findRoot)
+// Tìm Root Comment ID cho một targetId bất kỳ (dựa trên cấu trúc đã load về)
+export const findRootCommentId = (comments: CommentData[], targetId: string): string | null => {
+    // 1. Kiểm tra xem targetId có phải là root không?
+    const isRoot = comments.some(c => c.id === targetId);
+    if (isRoot) return targetId;
+
+    // 2. Nếu không, tìm trong các replies của từng root
+    for (const c of comments) {
+        if (c.replies && hasCommentId(c.replies, targetId)) {
+            return c.id; // Trả về ID của root chứa comment đó
+        }
+    }
+    return null;
+};
+
 const hasCommentId = (comments: CommentData[], id: string): boolean => {
     for (const c of comments) {
         if (c.id === id) return true;
+        // Nếu cấu trúc lồng nhau sâu hơn (tuy nhiên logic mới là 2 cấp)
         if (c.replies && hasCommentId(c.replies, id)) return true;
     }
     return false;
-};
-
-// Helper tìm Root ID (giữ nguyên logic 2 cấp)
-export const findRootCommentId = (comments: CommentData[], targetId: string): string | null => {
-    for (const c of comments) {
-        if (c.id === targetId) return c.id;
-        if (c.replies && hasCommentId(c.replies, targetId)) return c.id;
-    }
-
-    return null;
 };
 
 const findCommentAuthor = (comments: CommentData[], id: string): string | null => {
@@ -44,27 +49,26 @@ const findCommentAuthor = (comments: CommentData[], id: string): string | null =
     return null;
 };
 
-const addReplyToComment = (comments: CommentData[], parentId: string, newReply: CommentData): CommentData[] => {
-    return comments.map(c =>
-        c.id === parentId
-            ? { ...c, replies: [...(c.replies || []), newReply] }
-            : (c.replies ? { ...c, replies: addReplyToComment(c.replies, parentId, newReply) } : c)
-    );
+// Add Reply: Luôn add vào Root Parent
+const addReplyToComment = (comments: CommentData[], rootId: string, newReply: CommentData): CommentData[] => {
+    return comments.map(c => {
+        if (c.id === rootId) {
+            return { ...c, replies: [...(c.replies || []), newReply] };
+        }
+        return c;
+    });
 };
 
-// [THAY ĐỔI QUAN TRỌNG] Helper Toggle Like Comment
 const toggleCommentHelper = (comments: CommentData[], commentId: string): CommentData[] => {
     return comments.map(c => {
-        // Tìm thấy comment
         if (c.id === commentId) {
-            const newIsLiked = !c.isLiked; // Đảo ngược trạng thái
+            const newIsLiked = !c.isLiked;
             return {
                 ...c,
                 isLiked: newIsLiked,
-                likes: newIsLiked ? c.likes + 1 : Math.max(0, c.likes - 1) // Tăng hoặc giảm like
+                likes: newIsLiked ? c.likes + 1 : Math.max(0, c.likes - 1)
             };
         }
-        // Tìm trong replies nếu có
         if (c.replies && c.replies.length > 0) {
             return { ...c, replies: toggleCommentHelper(c.replies, commentId) };
         }
@@ -90,7 +94,6 @@ export function usePostInteractions(initialPost: InitialPostData, onInteractionU
     const [showComments, setShowComments] = useState(false);
     const [showShareDialog, setShowShareDialog] = useState(false);
 
-    // Like Post (Toggle)
     const handleLike = () => {
         const newStatus = !isLiked;
         setIsLiked(newStatus);
@@ -107,10 +110,13 @@ export function usePostInteractions(initialPost: InitialPostData, onInteractionU
         onInteractionUpdate(updated);
     };
 
-    // Logic Reply 2 cấp
+    // Logic Reply 2 cấp (Facebook Style)
     const handleAddReply = (targetId: string, text: string) => {
+        // Tìm Root của thread này
         const rootParentId = findRootCommentId(localPost.comments, targetId);
-        const effectiveParentId = rootParentId || targetId;
+        const effectiveRootId = rootParentId || targetId;
+        
+        // Tìm tên người đang được reply (targetId)
         const replyToAuthor = findCommentAuthor(localPost.comments, targetId);
 
         const newR: CommentData = {
@@ -120,16 +126,16 @@ export function usePostInteractions(initialPost: InitialPostData, onInteractionU
             content: text,
             timestamp: "Vừa xong",
             likes: 0,
-            replyTo: (targetId !== effectiveParentId) ? (replyToAuthor || undefined) : undefined,
+            // Nếu target không phải là root -> tức là đang reply chéo trong thread -> gán replyTo
+            replyTo: (targetId !== effectiveRootId) ? (replyToAuthor || undefined) : undefined,
             replies: []
         };
 
-        const updated = { ...localPost, comments: addReplyToComment(localPost.comments, effectiveParentId, newR) };
+        const updated = { ...localPost, comments: addReplyToComment(localPost.comments, effectiveRootId, newR) };
         setLocalPost(updated);
         onInteractionUpdate(updated);
     };
 
-    // [THAY ĐỔI] Handle Like Comment (Chỉ nhận ID -> Toggle)
     const handleLikeComment = (cmtId: string) => {
         const updated = { ...localPost, comments: toggleCommentHelper(localPost.comments, cmtId) };
         setLocalPost(updated);
