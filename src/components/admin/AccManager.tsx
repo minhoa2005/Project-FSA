@@ -22,12 +22,21 @@ import { toast } from "sonner";
 import { debounce } from "@/lib/function";
 import { sendNewPassword } from "@/config/emailService";
 
+interface Account {
+    id: number
+    username: string
+    email: string
+    roleId: number
+    createdAt: string
+    isActive: boolean
+}
+
 export function AccManager() {
-    const [account, setAccount] = useState([]);
-    const [search, setSearch] = useState('');
+    const [account, setAccount] = useState<Account[]>([]);
+    const [search, setSearch] = useState<string>('');
     const debouncedSearch = debounce(setSearch, 500);
 
-    const handleBan = async (id) => {
+    const handleBan = async (id: number) => {
         // console.log(id)
         try {
             const res = await banAcc(id);
@@ -44,7 +53,7 @@ export function AccManager() {
         }
     };
 
-    const handleUnBan = async (id) => {
+    const handleUnBan = async (id: number) => {
         try {
             const res = await unBanAcc(id);
             if (res) {
@@ -60,7 +69,7 @@ export function AccManager() {
         }
     }
 
-    const handleResetPass = async (id) => {
+    const handleResetPass = async (id: number) => {
         try {
             const res = await resetPassByAdmin(id);
             if (res.success) {
@@ -164,8 +173,8 @@ export function AccManager() {
 
                             <TableCell className="text-right">
 
-                                {a.roleId === 2 ?
-                                    <ToggleGroup type="multiple" variant="outline" spacing={2} size="sm">
+                                {a.roleId === 1 ? ('') : (
+                                    <ToggleGroup type="multiple" variant="outline" size="sm">
                                         {a.isActive === true ?
                                             <ToggleGroupItem
                                                 value="ban"
@@ -245,8 +254,8 @@ export function AccManager() {
                                         </ToggleGroupItem>
 
                                     </ToggleGroup>
-                                    :
-                                    ''
+
+                                )
                                 }
 
                             </TableCell>
@@ -259,24 +268,24 @@ export function AccManager() {
                 <Pagination className='flex justify-end py-3'>
                     <PaginationContent >
                         <PaginationItem>
-                            <PaginationPrevious href="#" />
+                            <PaginationPrevious href="#" size="sm" />
                         </PaginationItem>
                         <PaginationItem>
-                            <PaginationLink href="#" isActive>1</PaginationLink>
+                            <PaginationLink href="#" size="sm" isActive>1</PaginationLink>
                         </PaginationItem>
                         <PaginationItem>
-                            <PaginationLink href="#" >
+                            <PaginationLink href="#" size="sm">
                                 2
                             </PaginationLink>
                         </PaginationItem>
                         <PaginationItem>
-                            <PaginationLink href="#">3</PaginationLink>
+                            <PaginationLink href="#" size="sm">3</PaginationLink>
                         </PaginationItem>
                         <PaginationItem>
                             <PaginationEllipsis />
                         </PaginationItem>
                         <PaginationItem>
-                            <PaginationNext href="#" />
+                            <PaginationNext href="#" size="sm" />
                         </PaginationItem>
                     </PaginationContent>
                 </Pagination>

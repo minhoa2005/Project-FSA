@@ -13,7 +13,7 @@ import { toast } from 'sonner'
 export default function AccBan() {
     const [acc, setAcc] = useState([])
 
-    const handleUnBan = async (id) => {
+    const handleUnBan = async (id: number) => {
         try {
             const res = await unBanAcc(id)
             if (res) {
@@ -108,60 +108,32 @@ export default function AccBan() {
 
                                 <TableCell className="text-right">
 
-                                    <ToggleGroup type="multiple" variant="outline" spacing={2} size="sm">
-                                        {a.isActive === true ?
-                                            <ToggleGroupItem
-                                                value="ban"
-                                                aria-label="Toggle ban"
-                                                className="data-[state=on]:bg-red-100 data-[state=on]:text-red-600"
-                                            >
-                                                <AlertDialog>
-                                                    <AlertDialogTrigger asChild>
-                                                        <span ><Ban /></span>
-                                                    </AlertDialogTrigger>
-                                                    <AlertDialogContent>
-                                                        <AlertDialogHeader>
-                                                            <AlertDialogTitle>Bạn có chắc chắn muốn cấm tài khoản này?</AlertDialogTitle>
-                                                            <AlertDialogDescription>
-                                                                Vui lòng xác nhận để tiếp tục hành động!
-                                                            </AlertDialogDescription>
-                                                        </AlertDialogHeader>
-                                                        <AlertDialogFooter>
-                                                            <AlertDialogCancel>Hủy</AlertDialogCancel>
-                                                            <AlertDialogAction onClick={() => handleBan(a.id)}>
-                                                                Cấm
-                                                            </AlertDialogAction>
-                                                        </AlertDialogFooter>
-                                                    </AlertDialogContent>
-                                                </AlertDialog>
-                                            </ToggleGroupItem>
-                                            :
-                                            <ToggleGroupItem
-                                                value="unlock"
-                                                aria-label="Toggle unlock"
-                                                className="data-[state=on]:bg-green-100 data-[state=on]:text-green-600"
-                                            >
-                                                <AlertDialog>
-                                                    <AlertDialogTrigger asChild>
-                                                        <span><Unlock /></span>
-                                                    </AlertDialogTrigger>
+                                    <ToggleGroup type="multiple" variant="outline" size="sm">
+                                        <ToggleGroupItem
+                                            value="unlock"
+                                            aria-label="Toggle unlock"
+                                            className="data-[state=on]:bg-green-100 data-[state=on]:text-green-600"
+                                        >
+                                            <AlertDialog>
+                                                <AlertDialogTrigger asChild>
+                                                    <span><Unlock /></span>
+                                                </AlertDialogTrigger>
 
-                                                    <AlertDialogContent>
-                                                        <AlertDialogHeader>
-                                                            <AlertDialogTitle>Bạn có chắc chắn muốn mở khóa tài khoản này?</AlertDialogTitle>
-                                                            <AlertDialogDescription>
-                                                                Vui lòng xác nhận để tiếp tục hành động!
-                                                            </AlertDialogDescription>
-                                                        </AlertDialogHeader>
+                                                <AlertDialogContent>
+                                                    <AlertDialogHeader>
+                                                        <AlertDialogTitle>Bạn có chắc chắn muốn mở khóa tài khoản này?</AlertDialogTitle>
+                                                        <AlertDialogDescription>
+                                                            Vui lòng xác nhận để tiếp tục hành động!
+                                                        </AlertDialogDescription>
+                                                    </AlertDialogHeader>
 
-                                                        <AlertDialogFooter>
-                                                            <AlertDialogCancel>Hủy</AlertDialogCancel>
-                                                            <AlertDialogAction onClick={() => handleUnBan(a.id)}>Mở khóa</AlertDialogAction>
-                                                        </AlertDialogFooter>
-                                                    </AlertDialogContent>
-                                                </AlertDialog>
-                                            </ToggleGroupItem>
-                                        }
+                                                    <AlertDialogFooter>
+                                                        <AlertDialogCancel>Hủy</AlertDialogCancel>
+                                                        <AlertDialogAction onClick={() => handleUnBan(a.id)}>Mở khóa</AlertDialogAction>
+                                                    </AlertDialogFooter>
+                                                </AlertDialogContent>
+                                            </AlertDialog>
+                                        </ToggleGroupItem>
                                     </ToggleGroup>
 
                                 </TableCell>
@@ -178,24 +150,24 @@ export default function AccBan() {
                 <Pagination className='flex justify-end py-3'>
                     <PaginationContent >
                         <PaginationItem>
-                            <PaginationPrevious href="#" />
+                            <PaginationPrevious href="#" size="sm" />
                         </PaginationItem>
                         <PaginationItem>
-                            <PaginationLink href="#" isActive>1</PaginationLink>
+                            <PaginationLink href="#" size="sm" isActive>1</PaginationLink>
                         </PaginationItem>
                         <PaginationItem>
-                            <PaginationLink href="#" >
+                            <PaginationLink href="#" size="sm">
                                 2
                             </PaginationLink>
                         </PaginationItem>
                         <PaginationItem>
-                            <PaginationLink href="#">3</PaginationLink>
+                            <PaginationLink href="#" size="sm">3</PaginationLink>
                         </PaginationItem>
                         <PaginationItem>
                             <PaginationEllipsis />
                         </PaginationItem>
                         <PaginationItem>
-                            <PaginationNext href="#" />
+                            <PaginationNext href="#" size="sm"/>
                         </PaginationItem>
                     </PaginationContent>
                 </Pagination>
