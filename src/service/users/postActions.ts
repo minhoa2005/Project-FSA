@@ -5,14 +5,13 @@ import path from "path";
 import { connectDB, sql } from "@/config/db";
 import { revalidatePath } from "next/cache";
 import { removeVietnameseSigns } from "@/lib/formatter";
-import { Transaction } from "mssql";
 
 const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads");
 const FEED_PATH = "/(private)/(user)";
 
-// ... (Giữ nguyên các hàm createBlog, updateBlog không thay đổi) ...
-// ...existing code...
-
+// ==========================================
+// 1. CREATE BLOG
+// ==========================================
 export async function createBlog(formData: FormData) {
   try {
     const pool = await connectDB();
@@ -25,7 +24,6 @@ export async function createBlog(formData: FormData) {
       return { success: false, message: "creatorId is required" };
     }
 
-    // 1. tạo blog
     const result = await pool
       .request()
       .input("text", sql.NVarChar(sql.MAX), text)
@@ -38,37 +36,38 @@ export async function createBlog(formData: FormData) {
 
     const blogId = result.recordset[0].id as number;
 
-    // 2. xử lý nhiều file media
     const mediaFiles = formData.getAll("media") as File[];
+    if (mediaFiles.length > 0) {
+      await fs.mkdir(UPLOAD_DIR, { recursive: true });
 
-    await fs.mkdir(UPLOAD_DIR, { recursive: true });
+      for (const file of mediaFiles) {
+        if (!file || file.size === 0) continue;
 
-    for (const file of mediaFiles) {
-      if (!file || file.size === 0) continue;
+        const bytes = Buffer.from(await file.arrayBuffer());
+        const safeName = removeVietnameseSigns(file.name).replace(/\s+/g, "-");
+        const fileName = `${Date.now()}-${safeName}`;
+        const filePath = path.join(UPLOAD_DIR, fileName);
 
-      const bytes = Buffer.from(await file.arrayBuffer());
-      const safeName = removeVietnameseSigns(file.name).replace(/\s+/g, "-");
-      const fileName = `${Date.now()}-${safeName}`;
-      const filePath = path.join(UPLOAD_DIR, fileName);
+        await fs.writeFile(filePath, bytes);
 
-      await fs.writeFile(filePath, bytes);
+        const publicUrl = `/uploads/${fileName}`;
+        const type = file.type.startsWith("image/")
+          ? "image"
+          : file.type.startsWith("video/")
+            ? "video"
+            : "other";
 
-      const publicUrl = `/uploads/${fileName}`;
-      const type = file.type.startsWith("image/")
-        ? "image"
-        : file.type.startsWith("video/")
-          ? "video"
-          : "other";
-
-      await pool
-        .request()
-        .input("blogId", sql.Int, blogId)
-        .input("url", sql.VarChar(255), publicUrl)
-        .input("type", sql.VarChar(20), type)
-        .query(
-          "INSERT INTO BlogMedia(blogId, mediaUrl, mediaType) VALUES (@blogId, @url, @type)",
-        );
+        await pool
+          .request()
+          .input("blogId", sql.Int, blogId)
+          .input("url", sql.VarChar(255), publicUrl)
+          .input("type", sql.VarChar(20), type)
+          .query(
+            "INSERT INTO BlogMedia(blogId, mediaUrl, mediaType) VALUES (@blogId, @url, @type)"
+          );
+      }
     }
+
     revalidatePath(FEED_PATH);
     return { success: true, message: "Blog created successfully" };
   } catch (error) {
@@ -77,6 +76,9 @@ export async function createBlog(formData: FormData) {
   }
 }
 
+// ==========================================
+// 2. UPDATE BLOG
+// ==========================================
 export async function updateBlog(formData: FormData) {
   try {
     const pool = await connectDB();
@@ -95,7 +97,6 @@ export async function updateBlog(formData: FormData) {
       return { success: false, message: "blogId is required" };
     }
 
-    // update text
     await pool
       .request()
       .input("id", sql.Int, blogId)
@@ -104,7 +105,6 @@ export async function updateBlog(formData: FormData) {
         "UPDATE Blogs SET text = @text, updatedAt = GETDATE() WHERE id = @id",
       );
 
-    // xóa media cũ
     if (removeIds.length > 0) {
       await pool
         .request()
@@ -115,35 +115,36 @@ export async function updateBlog(formData: FormData) {
         );
     }
 
-    // thêm media mới
     const newMedia = formData.getAll("newMedia") as File[];
-    await fs.mkdir(UPLOAD_DIR, { recursive: true });
+    if (newMedia.length > 0) {
+      await fs.mkdir(UPLOAD_DIR, { recursive: true });
 
-    for (const file of newMedia) {
-      if (!file || file.size === 0) continue;
+      for (const file of newMedia) {
+        if (!file || file.size === 0) continue;
 
-      const bytes = Buffer.from(await file.arrayBuffer());
-      const safeName = removeVietnameseSigns(file.name).replace(/\s+/g, "-");
-      const fileName = `${Date.now()}-${safeName}`;
-      const filePath = path.join(UPLOAD_DIR, fileName);
+        const bytes = Buffer.from(await file.arrayBuffer());
+        const safeName = removeVietnameseSigns(file.name).replace(/\s+/g, "-");
+        const fileName = `${Date.now()}-${safeName}`;
+        const filePath = path.join(UPLOAD_DIR, fileName);
 
-      await fs.writeFile(filePath, bytes);
+        await fs.writeFile(filePath, bytes);
 
-      const publicUrl = `/uploads/${fileName}`;
-      const type = file.type.startsWith("image/")
-        ? "image"
-        : file.type.startsWith("video/")
-          ? "video"
-          : "other";
+        const publicUrl = `/uploads/${fileName}`;
+        const type = file.type.startsWith("image/")
+          ? "image"
+          : file.type.startsWith("video/")
+            ? "video"
+            : "other";
 
-      await pool
-        .request()
-        .input("blogId", sql.Int, blogId)
-        .input("url", sql.VarChar(255), publicUrl)
-        .input("type", sql.VarChar(20), type)
-        .query(
-          "INSERT INTO BlogMedia(blogId, mediaUrl, mediaType) VALUES (@blogId, @url, @type)",
-        );
+        await pool
+          .request()
+          .input("blogId", sql.Int, blogId)
+          .input("url", sql.VarChar(255), publicUrl)
+          .input("type", sql.VarChar(20), type)
+          .query(
+            "INSERT INTO BlogMedia(blogId, mediaUrl, mediaType) VALUES (@blogId, @url, @type)"
+          );
+      }
     }
 
     revalidatePath(FEED_PATH);
@@ -154,13 +155,114 @@ export async function updateBlog(formData: FormData) {
   }
 }
 
-// ...existing code...
+// ==========================================
+// 3. DELETE BLOG
+// ==========================================
+export async function deleteBlog(formData: FormData) {
+  const pool = await connectDB();
+  const transaction = new sql.Transaction(pool);
+  try {
+    const id = Number(formData.get("blogId"));
+    if (!id) {
+      return { success: false, message: "blogId is required" };
+    }
+    await transaction.begin();
+
+    await pool.request().input("blogId", sql.Int, id).query(`
+        DELETE CL FROM CommentLikes CL JOIN Comments C ON CL.commentId = C.id WHERE C.blogId = @blogId
+      `);
+    await pool.request().input("blogId", sql.Int, id).query(`
+        DELETE FROM Comments WHERE blogId = @blogId
+      `);
+    await pool.request().input("blogId", sql.Int, id).query(`
+        DELETE FROM [Like] WHERE blogId = @blogId
+      `);
+    await pool.request()
+      .input("blogId", sql.Int, id)
+      .query(`DELETE FROM BlogMedia WHERE blogId = @blogId`);
+
+    await pool.request()
+      .input("id", sql.Int, id)
+      .query(`DELETE FROM Blogs WHERE id = @id`);
+
+    await transaction.commit();
+    revalidatePath(FEED_PATH);
+    return { success: true, message: "Blog deleted successfully" };
+  } catch (error) {
+    await transaction.rollback();
+    console.error("[deleteBlog] Error:", error);
+    return { success: false, message: error instanceof Error ? error.message : "Failed to delete blog" };
+  }
+}
+
+// ==========================================
+// 4. GET BLOGS & COMMENT TREE
+// ==========================================
+
+function buildCommentTree(comments: any[], userLikedCommentIds: Set<number>, commentLikeCounts: Map<number, number>) {
+  try {
+    const map = new Map();
+    const roots: any[] = [];
+
+    comments.forEach((c) => {
+      map.set(c.id, {
+        id: String(c.id),
+        author: c.fullName || c.username || "User",
+        avatar: c.imgUrl || "",
+        content: c.text,
+        timestamp: new Date(c.createdAt).toLocaleString("vi-VN"),
+        createdAtRaw: c.createdAt,
+        likes: commentLikeCounts.get(c.id) || 0,
+        isLiked: userLikedCommentIds.has(c.id),
+        replies: [],
+        parentId: c.parentId,
+        replyTo: undefined
+      });
+    });
+
+    map.forEach((node) => {
+      if (!node.parentId) {
+        roots.push(node);
+      } else {
+        const directParent = map.get(node.parentId);
+        if (directParent) {
+          node.replyTo = directParent.author;
+
+          let rootAncestor = directParent;
+          let current = directParent;
+          let depth = 0;
+          while (current.parentId && depth < 20) {
+            const p = map.get(current.parentId);
+            if (!p) break;
+            current = p;
+            depth++;
+          }
+          rootAncestor = current;
+
+          rootAncestor.replies.push(node);
+        } else {
+          roots.push(node);
+        }
+      }
+    });
+
+    roots.forEach(root => {
+      if (root.replies?.length > 0) {
+        root.replies.sort((a: any, b: any) => new Date(a.createdAtRaw).getTime() - new Date(b.createdAtRaw).getTime());
+      }
+    });
+
+    return roots;
+  } catch (error) {
+    console.error("[buildCommentTree] Error:", error);
+    return [];
+  }
+}
 
 export async function getBlogs(currentUserId?: number) {
   try {
     const pool = await connectDB();
 
-    // 1. Get Blogs
     const blogsResult = await pool.request().query(`
       SELECT b.id AS blogId, b.text, b.creatorId, b.createdAt, b.updatedAt,
         up.fullName, up.imgUrl, a.username, m.id AS mediaId, m.mediaUrl, m.mediaType
@@ -171,12 +273,10 @@ export async function getBlogs(currentUserId?: number) {
       ORDER BY b.createdAt DESC, m.id ASC
     `);
 
-    // 2. Count Post Likes
     const likesCountResult = await pool.request().query(`SELECT blogId, COUNT(*) as count FROM [Like] GROUP BY blogId`);
     const likesMap = new Map<number, number>();
     likesCountResult.recordset.forEach((r: any) => likesMap.set(r.blogId, r.count));
 
-    // 3. Get Comments
     const commentsResult = await pool.request().query(`
       SELECT c.id, c.blogId, c.text, c.createdAt, c.parentId, up.fullName, up.imgUrl, a.username
       FROM Comments c
@@ -185,12 +285,10 @@ export async function getBlogs(currentUserId?: number) {
       ORDER BY c.createdAt ASC
     `);
 
-    // 4. Count Comment Likes
     const commentLikesCountResult = await pool.request().query(`SELECT commentId, COUNT(*) as count FROM CommentLikes GROUP BY commentId`);
     const commentLikesMap = new Map<number, number>();
     commentLikesCountResult.recordset.forEach((r: any) => commentLikesMap.set(r.commentId, r.count));
 
-    // 5. Check User Status (Post Like & Comment Like)
     const userLikedPostSet = new Set<number>();
     const userLikedCommentSet = new Set<number>();
 
@@ -204,7 +302,6 @@ export async function getBlogs(currentUserId?: number) {
       userCommentLikes.recordset.forEach((r: any) => userLikedCommentSet.add(r.commentId));
     }
 
-    // Mapping
     const commentsByBlog = new Map<number, any[]>();
     commentsResult.recordset.forEach((c: any) => {
       if (!commentsByBlog.has(c.blogId)) commentsByBlog.set(c.blogId, []);
@@ -230,7 +327,6 @@ export async function getBlogs(currentUserId?: number) {
           media: [],
           likes: likesMap.get(blogId) || 0,
           isLikedByCurrentUser: userLikedPostSet.has(blogId),
-          // SỬ DỤNG HÀM MỚI Ở ĐÂY
           comments: buildCommentTree(rawComments, userLikedCommentSet, commentLikesMap),
           shares: 0,
         });
@@ -240,121 +336,17 @@ export async function getBlogs(currentUserId?: number) {
       }
     }
 
-    return Array.from(blogMap.values())
+    return Array.from(blogMap.values());
   } catch (error) {
     console.error("[getBlogs] Error:", error);
+    return [];
   }
 }
 
-export async function deleteBlog(formData: FormData) {
-  const pool = await connectDB();
-  const transaction = new sql.Transaction(pool);
-  try {
-    const id = Number(formData.get("blogId"));
-    if (!id) {
-      return { success: false, message: "blogId is required" };
-    }
-    await transaction.begin();
-    //xoa reports
-    await pool.request().input("blogId", sql.Int, id).query(`
-        DELETE FROM Reports WHERE blogId = @blogId
-      `)
-    //Xoá comment likes
-    await pool.request().input("blogId", sql.Int, id).query(`
-        DELETE CL FROM CommentLikes CL JOIN Comments C ON CL.commentId = C.id WHERE C.blogId = @blogId
-      `);
-    //Xoa comments
-    await pool.request().input("blogId", sql.Int, id).query(`
-        DELETE FROM Comments WHERE blogId = @blogId
-      `);
+// ==========================================
+// 5. INTERACTION ACTIONS
+// ==========================================
 
-    //Xoa like
-    await pool.request().input("blogId", sql.Int, id).query(`
-        DELETE FROM [Like] WHERE blogId = @blogId
-      `)
-    // xóa media
-    await pool.request()
-      .input("blogId", sql.Int, id)
-      .query(`DELETE FROM BlogMedia WHERE blogId = @blogId`);
-
-    // xóa blog
-    await pool.request()
-      .input("id", sql.Int, id)
-      .query(`DELETE FROM Blogs WHERE id = @id`);
-
-    revalidatePath("/(private)/(user)");
-    await transaction.commit();
-    return { success: true, message: "Blog deleted successfully" };
-  } catch (error) {
-    await transaction.rollback();
-    console.error("[deleteBlog] Error:", error);
-    return { success: false, message: error instanceof Error ? error.message : "Failed to delete blog" };
-  }
-}
-
-// ...existing code...
-
-// === FIX: Build Tree theo dạng 2-Level (Facebook style) ===
-function buildCommentTree(comments: any[], userLikedCommentIds: Set<number>, commentLikeCounts: Map<number, number>) {
-  try {
-    const map = new Map();
-    const roots: any[] = [];
-
-    // 1. Tạo node map
-    comments.forEach((c) => {
-      map.set(c.id, {
-        id: String(c.id),
-        author: c.fullName || c.username || "User",
-        avatar: c.imgUrl || "",
-        content: c.text,
-        timestamp: new Date(c.createdAt).toLocaleString("vi-VN"),
-        createdAtRaw: c.createdAt, // dùng để sort lại nếu cần
-        likes: commentLikeCounts.get(c.id) || 0,
-        isLiked: userLikedCommentIds.has(c.id),
-        replies: [],
-        parentId: c.parentId,
-        replyTo: undefined // Sẽ điền sau
-      });
-    });
-
-    // 2. Xây dựng cây 2 cấp (Root -> [Children])
-    map.forEach((node) => {
-      if (!node.parentId) {
-        roots.push(node);
-      } else {
-        // Tìm cha trực tiếp để lấy tên (replyTo)
-        const directParent = map.get(node.parentId);
-
-        if (directParent) {
-          node.replyTo = directParent.author;
-
-          // Tìm Root tổ tiên của node này
-          let rootAncestor = directParent;
-          let current = directParent;
-
-          // Leo lên cây cho đến khi tìm được node không có parentId (là Root)
-          while (current.parentId) {
-            const p = map.get(current.parentId);
-            if (!p) break;
-            current = p;
-          }
-          rootAncestor = current;
-
-          // Đẩy node hiện tại vào danh sách replies của Root Ancestor
-          // (Thay vì đẩy vào cha trực tiếp)
-          rootAncestor.replies.push(node);
-        }
-      }
-    });
-
-    return roots;
-  } catch (error) {
-    console.error("[buildCommentTree] Error:", error);
-    throw error;
-  }
-}
-
-// ... (ToggleLike, ToggleCommentLike giữ nguyên) ...
 export async function toggleLike(blogId: number, userId: number) {
   try {
     if (!userId) throw new Error("User ID required");
@@ -395,24 +387,65 @@ export async function toggleCommentLike(commentId: number, userId: number) {
   }
 }
 
+// FIX: Trả về object comment đầy đủ
 export async function addComment(blogId: number, userId: number, text: string, parentId?: number) {
   try {
     if (!userId) throw new Error("User ID required");
-    if (!text || !text.trim()) {
-      console.warn("[addComment] Empty text, skipping");
-      return;
-    }
+    if (!text || !text.trim()) return null;
 
+    const validParentId = (parentId && !isNaN(parentId)) ? parentId : null;
     const pool = await connectDB();
-    await pool.request()
-      .input("userId", sql.Int, userId).input("blogId", sql.Int, blogId)
+
+    // 1. Insert và lấy ID mới
+    const insertResult = await pool.request()
+      .input("userId", sql.Int, userId)
+      .input("blogId", sql.Int, blogId)
       .input("text", sql.NVarChar(sql.MAX), text)
-      // Quan trọng: parentId ở đây phải là ID của comment được trả lời trực tiếp
-      .input("parentId", sql.Int, parentId || null)
-      .query(`INSERT INTO Comments (userId, blogId, text, parentId) VALUES (@userId, @blogId, @text, @parentId)`);
+      .input("parentId", sql.Int, validParentId)
+      .query(`
+        INSERT INTO Comments (userId, blogId, text, parentId) 
+        OUTPUT inserted.id 
+        VALUES (@userId, @blogId, @text, @parentId)
+      `);
+
+    const newCommentId = insertResult.recordset[0].id;
+
+    // 2. Query lại data đầy đủ để trả về Client
+    const fullCommentResult = await pool.request()
+      .input("id", sql.Int, newCommentId)
+      .query(`
+        SELECT c.id, c.text, c.createdAt, c.parentId, 
+               up.fullName, up.imgUrl, a.username
+        FROM Comments c
+        LEFT JOIN UserProfile up ON up.accountId = c.userId
+        LEFT JOIN Account a ON a.id = c.userId
+        WHERE c.id = @id
+      `);
+
+    const raw = fullCommentResult.recordset[0];
+
+    // Trigger update cache
     revalidatePath(FEED_PATH);
+
+    // 3. Return format chuẩn
+    return {
+      success: true,
+      data: {
+        id: String(raw.id),
+        author: raw.fullName || raw.username || "Bạn",
+        avatar: raw.imgUrl || "",
+        content: raw.text,
+        timestamp: new Date(raw.createdAt).toLocaleString("vi-VN"),
+        createdAtRaw: raw.createdAt,
+        likes: 0,
+        isLiked: false,
+        replies: [],
+        parentId: raw.parentId,
+        replyTo: undefined
+      }
+    };
   } catch (error) {
     console.error("[addComment] Error:", error);
-    throw error;
+    return { success: false, error };
   }
 }
