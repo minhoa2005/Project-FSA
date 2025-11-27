@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export interface CommentData {
     id: string;
@@ -9,22 +9,16 @@ export interface CommentData {
     likes: number;
     isLiked?: boolean;
     replies?: CommentData[];
-    replyTo?: string; // Tên người được trả lời
+    replyTo?: string;
+    parentId?: string | number;
 }
 
 // --- Helpers ---
-
-// Tìm Root Comment ID cho một targetId bất kỳ (dựa trên cấu trúc đã load về)
 export const findRootCommentId = (comments: CommentData[], targetId: string): string | null => {
-    // 1. Kiểm tra xem targetId có phải là root không?
-    const isRoot = comments.some(c => c.id === targetId);
-    if (isRoot) return targetId;
-
-    // 2. Nếu không, tìm trong các replies của từng root
+    const root = comments.find(c => c.id === targetId);
+    if (root) return root.id;
     for (const c of comments) {
-        if (c.replies && hasCommentId(c.replies, targetId)) {
-            return c.id; // Trả về ID của root chứa comment đó
-        }
+        if (c.replies && hasCommentId(c.replies, targetId)) return c.id;
     }
     return null;
 };
@@ -32,7 +26,6 @@ export const findRootCommentId = (comments: CommentData[], targetId: string): st
 const hasCommentId = (comments: CommentData[], id: string): boolean => {
     for (const c of comments) {
         if (c.id === id) return true;
-        // Nếu cấu trúc lồng nhau sâu hơn (tuy nhiên logic mới là 2 cấp)
         if (c.replies && hasCommentId(c.replies, id)) return true;
     }
     return false;
@@ -47,33 +40,6 @@ const findCommentAuthor = (comments: CommentData[], id: string): string | null =
         }
     }
     return null;
-};
-
-// Add Reply: Luôn add vào Root Parent
-const addReplyToComment = (comments: CommentData[], rootId: string, newReply: CommentData): CommentData[] => {
-    return comments.map(c => {
-        if (c.id === rootId) {
-            return { ...c, replies: [...(c.replies || []), newReply] };
-        }
-        return c;
-    });
-};
-
-const toggleCommentHelper = (comments: CommentData[], commentId: string): CommentData[] => {
-    return comments.map(c => {
-        if (c.id === commentId) {
-            const newIsLiked = !c.isLiked;
-            return {
-                ...c,
-                isLiked: newIsLiked,
-                likes: newIsLiked ? c.likes + 1 : Math.max(0, c.likes - 1)
-            };
-        }
-        if (c.replies && c.replies.length > 0) {
-            return { ...c, replies: toggleCommentHelper(c.replies, commentId) };
-        }
-        return c;
-    });
 };
 
 const countAllComments = (comments: CommentData[]): number =>
@@ -94,6 +60,19 @@ export function usePostInteractions(initialPost: InitialPostData, onInteractionU
     const [showComments, setShowComments] = useState(false);
     const [showShareDialog, setShowShareDialog] = useState(false);
 
+    // FIX LOOP: Dùng JSON.stringify để so sánh deep equality
+    useEffect(() => {
+        setLocalPost(prev => {
+            if (JSON.stringify(prev) === JSON.stringify(initialPost)) return prev;
+            return initialPost;
+        });
+        setIsLiked(prev => {
+            const newStatus = initialPost.isLiked || false;
+            if (prev === newStatus) return prev;
+            return newStatus;
+        });
+    }, [JSON.stringify(initialPost)]);
+
     const handleLike = () => {
         const newStatus = !isLiked;
         setIsLiked(newStatus);
@@ -103,41 +82,95 @@ export function usePostInteractions(initialPost: InitialPostData, onInteractionU
         onInteractionUpdate(updated);
     };
 
-    const handleAddComment = (text: string) => {
-        const newC: CommentData = { id: `temp-${Date.now()}`, author: "Bạn", avatar: "", content: text, timestamp: "Vừa xong", likes: 0, replies: [] };
+    // FIX: Nhận tempId từ UI để hiển thị ngay
+    const handleAddComment = (text: string, tempId: string, currentUserInfo?: { name: string, avatar: string }) => {
+        const newC: CommentData = {
+            id: tempId,
+            author: currentUserInfo?.name || "Bạn",
+            avatar: currentUserInfo?.avatar || "",
+            content: text,
+            timestamp: "Đang gửi...",
+            likes: 0,
+            replies: []
+        };
         const updated = { ...localPost, comments: [...localPost.comments, newC] };
         setLocalPost(updated);
         onInteractionUpdate(updated);
     };
 
-    // Logic Reply 2 cấp (Facebook Style)
-    const handleAddReply = (targetId: string, text: string) => {
-        // Tìm Root của thread này
+    // FIX: Nhận tempId từ UI
+    const handleAddReply = (targetId: string, text: string, tempId: string, currentUserInfo?: { name: string, avatar: string }) => {
         const rootParentId = findRootCommentId(localPost.comments, targetId);
         const effectiveRootId = rootParentId || targetId;
-        
-        // Tìm tên người đang được reply (targetId)
         const replyToAuthor = findCommentAuthor(localPost.comments, targetId);
+        const isReplyingToChild = targetId !== effectiveRootId;
 
         const newR: CommentData = {
-            id: `temp-${Date.now()}`,
-            author: "Bạn",
-            avatar: "",
+            id: tempId,
+            author: currentUserInfo?.name || "Bạn",
+            avatar: currentUserInfo?.avatar || "",
             content: text,
-            timestamp: "Vừa xong",
+            timestamp: "Đang gửi...",
             likes: 0,
-            // Nếu target không phải là root -> tức là đang reply chéo trong thread -> gán replyTo
-            replyTo: (targetId !== effectiveRootId) ? (replyToAuthor || undefined) : undefined,
+            replyTo: isReplyingToChild ? (replyToAuthor || undefined) : undefined,
             replies: []
         };
 
-        const updated = { ...localPost, comments: addReplyToComment(localPost.comments, effectiveRootId, newR) };
+        const updatedComments = localPost.comments.map(c => {
+            if (c.id === effectiveRootId) {
+                return { ...c, replies: [...(c.replies || []), newR] };
+            }
+            return c;
+        });
+
+        const updated = { ...localPost, comments: updatedComments };
         setLocalPost(updated);
         onInteractionUpdate(updated);
     };
 
+    // === NEW: Hàm thay thế tempId bằng realData sau khi Server trả về ===
+    const handleCommentSuccess = (tempId: string, realData: CommentData) => {
+        const replaceRecursive = (list: CommentData[]): CommentData[] => {
+            return list.map(c => {
+                if (c.id === tempId) {
+                    // Giữ lại replies nếu trong lúc chờ user đã kịp reply vào comment ảo
+                    return {
+                        ...realData,
+                        replies: c.replies || []
+                    };
+                }
+                if (c.replies && c.replies.length > 0) {
+                    return { ...c, replies: replaceRecursive(c.replies) };
+                }
+                return c;
+            });
+        };
+
+        setLocalPost(prev => {
+            const updatedComments = replaceRecursive(prev.comments);
+            return { ...prev, comments: updatedComments };
+        });
+    };
+
     const handleLikeComment = (cmtId: string) => {
-        const updated = { ...localPost, comments: toggleCommentHelper(localPost.comments, cmtId) };
+        const toggleRecursive = (list: CommentData[]): CommentData[] => {
+            return list.map(c => {
+                if (c.id === cmtId) {
+                    const newIsLiked = !c.isLiked;
+                    return {
+                        ...c,
+                        isLiked: newIsLiked,
+                        likes: newIsLiked ? c.likes + 1 : Math.max(0, c.likes - 1)
+                    };
+                }
+                if (c.replies && c.replies.length > 0) {
+                    return { ...c, replies: toggleRecursive(c.replies) };
+                }
+                return c;
+            });
+        };
+
+        const updated = { ...localPost, comments: toggleRecursive(localPost.comments) };
         setLocalPost(updated);
         onInteractionUpdate(updated);
     };
@@ -152,6 +185,12 @@ export function usePostInteractions(initialPost: InitialPostData, onInteractionU
         currentLikes: localPost.likes,
         totalComments: countAllComments(localPost.comments),
         localPostComments: localPost.comments,
-        handleLike, setShowComments, setShowShareDialog, handleAddComment, handleAddReply, handleLikeComment, handleShare
+        handleLike, setShowComments, setShowShareDialog,
+        handleAddComment,
+        handleAddReply,
+        handleCommentSuccess, // Export function này
+        handleLikeComment,
+        handleShare,
+        setLocalPost
     };
 }

@@ -58,6 +58,40 @@ const getPersonalInfo = async () => {
     }
 }
 
+const getPersonalInfoById = async (id: number) => {
+    if (!await verifyUser()) {
+        unauthorized();
+    }
+    try {
+        const result = await pool.request().input('id', id).query(
+            `
+            select a.email, p.fullName, p.phoneNumber, p.dob, p.imgUrl, a.username from Account a
+            join AccountRole ar on a.id = ar.accountId 
+            join Role r on ar.roleId = r.id 
+            join UserProfile p on a.id = p.accountId
+            where a.id = @id
+            `
+        )
+        if (result.recordset.length === 0) {
+            return {
+                success: false,
+                message: "User not found"
+            }
+        }
+        return {
+            success: true,
+            data: result.recordset[0]
+        }
+    }
+    catch (error) {
+        console.error('Error fetching personal info:', error);
+        return {
+            success: false,
+            message: "Error fetching personal info"
+        }
+    }
+}
+
 const updateInfo = async (data: { fullName: string, phoneNumber: string, dob: string }) => {
     if (!await verifyUser()) {
         unauthorized();
@@ -169,4 +203,4 @@ const updateAvatar = async (avatarUrl: string) => {
         }
     }
 }
-export { getPersonalInfo, updateInfo, changePassword, verifyUser, updateAvatar };
+export { getPersonalInfo, updateInfo, changePassword, verifyUser, updateAvatar, getPersonalInfoById };
