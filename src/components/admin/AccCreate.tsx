@@ -12,16 +12,16 @@ import { SlashIcon } from 'lucide-react'
 
 export default function AccCreate() {
 
-    const handleSubmit = async (e) => {
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
 
-        const data = new FormData(e.target);
+        const data = new FormData(e.currentTarget);
 
-        const fullName = data.get('fullName')
-        const username = data.get('username')
-        const email = data.get('email')
-        const password = data.get('password')
-        const confirmPassword = data.get('confirmPassword')
+        const fullName = data.get('fullName') as string
+        const username = data.get('username') as string
+        const email = data.get('email') as string
+        const password = data.get('password') as string
+        const confirmPassword = data.get('confirmPassword') as string
 
         if (password !== confirmPassword) {
             toast.error('Mật khẩu không khớp')

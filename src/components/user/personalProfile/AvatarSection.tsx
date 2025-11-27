@@ -115,7 +115,7 @@ export default function AvatarSection({ className }: { className?: string }) {
                             <p className='text-zinc-400 text-sm' >PNG, JPEG dưới 15MB</p>
                         </div>
                     </div>
-                    <div className='flex  gap-2 justify-center' >
+                    <div className='flex flex-col gap-2 justify-center' >
                         <Button className={'cursor-pointer'} onClick={() => ref.current.click()}>Đăng tải ảnh</Button>
                         <Button variant="outline" className={'cursor-pointer'}>Xóa</Button>
                     </div>

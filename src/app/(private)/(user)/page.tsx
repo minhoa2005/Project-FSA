@@ -10,6 +10,7 @@ import CreatePost from "@/components/blog/CreatePost";
 import PostList from "@/components/blog/PostList";
 import ContactsSidebar from "@/components/blog/ContactsSidebar";
 import Loading from "./loading";
+import { toast } from "sonner";
 
 export default function HomePage() {
   const router = useRouter();
@@ -36,6 +37,7 @@ export default function HomePage() {
       setPosts(data);
     } catch (err) {
       console.error("Error loading blogs:", err);
+      toast.error("Đã có lỗi xảy ra khi tải bài viết.");
     } finally {
       setLoadingPosts(false);
     }

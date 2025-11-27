@@ -49,6 +49,7 @@ CREATE TABLE AdminProfile (
     phoneNumber VARCHAR(15),
     dob DATE,
     imgUrl VARCHAR(255),
+    coverImg VARCHAR(255),
     createdAt DATETIME DEFAULT GETDATE(),
     updatedAt DATETIME DEFAULT GETDATE()
 );
@@ -61,6 +62,7 @@ CREATE TABLE UserProfile (
     phoneNumber VARCHAR(15),
     dob DATE,
     imgUrl VARCHAR(255),
+    coverImg VARCHAR(255),
     createdAt DATETIME DEFAULT GETDATE(),
     updatedAt DATETIME DEFAULT GETDATE()
 );
@@ -91,9 +93,8 @@ GO
 CREATE TABLE Blogs (
     id INT IDENTITY(1,1) PRIMARY KEY,
     text NVARCHAR(MAX),
-    image VARCHAR(255),
-    video VARCHAR(255),
     creatorId INT NOT NULL,
+    isDeleted BIT DEFAULT 0,
     createdAt DATETIME DEFAULT GETDATE(),
     updatedAt DATETIME DEFAULT GETDATE(),
     FOREIGN KEY (creatorId) REFERENCES Account(id)

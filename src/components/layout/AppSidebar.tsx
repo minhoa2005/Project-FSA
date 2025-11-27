@@ -8,10 +8,6 @@ import { getAdminInfo } from '@/service/admin/admininfo'
 import { useTheme } from 'next-themes'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { Sheet, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle, SheetTrigger } from '../ui/sheet'
-import { Button } from '../ui/button'
-import { Label } from '../ui/label'
-import { Input } from '../ui/input'
 import ChangePassAdmin from '../admin/ChangePassAdmin'
 
 const dashboard = [
@@ -71,10 +67,14 @@ const report = [
   }
 ]
 
+interface AdminInfo {
+  fullName: string
+}
+
 export function AppSidebar() {
 
   const { handleLogout } = useUser();
-  const [info, setInfo] = useState();
+  const [info, setInfo] = useState<AdminInfo>();
   const { theme, setTheme } = useTheme();
   const pathName = usePathname()
 
@@ -240,7 +240,7 @@ export function AppSidebar() {
                     Theme
                   </DropdownMenuSubTrigger>
                   <DropdownMenuPortal>
-                    <DropdownMenuSubContent side="left" sideOffset={4}>
+                    <DropdownMenuSubContent sideOffset={4}>
                       <DropdownMenuRadioGroup value={theme} onValueChange={setTheme}>
                         <DropdownMenuRadioItem value="light">
                           <Sun className="mr-2 h-4 w-4" />

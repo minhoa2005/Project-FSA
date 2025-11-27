@@ -6,6 +6,10 @@ import { useSocket } from "@/hooks/useSocket";
 import { getMessagesByFollowing, insertMessage } from "@/service/users/chat";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getInitials } from "@/lib/formatter";
+import { Card } from "../ui/card";
+import { File, Upload, X } from "lucide-react";
+import { Input } from "../ui/input";
+import Image from "next/image";
 
 export default function ChatBox({ user, onClose, avatar, name }) {
   const socket = useSocket();
@@ -49,7 +53,7 @@ export default function ChatBox({ user, onClose, avatar, name }) {
   const sendMessage = async () => {
     if (!text.trim() || !roomId) return;
     const msg = await insertMessage(user.id, text, "text");
-    
+
     socket.emit("send_message", msg);
     setMessages(prev => [...prev, msg]);
     setText("");
@@ -90,12 +94,25 @@ export default function ChatBox({ user, onClose, avatar, name }) {
       setMessages(prev => prev.map(m => (m.id === tempMsg.id ? msg : m)));
     } catch (err) {
       console.error("Upload image error:", err);
-      setMessages(prev => prev.map(m => m.id === tempMsg.id ? {...m, status:"error"} : m));
+      setMessages(prev => prev.map(m => m.id === tempMsg.id ? { ...m, status: "error" } : m));
     }
   };
 
+  useEffect(() => {
+    const sendBtn = document.getElementById("sendBtn");
+    const enterKey = (e: KeyboardEvent) => {
+      if (e.key === "Enter") {
+        sendBtn.click();
+      }
+    }
+    document.addEventListener("keydown", enterKey);
+    return () => {
+      document.removeEventListener("keydown", enterKey);
+    };
+  }, []);
+
   return (
-    <div className="fixed bottom-4 right-4 bg-white w-80 rounded-xl shadow-xl">
+    <Card className="fixed bottom-4 right-4 rounded-xl shadow-xl">
       <div className="p-3 border-b flex justify-between">
         <div className="flex gap-3">
           <Avatar className="h-9 w-9">
@@ -103,23 +120,23 @@ export default function ChatBox({ user, onClose, avatar, name }) {
           </Avatar>
           <span>{name}</span>
         </div>
-        <button onClick={onClose}>x</button>
+        <Button variant="ghost" onClick={onClose}><X /></Button>
       </div>
 
       <div ref={scrollRef} className="h-64 p-3 overflow-y-auto flex flex-col gap-3">
         {messages.map((msg, idx) => {
           const isOther = msg.senderId === user.id;
           return (
-            <div key={idx} className={`flex items-end ${isOther ? "justify-start" : "justify-end"}`}>
+            <div key={idx} className={`flex items-end ${isOther ? "justify-start" : "justify-end"} gap-1`}>
               {isOther && (
                 <Avatar className="h-9 w-9">
                   {avatar ? <AvatarImage src={avatar} /> : <AvatarFallback>{getInitials(name)}</AvatarFallback>}
                 </Avatar>
               )}
-              <div className={`px-3 py-2 rounded-lg max-w-[70%] break-words ${isOther ? "bg-gray-200" : "bg-blue-500 text-white"}`}>
+              <div className={`px-3 py-2 rounded-lg max-w-[70%] wrap-break-word ${isOther ? "bg-gray-200 text-black" : "bg-blue-500 text-white"}`}>
                 {msg.type === "image" ? (
                   <div className="relative">
-                    <img src={msg.text} className="max-w-[150px] rounded-lg" />
+                    <Image src={msg.text} className="max-w-[150px] rounded-lg" alt="msgImg" />
                     {msg.status === "uploading" && <span className="absolute top-1 right-1 text-xs bg-gray-200 px-1 rounded">⏳</span>}
                     {msg.status === "error" && <span className="absolute top-1 right-1 text-xs bg-red-200 px-1 rounded">❌</span>}
                   </div>
@@ -134,17 +151,17 @@ export default function ChatBox({ user, onClose, avatar, name }) {
 
       <div className="p-3 border-t flex gap-2 items-center">
         <input type="file" onChange={handleImageUpload} className="hidden" id="uploadImage" />
-        <label htmlFor="uploadImage" className="cursor-pointer px-2 py-1 border rounded">📎</label>
+        <Button onClick={() => document.getElementById('uploadImage')?.click()} variant="ghost" className="cursor-pointer px-2 py-1 border rounded"><Upload className="h-5 w-5" /></Button>
 
-        <input
-          className="flex-1 border rounded-lg px-3 py-1"
+        <Input
+          className="flex-1 px-3 py-1"
           placeholder="Nhập tin nhắn..."
           value={text}
           onChange={(e) => setText(e.target.value)}
         />
 
-        <Button onClick={sendMessage}>Gửi</Button>
+        <Button onClick={sendMessage} className="cursor-pointer" id="sendBtn">Gửi</Button>
       </div>
-    </div>
+    </Card>
   );
 }
