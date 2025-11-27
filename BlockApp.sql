@@ -224,3 +224,7 @@ BEGIN
       OR (used = 1 AND usedAt < DATEADD(DAY, -7, GETDATE()));
 END;
 GO
+
+-- update 27/11/2025 - trang thai table comment
+ALTER TABLE Comments ADD isHidden BIT DEFAULT 0;
+ALTER TABLE Comments ADD updatedAt DATETIME;

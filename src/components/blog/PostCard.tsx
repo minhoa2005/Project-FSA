@@ -7,6 +7,8 @@ import {
   toggleLike,
   addComment,
   toggleCommentLike,
+  editComment, 
+  toggleHideComment, 
 } from "@/service/users/postActions";
 
 import {
@@ -37,6 +39,7 @@ import Image from "next/image";
 import ReportModal from "../report/ReportModal";
 import {
   usePostInteractions,
+  CommentData, 
 } from "@/components/post/Social_Interactions";
 import { CommentSection } from "@/components/post/CommentSection";
 import { ShareDialog } from "@/components/post/ShareDialog";
@@ -47,6 +50,18 @@ interface PostCardProps {
   isOwner: boolean;
   currentUserId: number;
   onChanged?: () => void;
+}
+
+// Helper: Tìm nội dung cũ để khôi phục (revert) nếu gọi server thất bại
+const findCommentContent = (comments: CommentData[], id: string): string | null => {
+    for (const c of comments) {
+        if (c.id === id) return c.content;
+        if (c.replies) {
+            const found = findCommentContent(c.replies, id);
+            if (found) return found;
+        }
+    }
+    return null;
 }
 
 export default function PostCard({
@@ -60,8 +75,6 @@ export default function PostCard({
   const [removedMediaIds, setRemovedMediaIds] = useState<number[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   
-  // Placeholder thông tin user hiện tại (Để hiển thị ngay lập tức)
-  // Bạn nên thay bằng hook useUser() hoặc truyền từ props nếu có
   const currentUserInfo = { 
     name: "Bạn", 
     avatar: "" 
@@ -79,8 +92,10 @@ export default function PostCard({
     setShowShareDialog,
     handleAddComment: triggerAddCommentLocal,
     handleAddReply: triggerAddReplyLocal,
-    handleCommentSuccess, // Lấy hàm này từ hook
+    handleCommentSuccess,
     handleLikeComment: triggerLikeCommentLocal,
+    handleEditComment: triggerEditCommentLocal,
+    handleToggleHideComment: triggerToggleHideLocal,
     handleShare,
   } = usePostInteractions(
     {
@@ -94,8 +109,6 @@ export default function PostCard({
     () => { }
   );
 
-  // --- ACTIONS ---
-
   const onLikeClick = async () => {
     triggerLikeLocal();
     try {
@@ -105,19 +118,11 @@ export default function PostCard({
     }
   };
 
-  // --- LOGIC COMMENT (NO RELOAD) ---
   const onAddCommentClick = async (text: string) => {
-    // 1. Tạo Temp ID
     const tempId = `temp-${Date.now()}`;
-    
-    // 2. Hiển thị ngay lập tức (Optimistic UI)
     triggerAddCommentLocal(text, tempId, currentUserInfo);
-    
     try {
-      // 3. Gọi Server
       const result = await addComment(post.id, currentUserId, text);
-      
-      // 4. Khi có kết quả từ Server, cập nhật ID thật
       if (result && result.success && result.data) {
         handleCommentSuccess(tempId, result.data);
       } else {
@@ -130,15 +135,12 @@ export default function PostCard({
   };
 
   const onAddReplyClick = async (targetId: string, text: string) => {
-    // Chặn nếu đang reply vào comment ảo
     if (targetId.toString().startsWith("temp-")) {
       toast.warning("Đang gửi, vui lòng đợi...");
       return;
     }
-
     const tempId = `temp-${Date.now()}`;
     triggerAddReplyLocal(targetId, text, tempId, currentUserInfo);
-    
     try {
       const result = await addComment(post.id, currentUserId, text, Number(targetId));
       if (result && result.success && result.data) {
@@ -149,15 +151,58 @@ export default function PostCard({
       toast.error("Không thể gửi phản hồi");
     }
   };
-  // ---------------------------------
+  
+  // === LOGIC SỬA COMMENT (ĐÃ KHẮC PHỤC LỖI) ===
+  const onEditCommentClick = async (commentId: string, newText: string) => {
+      // 1. Lưu state cũ
+      const oldText = findCommentContent(localPostComments, commentId) || "";
+      
+      // 2. Cập nhật UI ngay lập tức
+      triggerEditCommentLocal(commentId, newText);
+
+      // 3. Gọi Server
+      if (!commentId.startsWith("temp-")) {
+          try {
+              const res = await editComment(Number(commentId), currentUserId, newText);
+              
+              if (!res.success) {
+                  // Nếu lỗi: Hiện thông báo và Quay lại text cũ
+                  toast.error(res.message || "Sửa thất bại");
+                  console.error("Edit failed details:", res.message);
+                  triggerEditCommentLocal(commentId, oldText);
+              } else {
+                  toast.success("Đã cập nhật bình luận");
+              }
+          } catch (e) {
+              console.error(e);
+              toast.error("Lỗi kết nối");
+              triggerEditCommentLocal(commentId, oldText);
+          }
+      }
+  };
+
+  // === LOGIC ẨN/HIỆN COMMENT ===
+  const onToggleHideCommentClick = async (commentId: string) => {
+      triggerToggleHideLocal(commentId);
+      if (!commentId.startsWith("temp-")) {
+          try {
+              const res = await toggleHideComment(Number(commentId), currentUserId);
+              if (!res.success) {
+                 toast.error(res.message || "Không thể thay đổi trạng thái");
+                 triggerToggleHideLocal(commentId); // Revert
+              }
+          } catch (e) {
+              console.error(e);
+              triggerToggleHideLocal(commentId); // Revert
+          }
+      }
+  };
 
   const onLikeCommentClick = async (cmtId: string) => {
     if (cmtId.toString().startsWith("temp-")) return;
     triggerLikeCommentLocal(cmtId);
-    const commentIdNum = Number(cmtId);
-    if (isNaN(commentIdNum)) return;
     try {
-      await toggleCommentLike(commentIdNum, currentUserId);
+      await toggleCommentLike(Number(cmtId), currentUserId);
     } catch (e) {
       console.error(e);
     }
@@ -167,18 +212,15 @@ export default function PostCard({
   const displayName = post.fullName || post.username || `User #${post.creatorId}`;
   const avatarUrl = post.imgUrl || post.avatarUrl || "";
   const avatarFallback = displayName.split(" ").map((w: string) => w[0]).join("").toUpperCase() || "U";
-
   const images = (post.media || []).filter((m: any) => m.type === "image" && !removedMediaIds.includes(m.id));
   const videos = (post.media || []).filter((m: any) => m.type === "video" && !removedMediaIds.includes(m.id));
 
   const handleReportClick = (e: any) => setIsModalOpen(true);
-
+  
   const handleUpdate = async (formData: FormData) => {
     try {
       setSubmitting(true);
-      if (removedMediaIds.length > 0) {
-        formData.set("removeMediaIds", removedMediaIds.join(","));
-      }
+      if (removedMediaIds.length > 0) formData.set("removeMediaIds", removedMediaIds.join(","));
       await updateBlog(formData);
       setEditing(false);
       setRemovedMediaIds([]);
@@ -226,7 +268,6 @@ export default function PostCard({
             <div className="text-xs text-muted-foreground">{createdAt}</div>
           </div>
         </div>
-
         {isOwner ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -320,6 +361,9 @@ export default function PostCard({
             onAddComment={onAddCommentClick}
             onLikeComment={onLikeCommentClick}
             onAddReply={onAddReplyClick}
+            onEditComment={onEditCommentClick}
+            onToggleHideComment={onToggleHideCommentClick}
+            currentUserId={currentUserId}
           />
         )}
         {showShareDialog && <ShareDialog onClose={() => setShowShareDialog(false)} onShare={handleShare} />}
