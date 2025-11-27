@@ -90,7 +90,7 @@ GO
 
 CREATE TABLE Blogs (
     id INT IDENTITY(1,1) PRIMARY KEY,
-    text TEXT,
+    text NVARCHAR(MAX),
     image VARCHAR(255),
     video VARCHAR(255),
     creatorId INT NOT NULL,
