@@ -8,20 +8,20 @@ import bcrypt from 'bcryptjs'
 import { toast } from 'sonner'
 
 export default function ChangePassAdmin() {
-    const [err, setErr] = useState('')
+    const [err, setErr] = useState<string>('')
 
     const handleSubmit = async (e) => {
         e.preventDefault()
 
         const data = new FormData(e.target)
 
-        const oldPass = data.get('oldPassword')
-        const newPass = data.get('newPassword')
-        const reNewPass = data.get('reNewPassword')
+        const oldPass = data.get('oldPassword') as string
+        const newPass = data.get('newPassword') as string
+        const reNewPass = data.get('reNewPassword') as string
 
         const infoAdmin = await getAdminInfo()
         if(infoAdmin.success) {
-            const pass = infoAdmin?.data?.password
+            const pass = infoAdmin?.data?.password as string
             // console.log(pass)
 
             const checkPass = await bcrypt.compare(oldPass, pass);
