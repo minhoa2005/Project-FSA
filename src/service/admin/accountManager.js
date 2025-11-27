@@ -9,7 +9,7 @@ const getAllUser = async () => {
 
     try {
         const result = await pool.request()
-            .query('select a.id, a.email, a.username, a.roleid, a.isActive, a.createdAt from Account a')
+            .query('select a.id, a.email, a.username,r.roleId, a.isActive, a.createdAt from Account a join AccountRole r on r.accountId=a.id')
         // console.log(result)
         return {
             success: true,
@@ -25,7 +25,7 @@ export const getEmailAccById = async (id) => {
     const result = await pool.request()
         .input('id', id)
         .query(`select * from account where id= @id`)
-        // console.log(result.recordset[0])
+    // console.log(result.recordset[0])
     return result.recordset[0]
 }
 
@@ -55,7 +55,7 @@ export const addAccByAdmin = async (fullName, email, username, password) => {
 
         await pool.request()
             .input('email', email).input('username', username).input('password', hashPass)
-            .query(`insert into account(email, username, password, roleId) values (@email, @username, @password, 2)`)
+            .query(`insert into account(email, username, password) values (@email, @username, @password)`)
 
         await pool.request()
             .input('email', email)
@@ -83,7 +83,7 @@ export const addAccByAdmin = async (fullName, email, username, password) => {
 const getAllAccBan = async () => {
     try {
         const result = await pool.request()
-            .query('select a.id, a.email, a.username, a.roleid, a.isActive, a.createdAt from Account a where isActive = 0')
+            .query('select a.id, a.email, a.username, r.roleid, a.isActive, a.createdAt from Account a  join AccountRole r on r.accountId=a.id where isActive = 0')
 
         return {
             success: true,
@@ -97,10 +97,11 @@ const getAllAccBan = async () => {
 const filterAcc = async (keyword) => {
     const result = await pool.request()
         .input('key', `%${keyword}%`)
-        .query(`select a.id, a.email, a.username, u.fullName, u.phoneNumber, u.dob, u.imgUrl, a.createdAt, a.updatedAt, a.isActive
+        .query(`select a.id, a.email, a.username, u.fullName, u.phoneNumber, u.dob, u.imgUrl, a.createdAt, a.updatedAt, a.isActive, r.roleId
             from Account a
             LEFT join UserProfile u on u.id = a.id
             LEFT join AdminProfile ad on ad.id = a.id
+			Left join AccountRole r on r.accountId=a.id
             where username like @key`)
     return {
         success: true,
