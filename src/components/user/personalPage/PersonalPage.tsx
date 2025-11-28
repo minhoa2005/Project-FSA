@@ -1,5 +1,4 @@
-"use client"
-import { useUser } from '@/context/AuthContext'
+import BlogSection from './BlogSection'
 import CoverSection from './CoverSection'
 
 export default function PersonalPage({ data }: {
@@ -14,6 +13,7 @@ export default function PersonalPage({ data }: {
     return (
         <div>
             <CoverSection user={data} />
+            <BlogSection />
         </div>
     )
 }

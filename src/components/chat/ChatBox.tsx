@@ -136,7 +136,7 @@ export default function ChatBox({ user, onClose, avatar, name }) {
               <div className={`px-3 py-2 rounded-lg max-w-[70%] wrap-break-word ${isOther ? "bg-gray-200 text-black" : "bg-blue-500 text-white"}`}>
                 {msg.type === "image" ? (
                   <div className="relative">
-                    <Image src={msg.text} className="max-w-[150px] rounded-lg" alt="msgImg" />
+                    <Image src={msg.text} className="rounded-lg" alt="msgImg" width={150} height={150} />
                     {msg.status === "uploading" && <span className="absolute top-1 right-1 text-xs bg-gray-200 px-1 rounded">⏳</span>}
                     {msg.status === "error" && <span className="absolute top-1 right-1 text-xs bg-red-200 px-1 rounded">❌</span>}
                   </div>
