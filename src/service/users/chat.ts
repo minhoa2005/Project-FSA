@@ -6,10 +6,6 @@ import { verifyToken } from "@/config/jwt";
 import { verifyUser } from "./personalInfo";
 
 const pool = await connectDB();
-
-// ==========================
-//        TYPES
-// ==========================
 export type FollowUser = {
   id: number;
   username: string;
@@ -32,9 +28,6 @@ export type MessageListResult = {
   messages: Message[];
 };
 
-// ==========================
-//   GET FOLLOWING USERS
-// ==========================
 export async function getFollowingUsers(
   offset: number,
   limit: number
@@ -65,9 +58,6 @@ export async function getFollowingUsers(
   return result.recordset as FollowUser[];
 }
 
-// ==========================
-//       INSERT MESSAGE
-// ==========================
 export async function insertMessage(
   receiverId: number,
   text: string,
@@ -112,9 +102,6 @@ export async function insertMessage(
   }
 }
 
-// ==========================
-//   GET MESSAGES IN ROOM
-// ==========================
 export async function getMessagesByFollowing(
   receiverId: number
 ): Promise<MessageListResult> {
@@ -154,5 +141,38 @@ export async function getMessagesByFollowing(
       roomId: "",
       messages: [],
     };
+  }
+}
+
+export async function deleteMessage(messageId: number): Promise<{ success: boolean }> {
+  try {
+    const token = await getCookie();
+    const decoded = verifyToken(token);
+    const userId: number = Number(decoded.id);
+
+    // Kiểm tra người gửi
+    const checkResult = await pool
+      .request()
+      .input("messageId", sql.Int, messageId)
+      .input("userId", sql.Int, userId)
+      .query(`
+        SELECT id FROM Messages
+        WHERE id = @messageId AND senderId = @userId
+      `);
+
+    if (checkResult.recordset.length === 0) {
+      throw new Error("Unauthorized: Cannot delete message");
+    }
+
+    // Xóa tin nhắn
+    await pool
+      .request()
+      .input("messageId", sql.Int, messageId)
+      .query(`DELETE FROM Messages WHERE id = @messageId`);
+
+    return { success: true };
+  } catch (err) {
+    console.error("DELETE MESSAGE ERROR:", err);
+    return { success: false };
   }
 }

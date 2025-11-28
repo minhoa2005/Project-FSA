@@ -3,13 +3,19 @@
 import { useEffect, useState, useRef } from "react";
 import { Button } from "../ui/button";
 import { useSocket } from "@/hooks/useSocket";
-import { getMessagesByFollowing, insertMessage } from "@/service/users/chat";
+import { getMessagesByFollowing, insertMessage, deleteMessage } from "@/service/users/chat";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getInitials } from "@/lib/formatter";
 import { Card } from "../ui/card";
-import { File, Upload, X } from "lucide-react";
+import { File, Upload, X, MoreVertical } from "lucide-react";
 import { Input } from "../ui/input";
 import Image from "next/image";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function ChatBox({ user, onClose, avatar, name }) {
   const socket = useSocket();
@@ -46,7 +52,14 @@ export default function ChatBox({ user, onClose, avatar, name }) {
       setMessages(prev => [...prev, msg]);
     });
 
-    return () => socket.off("receive_message");
+    socket.on("message_deleted", (msgId) => {
+      setMessages(prev => prev.filter(m => m.id !== msgId));
+    });
+
+    return () => {
+      socket.off("receive_message");
+      socket.off("message_deleted");
+    };
   }, [socket, roomId]);
 
   // Send text
@@ -57,6 +70,13 @@ export default function ChatBox({ user, onClose, avatar, name }) {
     socket.emit("send_message", msg);
     setMessages(prev => [...prev, msg]);
     setText("");
+  };
+
+  // Delete message
+  const handleDeleteMessage = (msgId) => {
+    setMessages(prev => prev.filter(m => m.id !== msgId));
+    socket.emit("delete_message", msgId);
+    deleteMessage(msgId);
   };
 
   // Send image with optimistic UI
@@ -97,7 +117,6 @@ export default function ChatBox({ user, onClose, avatar, name }) {
       setMessages(prev => prev.map(m => m.id === tempMsg.id ? { ...m, status: "error" } : m));
     }
   };
-
   useEffect(() => {
     const sendBtn = document.getElementById("sendBtn");
     const enterKey = (e: KeyboardEvent) => {
@@ -123,25 +142,53 @@ export default function ChatBox({ user, onClose, avatar, name }) {
         <Button variant="ghost" onClick={onClose}><X /></Button>
       </div>
 
-      <div ref={scrollRef} className="h-64 p-3 overflow-y-auto flex flex-col gap-3">
+      <div ref={scrollRef} className="h-80 p-4 overflow-y-auto flex flex-col gap-3 bg-gray-50">
         {messages.map((msg, idx) => {
           const isOther = msg.senderId === user.id;
           return (
-            <div key={idx} className={`flex items-end ${isOther ? "justify-start" : "justify-end"} gap-1`}>
+            <div key={idx} className={`flex items-end gap-2 group ${isOther ? "justify-start" : "justify-end"}`}>
               {isOther && (
-                <Avatar className="h-9 w-9">
+                <Avatar className="h-8 w-8 flex-shrink-0">
                   {avatar ? <AvatarImage src={avatar} /> : <AvatarFallback>{getInitials(name)}</AvatarFallback>}
                 </Avatar>
               )}
-              <div className={`px-3 py-2 rounded-lg max-w-[70%] wrap-break-word ${isOther ? "bg-gray-200 text-black" : "bg-blue-500 text-white"}`}>
+
+              <div className="flex items-end gap-2 max-w-xs">
+                {!isOther && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="opacity-0 group-hover:opacity-100 transition-opacity h-7 w-7 p-0 hover:bg-gray-300"
+                      >
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start">
+                      <DropdownMenuItem onClick={() => handleDeleteMessage(msg.id)} className="text-red-600">
+                        🗑️ Xóa
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+
                 {msg.type === "image" ? (
                   <div className="relative">
-                    <Image src={msg.text} className="rounded-lg" alt="msgImg" width={150} height={150} />
-                    {msg.status === "uploading" && <span className="absolute top-1 right-1 text-xs bg-gray-200 px-1 rounded">⏳</span>}
-                    {msg.status === "error" && <span className="absolute top-1 right-1 text-xs bg-red-200 px-1 rounded">❌</span>}
+                    <Image
+                      src={msg.text}
+                      className="rounded-lg max-w-sm"
+                      alt="msgImg"
+                      width={200}
+                      height={160}
+                    />
+                    {msg.status === "uploading" && <span className="absolute top-2 right-2 text-xs bg-gray-200 px-2 py-1 rounded">⏳</span>}
+                    {msg.status === "error" && <span className="absolute top-2 right-2 text-xs bg-red-200 px-2 py-1 rounded">❌</span>}
                   </div>
                 ) : (
-                  msg.text
+                  <div className={`px-4 py-2 rounded-2xl wrap-break-word whitespace-pre-wrap ${isOther ? "bg-gray-200 text-gray-900" : "bg-blue-500 text-white"}`}>
+                    <span className="text-sm">{msg.text}</span>
+                  </div>
                 )}
               </div>
             </div>

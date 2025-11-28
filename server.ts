@@ -73,6 +73,11 @@ app.prepare().then(() => {
             io.to(roomId).emit("messages_read", { roomId });
         });
 
+        // Delete message - broadcast to room
+        socket.on("delete_message", (msgId) => {
+            socket.broadcast.emit("message_deleted", msgId);
+        });
+
         // Legacy support
         socket.on("send-message", (msg) => {
             io.emit("receive-message", msg);
