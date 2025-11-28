@@ -138,7 +138,7 @@ GO
 CREATE TABLE Reports (
     id INT IDENTITY(1,1) PRIMARY KEY,
     blogId INT NULL,
-    reason VARCHAR(255) NOT NULL,
+    reason NVARCHAR(255) NOT NULL,
     status VARCHAR(20) DEFAULT 'Pending',
     createdAt DATETIME DEFAULT GETDATE(),
     FOREIGN KEY (blogId) REFERENCES Blogs(id),

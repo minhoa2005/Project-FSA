@@ -31,3 +31,21 @@ export async function insertReport(data : ReportPayload) : Promise<number> {
     return 0;
   }
 }
+
+export type Report = {
+  blogId : number;
+  reason : string;
+  createdAt : Date;
+  status : string;
+}
+
+export const getReport = async (): Promise<Report[]> => {
+  try {
+    const result = await pool.request()
+      .query(`SELECT * FROM Reports WHERE status = 'Pending'`);
+    return result.recordset;
+  } catch (error) {
+    console.error('Lỗi lấy báo cáo:', error);
+    return [];
+  }
+};

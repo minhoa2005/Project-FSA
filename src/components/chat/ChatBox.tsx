@@ -167,7 +167,7 @@ useEffect(() => {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="start">
                       <DropdownMenuItem onClick={() => handleDeleteMessage(msg.id)} className="text-red-600">
-                        🗑️ Xóa
+                        Xóa
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
