@@ -21,7 +21,7 @@ const getAllUser = async () => {
     }
 }
 
-export const getEmailAccById = async (id) => {
+export const getEmailAccById = async (id: number) => {
     const result = await pool.request()
         .input('id', id)
         .query(`select * from account where id= @id`)
@@ -48,7 +48,7 @@ export const getAllUsername = async () => {
     return result.recordset;
 }
 
-export const addAccByAdmin = async (fullName, email, username, password) => {
+export const addAccByAdmin = async (fullName: string, email: string, username: string, password: string) => {
     try {
         const salt = await bcrypt.genSalt(10)
         const hashPass = await bcrypt.hash(password, salt)
@@ -94,7 +94,7 @@ const getAllAccBan = async () => {
     }
 }
 
-const filterAcc = async (keyword) => {
+const filterAcc = async (keyword: string) => {
     const result = await pool.request()
         .input('key', `%${keyword}%`)
         .query(`select a.id, a.email, a.username, u.fullName, u.phoneNumber, u.dob, u.imgUrl, a.createdAt, a.updatedAt, a.isActive, r.roleId
@@ -109,7 +109,7 @@ const filterAcc = async (keyword) => {
     }
 }
 
-const banAcc = async (id) => {
+const banAcc = async (id: number) => {
     const result = await pool.request()
         .input("id", id)
         .query(`
@@ -121,7 +121,7 @@ const banAcc = async (id) => {
     return result;
 };
 
-const unBanAcc = async (id) => {
+const unBanAcc = async (id: number) => {
     const result = await pool.request()
         .input('id', id)
         .query(`Update account set isActive = 1 where id = @id`);
