@@ -1,8 +1,8 @@
-// components/layout/SearchDropdown.tsx
+
 "use client";
 
 import { useState, useEffect, useTransition, useEffectEvent } from 'react';
-import { searchEverything } from '@/service/users/searchService'; // ← GỌI THẲNG TỪ SERVICE
+import { searchEverything } from '@/service/users/searchService'; 
 import { Search } from 'lucide-react';
 import { Input } from '../ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
@@ -14,9 +14,8 @@ export default function SearchDropdown() {
     users: any[];
     posts: any[];
   }>({ users: [], posts: [] });
-  const [isPending, startTransition] = useTransition(); // ← Dùng để gọi async mượt
+  const [isPending, startTransition] = useTransition(); 
 
-  // Đây chính là chỗ bạn hỏi: "dùng ở đâu"
   const handleSetResults = useEffectEvent((users: [], posts: []) => setResults({ users, posts }))
   useEffect(() => {
     if (query.length < 2) {
@@ -24,10 +23,8 @@ export default function SearchDropdown() {
       return;
     }
 
-    // Debounce 300ms
     const timeoutId = setTimeout(() => {
       startTransition(async () => {
-        // ← ĐÚNG CHỖ NÀY: gọi thẳng service từ client
         const data = await searchEverything(query);
         setResults(data);
       });
