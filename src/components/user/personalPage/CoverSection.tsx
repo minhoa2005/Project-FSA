@@ -12,6 +12,7 @@ export default function CoverSection({ className, user }: { className?: string, 
                     alt="Personal Image"
                     layout="fill"
                     objectFit='cover'
+                    className='rounded'
                 />
                 <div className='absolute bottom-[-130px] left-5 grid grid-cols-2 gap-3' >
                     <Avatar className='w-40 h-40 border-4 border-primary'>

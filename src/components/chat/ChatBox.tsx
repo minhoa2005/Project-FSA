@@ -117,7 +117,7 @@ export default function ChatBox({ user, onClose, avatar, name }) {
       setMessages(prev => prev.map(m => m.id === tempMsg.id ? { ...m, status: "error" } : m));
     }
   };
-useEffect(() => {
+  useEffect(() => {
     const sendBtn = document.getElementById("sendBtn");
     const enterKey = (e: KeyboardEvent) => {
       if (e.key === "Enter") {
@@ -152,7 +152,7 @@ useEffect(() => {
                   {avatar ? <AvatarImage src={avatar} /> : <AvatarFallback>{getInitials(name)}</AvatarFallback>}
                 </Avatar>
               )}
-              
+
               <div className="flex items-end gap-2 max-w-xs">
                 {!isOther && (
                   <DropdownMenu>
@@ -175,18 +175,18 @@ useEffect(() => {
 
                 {msg.type === "image" ? (
                   <div className="relative">
-                    <Image 
-                      src={msg.text} 
-                      className="rounded-lg max-w-sm" 
-                      alt="msgImg" 
-                      width={200} 
+                    <Image
+                      src={msg.text}
+                      className="rounded-lg max-w-sm"
+                      alt="msgImg"
+                      width={200}
                       height={160}
                     />
                     {msg.status === "uploading" && <span className="absolute top-2 right-2 text-xs bg-gray-200 px-2 py-1 rounded">⏳</span>}
                     {msg.status === "error" && <span className="absolute top-2 right-2 text-xs bg-red-200 px-2 py-1 rounded">❌</span>}
                   </div>
                 ) : (
-                  <div className={`px-4 py-2 rounded-2xl break-words whitespace-pre-wrap ${isOther ? "bg-gray-200 text-gray-900" : "bg-blue-500 text-white"}`}>
+                  <div className={`px-4 py-2 rounded-2xl wrap-break-word whitespace-pre-wrap ${isOther ? "bg-gray-200 text-gray-900" : "bg-blue-500 text-white"}`}>
                     <span className="text-sm">{msg.text}</span>
                   </div>
                 )}

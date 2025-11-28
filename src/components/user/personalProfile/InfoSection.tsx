@@ -4,40 +4,47 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { getPersonalInfo, updateInfo } from '@/service/users/personalInfo'
-import React, { useEffect, useState } from 'react'
+import React, { use, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import InfoSectionSkeleton from './InfoSectionSkeleton'
+import { useRouter } from 'next/navigation'
 
 
-export default function InfoSection({ className }: { className?: string }) {
+export default function InfoSection({ className, fetchInfo }: {
+    className?: string,
+    fetchInfo: Promise<any>
+}) {
+    const fetch = use(fetchInfo);
+    const router = useRouter()
     const [fetching, setFetching] = useState(false);
-    const [data, setData] = useState(null);
+    const [data, setData] = useState(fetch.data || {});
     const [loading, setLoading] = useState(false);
-    const fetchInfo = async () => {
-        setFetching(true);
-        try {
-            const response = await getPersonalInfo();
-            if (response.success) {
-                setData(response.data);
-            }
-            else {
-                toast.error(response.message || "Failed to fetch personal information.", { duration: 4000 });
-            }
-        }
-        catch (error) {
-            console.error("Error fetching personal info:", error);
-            toast.error("Failed to fetch personal information.", { duration: 4000 });
-        }
-        finally {
-            setFetching(false);
-        }
-    }
+    // const fetchInfo = async () => {
+    //     setFetching(true);
+    //     try {
+    //         const response = await getPersonalInfo();
+    //         if (response.success) {
+    //             setData(response.data);
+    //         }
+    //         else {
+    //             toast.error(response.message || "Failed to fetch personal information.", { duration: 4000 });
+    //         }
+    //     }
+    //     catch (error) {
+    //         console.error("Error fetching personal info:", error);
+    //         toast.error("Failed to fetch personal information.", { duration: 4000 });
+    //     }
+    //     finally {
+    //         setFetching(false);
+    //     }
+    // }
     const handleUpdate = async () => {
         setLoading(true);
         try {
             const response = await updateInfo(data);
             if (response.success) {
                 toast.success("Personal information updated successfully.", { duration: 4000 });
+                router.refresh()
             }
             else {
                 toast.error(response.message || "Failed to update personal information.", { duration: 4000 });
@@ -51,9 +58,9 @@ export default function InfoSection({ className }: { className?: string }) {
             setLoading(false);
         }
     }
-    useEffect(() => {
-        fetchInfo();
-    }, [])
+    // useEffect(() => {
+    //     fetchInfo();
+    // }, [])
 
     return (
         fetching ? (
