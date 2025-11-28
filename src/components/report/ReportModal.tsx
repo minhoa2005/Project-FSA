@@ -5,8 +5,6 @@ import { Button } from '../ui/button';
 import { insertReport } from '@/service/users/report';
 import { toast } from 'sonner';
 
-// Giả sử Dialog, DialogContent, Button được import từ thư viện UI của bạn
-// import { Dialog, DialogContent, DialogHeader, DialogTitle, Button } from "@/components/ui/dialog" 
 
 const REPORT_REASONS = [
   "Vấn đề liên quan đến người dưới 18 tuổi",
@@ -22,20 +20,16 @@ const REPORT_REASONS = [
 
 const ReportModal = ({ blogId, isOpen, onClose }) => {
 
-  const [step, setStep] = useState(1); // 1: Chọn lý do, 2: Xác nhận và Gửi
+  const [step, setStep] = useState(1); 
   const [selectedReason, setSelectedReason] = useState(null);
   const handleBack = () => {
     setStep(1);
     setSelectedReason(null);
   };
-
-  // Xử lý chọn lý do (Bước 1 -> Bước 2)
   const handleReasonSelect = (reason) => {
     setSelectedReason(reason);
-    setStep(2); // Chuyển sang màn hình xác nhận
+    setStep(2); 
   };
-
-  // Xử lý Gửi cuối cùng (Bước 2)
   const handleFinalSubmit = async () => {
     if (!selectedReason) return;
 
@@ -63,12 +57,9 @@ const ReportModal = ({ blogId, isOpen, onClose }) => {
   return (
     <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50">
       <div className="bg-white rounded-lg w-full max-w-md p-6 shadow-lg">
-
-        {/* HEADER */}
         <div className="flex justify-between items-center pb-4 border-b">
           {step === 2 && (
             <button onClick={handleBack} className="p-1 rounded-full hover:bg-gray-100">
-              {/* Biểu tượng mũi tên quay lại */}
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
             </button>
           )}
@@ -77,12 +68,7 @@ const ReportModal = ({ blogId, isOpen, onClose }) => {
             <X className="h-5 w-5" />
           </button>
         </div>
-
-        {/* CONTENT */}
         {step === 1 ? (
-          // **********************************
-          // Màn hình 1: Chọn Lý do
-          // **********************************
           <div className="mt-4">
             <p className="font-semibold mb-2">Tại sao bạn báo cáo bài viết này?</p>
             {REPORT_REASONS.map((reason, index) => (
@@ -92,15 +78,11 @@ const ReportModal = ({ blogId, isOpen, onClose }) => {
                 onClick={() => handleReasonSelect(reason)}
               >
                 <span className="text-sm">{reason}</span>
-                {/* Mũi tên phải */}
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
               </button>
             ))}
           </div>
         ) : (
-          // **********************************
-          // Màn hình 2: Xác nhận và Gửi
-          // **********************************
           <div className="mt-4">
             <h3 className="text-lg font-semibold mb-4">Bạn sắp gửi báo cáo</h3>
             <p className="text-sm text-gray-600 mb-6">
