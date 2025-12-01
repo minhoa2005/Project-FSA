@@ -37,7 +37,7 @@ const handleLogin = async (data) => {
         }
         const roleName = result.recordset[0].role;
         const profile = await pool.request().input('id', result.recordset[0].id).query(
-            `SELECT imgUrl FROM ${roleName}Profile WHERE accountId = @id`
+            `SELECT imgUrl, coverImg FROM ${roleName}Profile WHERE accountId = @id`
         )
         const user = {
             id: result.recordset[0].id,
@@ -45,7 +45,8 @@ const handleLogin = async (data) => {
             username: result.recordset[0].username,
             role: result.recordset[0].role,
             isActive: result.recordset[0].isActive,
-            imgUrl: profile.recordset[0]?.imgUrl || null
+            imgUrl: profile.recordset[0]?.imgUrl || null,
+            coverImg: profile.recordset[0]?.coverImg || null
         };
         const hashedPassword = result.recordset[0].password;
         const isMatch = await bcrypt.compare(password, hashedPassword);
@@ -133,6 +134,7 @@ const authMe = async () => {
                 A.password,
                 A.isActive,
                 UP.imgUrl,
+                UP.coverImg,
                 R.roleName AS role
                 FROM
                     Account AS A
@@ -164,7 +166,8 @@ const authMe = async () => {
                 username: refresh.recordset[0].username,
                 role: refresh.recordset[0].role,
                 isActive: refresh.recordset[0].isActive,
-                imgUrl: refresh.recordset[0].imgUrl || null
+                imgUrl: refresh.recordset[0].imgUrl || null,
+                coverImg: refresh.recordset[0].coverImg || null
             }
         };
     } else {

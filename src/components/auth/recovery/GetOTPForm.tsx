@@ -1,4 +1,3 @@
-
 "use client"
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
@@ -44,7 +43,7 @@ export default function GetOTPForm({ submit }) {
                     </form>
                 </CardContent>
                 <CardFooter>
-                    <Button type="submit" form="email" className="w-full" disabled={isPending}>{isPending ? 'Sending...' : 'Send OTP'}</Button>
+                    <Button type="submit" form='email' disabled={isPending}>Lấy mã OTP</Button>
                 </CardFooter>
             </Card>
         </div>
