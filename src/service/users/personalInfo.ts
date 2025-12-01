@@ -65,7 +65,7 @@ const getPersonalInfoById = async (id: number) => {
     try {
         const result = await pool.request().input('id', id).query(
             `
-            select a.email, p.fullName, p.phoneNumber, p.dob, p.imgUrl, a.username from Account a
+            select a.email, p.fullName, p.phoneNumber, p.dob, p.imgUrl, p.coverImg, a.username from Account a
             join AccountRole ar on a.id = ar.accountId 
             join Role r on ar.roleId = r.id 
             join UserProfile p on a.id = p.accountId
@@ -203,4 +203,41 @@ const updateAvatar = async (avatarUrl: string) => {
         }
     }
 }
-export { getPersonalInfo, updateInfo, changePassword, verifyUser, updateAvatar, getPersonalInfoById };
+
+const updateCoverImage = async (coverImageUrl: string) => {
+    if (!await verifyUser()) {
+        unauthorized();
+    }
+    try {
+        const token: string = await getCookie();
+        const decoded = verifyToken(token);
+        const id: string = decoded.id;
+        const uploadResult = await upload(coverImageUrl, `user_cover_${id}.jpeg`);
+        if (uploadResult.success) {
+            const result = await pool.request().input('id', id).input('coverImgUrl', uploadResult.upload.url).query(`
+                    update UserProfile
+                    set coverImg = @coverImgUrl
+                    where accountId = @id
+                `);
+            if (result.rowsAffected[0] === 0) {
+                return {
+                    success: false,
+                    message: "User not found"
+                }
+            }
+            return { success: true, url: uploadResult.upload.url };
+        }
+        return {
+            success: false,
+            message: "Lỗi tải ảnh lên"
+        }
+    }
+    catch (error) {
+        console.error('Error updating avatar:', error);
+        return {
+            success: false,
+            message: "Lỗi câp nhật ảnh đại diện"
+        }
+    }
+}
+export { getPersonalInfo, updateInfo, changePassword, verifyUser, updateAvatar, getPersonalInfoById, updateCoverImage };

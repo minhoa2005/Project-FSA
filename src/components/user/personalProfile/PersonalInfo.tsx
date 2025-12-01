@@ -13,7 +13,7 @@ export default function PersonalInfo() {
       <div className='w-[70%] flex gap-5 flex-col' >
         <div className='grid grid-cols-2 gap-3'>
           <AvatarSection className={'mt-4'} />
-          <CoverImageSection className='mt-4 ' />
+          <CoverImageSection className='mt-4' />
         </div>
         <div className='grid grid-cols-2 gap-3 items-start' >
           <Suspense fallback={<InfoSectionSkeleton />}>
