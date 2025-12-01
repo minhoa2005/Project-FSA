@@ -3,27 +3,33 @@ import { Card } from '@/components/ui/card'
 import { getInitials } from '@/lib/formatter'
 import Image from 'next/image'
 import React, { use } from 'react'
+import FollowButton from './FollowButton'
 
 export default function CoverSection({ className, user }: { className?: string, user: any }) {
     return (
-        <div className={`flex justify-center mt-2 ${className}`}>
-            <div className='w-[70%] h-90 relative rounded' >
-                <Image src={user?.coverImg || ''}
-                    alt="Personal Image"
-                    layout="fill"
-                    objectFit='cover'
-                    className='rounded'
-                />
-                <div className='absolute bottom-[-130px] left-5 grid grid-cols-2 gap-3' >
-                    <Avatar className='w-40 h-40 border-4 border-primary'>
-                        <AvatarImage src={user?.imgUrl} />
-                        <AvatarFallback>{getInitials(user?.fullName)}</AvatarFallback>
-                    </Avatar>
-                    <div className='self-center flex flex-col'>
-                        <p className='text-2xl font-semibold'>{user?.fullName}</p>
-                        <p className='text-muted-foreground'>@{user?.username}</p>
+        <div className='grid grid-rows-2'>
+            <div className={`flex justify-center mt-2 ${className}`}>
+                <div className='w-[70%] h-90 relative rounded' >
+                    <Image src={user?.coverImg || ''}
+                        alt="Personal Image"
+                        layout="fill"
+                        objectFit='cover'
+                        className='rounded'
+                    />
+                    <div className='absolute bottom-[-130px] left-5 grid grid-cols-2 gap-3' >
+                        <Avatar className='w-40 h-40 border-4 border-primary'>
+                            <AvatarImage src={user?.imgUrl} />
+                            <AvatarFallback>{getInitials(user?.fullName)}</AvatarFallback>
+                        </Avatar>
+                        <div className='self-center flex flex-col'>
+                            <p className='text-2xl font-semibold'>{user?.fullName}</p>
+                            <p className='text-muted-foreground'>@{user?.username}</p>
+                        </div>
                     </div>
                 </div>
+            </div>
+            <div className='h-50 w-[70%] justify-self-center flex justify-end' >
+                <FollowButton id={user?.id} className="ml-auto mr-10 mt-4" />
             </div>
         </div>
     )

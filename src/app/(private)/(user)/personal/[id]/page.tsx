@@ -7,7 +7,7 @@ export default async function page({ params }: { params: { id: string } }) {
     const data = await getPersonalInfoById(parseInt(id));
     return (
         <div>
-            <PersonalPage data={data.data} />
+            <PersonalPage data={data.data} id={parseInt(id)} />
         </div>
     )
 }

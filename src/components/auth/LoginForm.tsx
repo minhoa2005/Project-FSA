@@ -30,57 +30,53 @@ export default function LoginForm() {
         }
     }
     return (
-        <div className='flex items-center justify-center h-screen'>
-            <div className='flex-1 flex flex-col items-center justify-center'>
-                <h1 className='text-[100px]'>BlogG</h1>
-                <p className='text-[20px]'>Share your moment</p>
-            </div>
-            <div className='flex-1 flex items-center justify-center'>
-                <Card className="w-full max-w-sm">
-                    <CardHeader>
-                        <CardTitle >Đăng nhập</CardTitle>
-                        <CardDescription>Nhập email và mật khẩu của bạn để đăng nhập</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <form id="login-form" onSubmit={handleSubmit}>
-                            <div className="flex flex-col gap-6">
-                                <div className="grid gap-2">
-                                    <Label htmlFor="email">Email</Label>
-                                    <Input
-                                        id="email"
-                                        name="email"
-                                        type="email"
-                                        placeholder="m@example.com"
-                                        required
-                                    />
-                                </div>
-                                <div className="grid gap-2">
-                                    <div className="flex items-center">
-                                        <Label htmlFor="password">Mật khẩu</Label>
-                                        <a
-                                            href="/recovery"
-                                            className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
-                                        >
-                                            Quên mật khẩu?
-                                        </a>
-                                    </div>
-                                    <Input id="password" type="password" name="password" required />
-                                </div>
+
+        <div className='flex-1 flex items-center justify-center'>
+            <Card className="w-full max-w-sm">
+                <CardHeader>
+                    <CardTitle >Đăng nhập</CardTitle>
+                    <CardDescription>Nhập email và mật khẩu của bạn để đăng nhập</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <form id="login-form" onSubmit={handleSubmit}>
+                        <div className="flex flex-col gap-6">
+                            <div className="grid gap-2">
+                                <Label htmlFor="email">Email</Label>
+                                <Input
+                                    id="email"
+                                    name="email"
+                                    type="email"
+                                    placeholder="m@example.com"
+                                    required
+                                />
                             </div>
-                        </form>
-                    </CardContent>
-                    <CardFooter className="flex flex-col gap-2">
-                        <Button type="submit" form="login-form" className="w-full cursor-pointer">
-                            Đăng nhập
-                        </Button>
-                        <Button className="w-full" variant="outline" onClick={() => {
-                            window.location.href = '/register';
-                        }}>
-                            Đăng ký
-                        </Button>
-                    </CardFooter>
-                </Card>
-            </div>
-        </div >
+                            <div className="grid gap-2">
+                                <div className="flex items-center">
+                                    <Label htmlFor="password">Mật khẩu</Label>
+                                    <a
+                                        href="/recovery"
+                                        className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
+                                    >
+                                        Quên mật khẩu?
+                                    </a>
+                                </div>
+                                <Input id="password" type="password" name="password" required />
+                            </div>
+                        </div>
+                    </form>
+                </CardContent>
+                <CardFooter className="flex flex-col gap-2">
+                    <Button type="submit" form="login-form" className="w-full cursor-pointer">
+                        Đăng nhập
+                    </Button>
+                    <Button className="w-full" variant="outline" onClick={() => {
+                        window.location.href = '/register';
+                    }}>
+                        Đăng ký
+                    </Button>
+                </CardFooter>
+            </Card>
+        </div>
+
     )
 }
