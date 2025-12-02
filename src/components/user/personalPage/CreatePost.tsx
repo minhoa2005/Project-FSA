@@ -41,7 +41,7 @@ interface CreatePostBoxProps {
     onPostCreated?: () => void;
 }
 
-export default function CreatePost() {
+export default function CreatePost({ refresh }: { refresh?: () => void }) {
     const [open, setOpen] = useState(false);
     const [content, setContent] = useState("");
     const [files, setFiles] = useState<File[]>([]);
@@ -89,7 +89,7 @@ export default function CreatePost() {
             formData.set("creatorId", String(user?.id));
 
             await createBlog(formData);
-
+            await refresh?.();
             toast.success("Đã tạo bài viết thành công!");
             setContent("");
             setFiles([]);

@@ -1,6 +1,5 @@
 import UserAvatar from '@/components/layout/UserAvatar';
 import { CommentSection } from '@/components/post/CommentSection';
-import ReportModal from '@/components/report/ReportModal';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -8,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Post } from '@/types/user/postT';
 import { Flag, MessageCircle, MoreHorizontal, Share2, ThumbsUp } from 'lucide-react';
 import Image from 'next/image';
+import ReportModal from './ReportModal';
 
 export default function PostCard({ post }: { post: Post }) {
     console.log(post);
