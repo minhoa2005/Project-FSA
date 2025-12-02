@@ -8,7 +8,7 @@ export default function UserAvatar({ className }: { className?: string }) {
     const { user } = useUser()
     return (
         <Avatar className={className}>
-            <AvatarImage src={''} alt="User Avatar" />
+            <AvatarImage src={user?.imgUrl} alt="User Avatar" />
             <AvatarFallback>{getInitials(user?.username)}</AvatarFallback>
         </Avatar>
     )

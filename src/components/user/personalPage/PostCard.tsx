@@ -14,7 +14,7 @@ export default function PostCard({ post }: { post: Post }) {
     const images = post?.media.filter((m: any) => m.mediaType === 'image') || [];
     const videos = post?.media.filter((m: any) => m.mediaType === 'video') || [];
     return (
-        <Card className="overflow-hidden shadow-sm w-[50%]">
+        <Card className="overflow-hidden shadow-sm ">
             <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
                 <div className="flex items-center gap-2">
                     <UserAvatar className="h-10 w-10" />
@@ -33,9 +33,7 @@ export default function PostCard({ post }: { post: Post }) {
                         <DropdownMenuItem>Chỉnh sửa bài viết</DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem className="text-destructive">Xóa bài viết</DropdownMenuItem>
-                        <DropdownMenuItem className="flex items-center gap-2">
-                            <Flag className="h-4 w-4" /> Báo cáo bài viết
-                        </DropdownMenuItem>
+                        <ReportModal blogId={post.id} />
                     </DropdownMenuContent>
                 </DropdownMenu>
             </CardHeader>
@@ -60,7 +58,6 @@ export default function PostCard({ post }: { post: Post }) {
                 </>
 
             </CardContent>
-            {/* <ReportModal blogId="" isOpen={false} onClose={() => { }} /> */}
 
             <CardFooter className="flex flex-col gap-4 border-t px-2 pb-2 pt-1">
                 <div className="flex items-center justify-between px-1 text-xs text-muted-foreground gap-5">
