@@ -1,5 +1,5 @@
 type Post = {
-    blogId: number;
+    id: number;
     text: string;
     creatorId: number;
     createdAt: string;

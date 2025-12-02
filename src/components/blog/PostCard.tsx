@@ -233,7 +233,7 @@ export default function PostCard({
       <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
         <div className="flex items-center gap-2">
           <Avatar className="h-10 w-10">
-            {avatarUrl ? <AvatarImage src={avatarUrl} alt={displayName} /> : null}
+            {avatarUrl ? <AvatarImage src={post.imgUrl} alt={displayName} /> : null}
             <AvatarFallback>{avatarFallback}</AvatarFallback>
           </Avatar>
           <div className="leading-tight">
