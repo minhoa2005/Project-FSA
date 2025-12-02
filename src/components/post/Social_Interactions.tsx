@@ -1,4 +1,5 @@
-// FILE: components/post/Social_Interactions.tsx
+"use client";
+
 import { useState, useEffect } from "react";
 
 export interface CommentData {
@@ -63,25 +64,30 @@ export function usePostInteractions(initialPost: InitialPostData) {
     const [showComments, setShowComments] = useState(false);
     const [showShareDialog, setShowShareDialog] = useState(false);
 
+    // Sync dữ liệu khi props thay đổi
     useEffect(() => {
         setLocalPost(initialPost);
         setIsLiked(initialPost.isLiked || false);
     }, [initialPost.id]);
 
-    // ==========================================
-    // 1. SOCKET HANDLERS (Nhận dữ liệu từ người khác)
-    // ==========================================
+    // ==================================================================
+    // 1. SOCKET HANDLERS (Xử lý dữ liệu nhận từ Server)
+    // ==================================================================
     
-    // Nhận Comment mới
+    // Nhận Comment mới từ người khác
     const handleSocketAddComment = (newComment: CommentData) => {
         setLocalPost(prev => {
+            // Tránh trùng lặp
             if (hasCommentId(prev.comments, newComment.id)) return prev;
             
             const currentComments = [...prev.comments];
+            
+            // Nếu là comment gốc
             if (!newComment.parentId) {
                 return { ...prev, comments: [...currentComments, newComment] };
             }
 
+            // Nếu là reply (đệ quy tìm cha)
             const addReplyRecursive = (list: CommentData[]): CommentData[] => {
                 return list.map(c => {
                     if (String(c.id) === String(newComment.parentId)) {
@@ -99,13 +105,12 @@ export function usePostInteractions(initialPost: InitialPostData) {
         });
     };
 
-    // Nhận Update Like Bài Viết
+    // Nhận số Like bài viết mới từ người khác
     const handleSocketUpdatePostLikes = (newLikeCount: number) => {
-        // Chỉ cập nhật số lượng, không đổi trạng thái isLiked của mình
         setLocalPost(prev => ({ ...prev, likes: newLikeCount }));
     };
 
-    // Nhận Update Like Comment
+    // Nhận số Like comment mới từ người khác
     const handleSocketUpdateCommentLikes = (commentId: string, newLikeCount: number) => {
         const updateLikesRecursive = (list: CommentData[]): CommentData[] => {
             return list.map(c => {
@@ -121,11 +126,27 @@ export function usePostInteractions(initialPost: InitialPostData) {
         setLocalPost(prev => ({ ...prev, comments: updateLikesRecursive(prev.comments) }));
     };
 
-    // ==========================================
-    // 2. USER ACTIONS (Hành động của mình)
-    // ==========================================
+    // Nhận sự kiện Ẩn/Hiện comment từ người khác
+    const handleSocketToggleHideComment = (commentId: string) => {
+        const toggleRecursive = (list: CommentData[]): CommentData[] => {
+            return list.map(c => {
+                if (String(c.id) === String(commentId)) {
+                    return { ...c, isHidden: !c.isHidden };
+                }
+                if (c.replies && c.replies.length > 0) {
+                    return { ...c, replies: toggleRecursive(c.replies) };
+                }
+                return c;
+            });
+        };
+        setLocalPost(prev => ({ ...prev, comments: toggleRecursive(prev.comments) }));
+    };
 
-    // Like Post
+    // ==================================================================
+    // 2. USER ACTIONS (Optimistic UI - Hiển thị ngay trên máy mình)
+    // ==================================================================
+
+    // Like Bài viết
     const handleLike = () => {
         const newStatus = !isLiked;
         const newCount = newStatus ? localPost.likes + 1 : Math.max(0, localPost.likes - 1);
@@ -133,20 +154,18 @@ export function usePostInteractions(initialPost: InitialPostData) {
         setIsLiked(newStatus);
         setLocalPost(prev => ({ ...prev, likes: newCount, isLiked: newStatus }));
         
-        // Trả về số lượng mới để PostCard gửi qua Socket
-        return newCount; 
+        return newCount; // Trả về để gửi socket
     };
 
     // Like Comment
     const handleLikeComment = (cmtId: string) => {
         let newCountForSocket = 0;
-        
         const toggleRecursive = (list: CommentData[]): CommentData[] => {
             return list.map(c => {
                 if (String(c.id) === String(cmtId)) {
                     const newIsLiked = !c.isLiked;
                     const newLikes = newIsLiked ? c.likes + 1 : Math.max(0, c.likes - 1);
-                    newCountForSocket = newLikes; // Lưu lại giá trị mới
+                    newCountForSocket = newLikes;
                     return { ...c, isLiked: newIsLiked, likes: newLikes };
                 }
                 if (c.replies && c.replies.length > 0) {
@@ -155,11 +174,11 @@ export function usePostInteractions(initialPost: InitialPostData) {
                 return c;
             });
         };
-        
         setLocalPost(prev => ({ ...prev, comments: toggleRecursive(prev.comments) }));
         return newCountForSocket;
     };
 
+    // Thêm Comment
     const handleAddComment = (text: string, tempId: string, currentUserInfo: any) => {
         const newC: CommentData = { 
             id: tempId, 
@@ -175,6 +194,7 @@ export function usePostInteractions(initialPost: InitialPostData) {
         setLocalPost(prev => ({ ...prev, comments: [...prev.comments, newC] }));
     };
 
+    // Thêm Reply
     const handleAddReply = (targetId: string, text: string, tempId: string, currentUserInfo: any) => {
         const rootParentId = findRootCommentId(localPost.comments, targetId);
         const effectiveRootId = rootParentId || targetId;
@@ -209,6 +229,7 @@ export function usePostInteractions(initialPost: InitialPostData) {
         setLocalPost(prev => ({ ...prev, comments: insertReplyRecursive(prev.comments) }));
     };
 
+    // Cập nhật Comment thật sau khi API trả về
     const handleCommentSuccess = (tempId: string, realData: CommentData) => {
         const replaceRecursive = (list: CommentData[]): CommentData[] => {
             return list.map(c => {
@@ -220,6 +241,7 @@ export function usePostInteractions(initialPost: InitialPostData) {
         setLocalPost(prev => ({ ...prev, comments: replaceRecursive(prev.comments) }));
     };
 
+    // Sửa Comment
     const handleEditComment = (cmtId: string, newText: string) => {
         const editRecursive = (list: CommentData[]): CommentData[] => {
             return list.map(c => {
@@ -231,6 +253,7 @@ export function usePostInteractions(initialPost: InitialPostData) {
         setLocalPost(prev => ({ ...prev, comments: editRecursive(prev.comments) }));
     };
 
+    // Ẩn/Hiện Comment (Máy mình)
     const handleToggleHideComment = (cmtId: string) => {
         const toggleHideRecursive = (list: CommentData[]): CommentData[] => {
             return list.map(c => {
@@ -255,9 +278,11 @@ export function usePostInteractions(initialPost: InitialPostData) {
         handleLike, setShowComments, setShowShareDialog, 
         handleAddComment, handleAddReply, handleCommentSuccess,
         handleLikeComment, handleEditComment, handleToggleHideComment, handleShare,
-        // EXPORT CÁC HÀM SOCKET
+        
+        // Export Socket Handlers
         handleSocketAddComment,
         handleSocketUpdatePostLikes,
-        handleSocketUpdateCommentLikes
+        handleSocketUpdateCommentLikes,
+        handleSocketToggleHideComment
     };
 }

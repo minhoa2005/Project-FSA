@@ -1,7 +1,7 @@
-// FILE: components/post/PostCard.tsx
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+// Import Socket Client
 import { io, Socket } from "socket.io-client";
 
 import {
@@ -47,35 +47,27 @@ export default function PostCard({
   const [removedMediaIds, setRemovedMediaIds] = useState<number[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   
+  // Ref socket để giữ kết nối không bị reset khi re-render
   const socketRef = useRef<Socket | null>(null);
 
   const currentUserInfo = { 
-    name: "Bạn", 
+    name: "Bạn", // Có thể lấy từ UserContext nếu có
     avatar: "", 
     id: currentUserId
   };
 
+  // Sử dụng Hook Logic
   const {
-    isLiked,
-    showComments,
-    showShareDialog,
-    localPostComments,
-    currentLikes,
-    totalComments,
-    handleLike,
-    setShowComments,
-    setShowShareDialog,
-    handleAddComment,
-    handleAddReply,
-    handleCommentSuccess,
-    handleLikeComment,
-    handleEditComment,
-    handleToggleHideComment,
-    handleShare,
-    // Socket handlers
+    isLiked, showComments, showShareDialog,
+    localPostComments, currentLikes, totalComments,
+    handleLike, setShowComments, setShowShareDialog,
+    handleAddComment, handleAddReply, handleCommentSuccess,
+    handleLikeComment, handleEditComment, handleToggleHideComment, handleShare,
+    // Socket handlers từ hook
     handleSocketAddComment,
     handleSocketUpdatePostLikes,
-    handleSocketUpdateCommentLikes
+    handleSocketUpdateCommentLikes,
+    handleSocketToggleHideComment
   } = usePostInteractions({
       id: String(post.id),
       likes: post.likes || 0,
@@ -86,31 +78,38 @@ export default function PostCard({
   });
 
   // ===============================================
-  // KẾT NỐI SOCKET
+  // 1. KẾT NỐI VÀ LẮNG NGHE SOCKET
   // ===============================================
   useEffect(() => {
-    socketRef.current = io(); // Kết nối tới server hiện tại (port 3000)
+    // Kết nối tới server hiện tại (cổng 3000)
+    socketRef.current = io(); 
 
     const socket = socketRef.current;
 
     socket.on("connect", () => {
+        // Tham gia vào phòng của bài viết này
         socket.emit("join_post", post.id);
     });
 
-    // 1. Nhận Comment mới
+    // A. Lắng nghe comment mới
     socket.on("receive_comment", (newComment: CommentData) => {
-        if (Number(newComment.userId) === currentUserId) return;
+        if (Number(newComment.userId) === currentUserId) return; // Bỏ qua nếu là của mình
         handleSocketAddComment(newComment);
     });
 
-    // 2. Nhận Cập nhật Like Bài Viết (Realtime)
+    // B. Lắng nghe cập nhật Like Bài viết
     socket.on("sync_post_likes", (data: { likes: number }) => {
         handleSocketUpdatePostLikes(data.likes);
     });
 
-    // 3. Nhận Cập nhật Like Comment (Realtime)
+    // C. Lắng nghe cập nhật Like Comment
     socket.on("sync_comment_likes", (data: { commentId: string, likes: number }) => {
         handleSocketUpdateCommentLikes(data.commentId, data.likes);
+    });
+
+    // D. Lắng nghe Ẩn/Hiện Comment
+    socket.on("sync_hide_comment", (data: { commentId: string }) => {
+        handleSocketToggleHideComment(data.commentId);
     });
 
     return () => {
@@ -120,15 +119,15 @@ export default function PostCard({
 
 
   // ===============================================
-  // HANDLERS
+  // 2. XỬ LÝ SỰ KIỆN (USER CLICK)
   // ===============================================
   
-  // 1. Like Post
+  // --- LIKE BÀI VIẾT ---
   const onLikeClick = async () => {
-    // A. Cập nhật UI ngay lập tức (Optimistic) và lấy số like mới
+    // 1. UI cập nhật ngay
     const newCount = handleLike(); 
     
-    // B. Gửi Socket ngay lập tức
+    // 2. Bắn Socket báo người khác
     if (socketRef.current) {
         socketRef.current.emit("update_post_like_stats", {
             room: `post_${post.id}`,
@@ -136,20 +135,20 @@ export default function PostCard({
         });
     }
 
-    // C. Gọi API lưu DB
+    // 3. Gọi API lưu DB
     try {
       await toggleLike(post.id, currentUserId);
     } catch (e) { console.error(e); }
   };
 
-  // 2. Like Comment
+  // --- LIKE COMMENT ---
   const onLikeCommentClick = async (cmtId: string) => {
     if (cmtId.startsWith("temp-")) return;
 
-    // A. Cập nhật UI ngay lập tức
+    // 1. UI cập nhật ngay
     const newCount = handleLikeComment(cmtId);
 
-    // B. Gửi Socket
+    // 2. Bắn Socket báo người khác
     if (socketRef.current) {
         socketRef.current.emit("update_comment_like_stats", {
             room: `post_${post.id}`,
@@ -158,19 +157,51 @@ export default function PostCard({
         });
     }
 
-    // C. Gọi API
+    // 3. Gọi API
     try {
       await toggleCommentLike(Number(cmtId), currentUserId);
     } catch (e) { console.error(e); }
   };
 
+  // --- ẨN/HIỆN COMMENT ---
+  const onToggleHideCommentClick = async (commentId: string) => {
+      // 1. UI cập nhật ngay
+      handleToggleHideComment(commentId);
+
+      // 2. Bắn Socket
+      if (!commentId.startsWith("temp-") && socketRef.current) {
+          socketRef.current.emit("toggle_hide_comment", {
+              room: `post_${post.id}`,
+              commentId: commentId
+          });
+      }
+
+      // 3. Gọi API
+      if (!commentId.startsWith("temp-")) {
+          try {
+              const res = await toggleHideComment(Number(commentId), currentUserId);
+              if (!res.success) {
+                 toast.error("Lỗi khi ẩn bình luận");
+                 handleToggleHideComment(commentId); // Revert nếu lỗi
+              }
+          } catch (e) {
+              handleToggleHideComment(commentId); // Revert nếu lỗi
+          }
+      }
+  };
+
+  // --- THÊM COMMENT ---
   const onAddCommentClick = async (text: string) => {
     const tempId = `temp-${Date.now()}`;
+    // UI
     handleAddComment(text, tempId, currentUserInfo);
     try {
+      // API
       const result = await addComment(post.id, currentUserId, text);
       if (result?.success && result.data) {
+        // Cập nhật ID thật
         handleCommentSuccess(tempId, result.data);
+        // Socket
         if (socketRef.current) {
             socketRef.current.emit("new_comment_posted", {
                 room: `post_${post.id}`,
@@ -181,14 +212,19 @@ export default function PostCard({
     } catch (e) { toast.error("Không thể gửi bình luận"); }
   };
 
+  // --- THÊM REPLY ---
   const onAddReplyClick = async (targetId: string, text: string) => {
     if (targetId.startsWith("temp-")) return;
     const tempId = `temp-${Date.now()}`;
+    // UI
     handleAddReply(targetId, text, tempId, currentUserInfo);
     try {
+      // API
       const result = await addComment(post.id, currentUserId, text, Number(targetId));
       if (result?.success && result.data) {
+        // Cập nhật ID thật
         handleCommentSuccess(tempId, result.data);
+        // Socket
         if (socketRef.current) {
             socketRef.current.emit("new_comment_posted", {
                 room: `post_${post.id}`,
@@ -199,6 +235,7 @@ export default function PostCard({
     } catch (e) { toast.error("Không thể gửi phản hồi"); }
   };
 
+  // --- EDIT, DELETE, UPDATE POST (Giữ nguyên logic cũ) ---
   const handleUpdate = async (formData: FormData) => {
     try {
       setSubmitting(true);
@@ -233,7 +270,7 @@ export default function PostCard({
       <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
         <div className="flex items-center gap-2">
           <Avatar className="h-10 w-10">
-            {avatarUrl ? <AvatarImage src={post.imgUrl} alt={displayName} /> : null}
+            {avatarUrl ? <AvatarImage src={avatarUrl} alt={displayName} /> : null}
             <AvatarFallback>{avatarFallback}</AvatarFallback>
           </Avatar>
           <div className="leading-tight">
@@ -319,7 +356,7 @@ export default function PostCard({
             onAddReply={onAddReplyClick}
             onLikeComment={onLikeCommentClick}
             onEditComment={async (id, txt) => handleEditComment(id, txt)} 
-            onToggleHideComment={async (id) => handleToggleHideComment(id)}
+            onToggleHideComment={onToggleHideCommentClick}
             currentUserId={currentUserId}
           />
         )}

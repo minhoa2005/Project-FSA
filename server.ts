@@ -114,6 +114,15 @@ app.prepare().then(() => {
             });
         });
 
+        // 5. Xử lý Ẩn/Hiện Comment (Realtime)
+        socket.on("toggle_hide_comment", (data: any) => {
+            // data: { room, commentId }
+            // Báo cho mọi người trong phòng biết commentId này vừa thay đổi trạng thái ẩn/hiện
+            socket.to(data.room).emit("sync_hide_comment", { 
+                commentId: data.commentId 
+            });
+        });
+
         // ------------------------------------------
 
         socket.on("disconnect", () => {
