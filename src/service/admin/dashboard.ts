@@ -61,7 +61,16 @@ export const countReportPending = async () => {
 
 export const get5Blogs = async () => {
     const result = await pool.request()
-        .query('select top 5 b.id, b.text, a.username ,b.isDeleted, b.createdAt, b.updatedAt  from Blogs b join Account a on a.id = b.creatorId')
+        .query('select top 5 b.id, b.text, a.username ,b.isDeleted, b.createdAt, b.updatedAt  from Blogs b join Account a on a.id = b.creatorId order by b.updatedAt desc')
+    return {
+        success: true,
+        data: result.recordset
+    }
+}
+
+export const get5Report = async () => {
+    const result = await pool.request()
+    . query('select top 5 id, blogId, reason, status, createdAt from Reports order by createdAt desc')
     return {
         success: true,
         data: result.recordset
