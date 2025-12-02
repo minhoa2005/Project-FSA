@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { Carousel, CarouselContent, CarouselItem } from '../ui/carousel'
 import { Card, CardContent } from '../ui/card'
 import BreadcrumbAdmin from './Breadcrumb'
-import { countAccBan, countAccount, countBlogs, countReportPending, get5accNew, get5Blogs } from '@/service/admin/dashboard'
+import { countAccBan, countAccount, countBlogs, countReportPending, get5accNew, get5Blogs, get5Report } from '@/service/admin/dashboard'
 import { Ban, Globe, KeyRound, Lock, Unlock } from 'lucide-react'
 import {
     Table,
@@ -40,6 +40,14 @@ interface Blog {
     isDeleted: boolean
 }
 
+interface Report {
+    id: number
+    blogId: number
+    reason: string
+    status: string
+    createdAt: string
+}
+
 export default function Dashboard() {
     const [countAcc, setCountAcc] = useState()
     const [countBlog, setCountBlog] = useState()
@@ -47,6 +55,7 @@ export default function Dashboard() {
     const [countReport, setCountReport] = useState()
     const [account, setAccount] = useState<Account[]>([])
     const [blog, setBlog] = useState<Blog[]>([])
+    const [report, setReport] = useState<Report[]>([])
 
     const handleBan = async (id: number) => {
         // console.log(id)
@@ -160,7 +169,9 @@ export default function Dashboard() {
 
                 const dataBlog = await get5Blogs()
 
-                if (dataCountAcc.success && dataCountBlogs.success && dataCountBan.success && dataCountReportPending.success && dataAcc.success && dataBlog.success) {
+                const dataReport = await get5Report()
+
+                if (dataCountAcc.success && dataCountBlogs.success && dataCountBan.success && dataCountReportPending.success && dataAcc.success && dataBlog.success && dataReport.success) {
                     const acc = dataCountAcc.data.total
 
                     const blog = dataCountBlogs.data.total
@@ -169,12 +180,14 @@ export default function Dashboard() {
 
                     const report = dataCountReportPending.data.total
 
+
                     setCountAcc(acc)
                     setCountBlog(blog)
                     setCountBan(ban)
                     setCountReport(report)
                     setAccount(dataAcc.data)
                     setBlog(dataBlog.data)
+                    setReport(dataReport.data)
                 }
             } catch (err) {
                 console.log('err count info', err)
@@ -500,6 +513,53 @@ export default function Dashboard() {
                         </TableBody>
                     ))}
 
+
+                </Table>
+            </div>
+
+            <div>
+                <div className='flex justify-around pr-4 items-baseline'>
+                    <h2 className="px-2 py-2 text-lg font-medium text-gray-700">Báo cáo chưa xử lý gần đây</h2>
+
+                    <a
+                        href="/admin/new-report"
+                        className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
+                    >
+                        Xem tất cả
+                    </a>
+                </div>
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead className="w-[50px]">BlogId</TableHead>
+                            <TableHead className="w-[200px]">Lý do</TableHead>
+                            <TableHead className="w-[100px]">Trạng thái</TableHead>
+                            <TableHead className="w-[300px]">Ngày tạo</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody >
+                        {report.map((b) => (
+
+                            <TableRow key={b.id} >
+                                <TableCell className="font-medium"> {b.blogId}</TableCell>
+    
+                                <TableCell className='line-clamp-1'>
+                                    {b.reason}
+                                </TableCell>
+
+                                <TableCell>
+                                    <div className={cn('inline-flex px-5 py-1 rounded-full text-sm font-medium items-center', b.status === 'Pending' ? " bg-orange-100 text-orange-700" : " bg-green-100 text-green-700")}>
+                                        {b.status === 'Pending' ? 'Chờ xử lý' : 'Đã giải quyết'}
+                                    </div>
+                                </TableCell>
+
+                                <TableCell>
+                                    {new Date(b.createdAt).toLocaleString()}
+                                </TableCell>
+                            </TableRow>
+
+                        ))}
+                    </TableBody>
 
                 </Table>
             </div>
