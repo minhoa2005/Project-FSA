@@ -1,6 +1,7 @@
-import BlogSection from './BlogSection'
-import CoverSection from './CoverSection'
-import FollowButton from './FollowButton'
+
+import BlogSection from './BlogSec/BlogSection'
+import CoverSection from './CoverSec/CoverSection'
+import FollowButton from './CoverSec/FollowButton'
 
 export default function PersonalPage({ data, id }: {
     data: {

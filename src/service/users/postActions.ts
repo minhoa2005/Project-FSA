@@ -492,10 +492,11 @@ export async function toggleHideComment(commentId: number, userId: number) {
   }
 }
 
-export const getPersonalBlogs = async (userId: number) => {
+export const getPersonalBlogs = async (userId: number, page: number = 1) => {
   try {
     const pool = await connectDB();
-    const blogsResult = await pool.request().input("userId", userId).query(`
+    const offset = (page - 1) * 5
+    const blogsResult = await pool.request().input("userId", userId).input("offset", offset).query(`
               SELECT
             b.id AS blogId,
             b.text,
@@ -508,7 +509,8 @@ export const getPersonalBlogs = async (userId: number) => {
             m.id AS mediaId,
             m.mediaUrl,
             m.mediaType,
-            ISNULL(lc.likeCount, 0) AS likeCount
+            ISNULL(lc.likeCount, 0) AS likeCount,
+            ISNULL(cc.commentCount, 0) AS commentCount
         FROM
             Blogs b
         LEFT JOIN
@@ -526,14 +528,26 @@ export const getPersonalBlogs = async (userId: number) => {
                     [Like]
                 GROUP BY
                     blogId
-            ) lc ON lc.blogId = b.id 
+            ) lc ON lc.blogId = b.id
+        LEFT JOIN
+            (
+              SELECT 
+                blogId,
+                COUNT(id) AS commentCount
+              FROM 
+                Comments
+              GROUP BY 
+                blogId
+            ) cc ON cc.blogId = b.id
         WHERE
             b.creatorId = @userId
         ORDER BY
             b.createdAt DESC,
-            m.id ASC;
+            m.id ASC
+        OFFSET @offset ROWS FETCH NEXT 5 ROWS ONLY
       `);
     const blogMap = new Map<number, any>();
+    console.log(blogsResult.recordset);
     blogsResult.recordset.forEach((row: any) => {
       const blogId = row.blogId;
       if (!blogMap.has(blogId)) {
@@ -548,6 +562,7 @@ export const getPersonalBlogs = async (userId: number) => {
           imgUrl: row.imgUrl,
           media: [],
           likeCount: row.likeCount,
+          commentCount: row.commentCount,
           shares: 0,
         });
       }

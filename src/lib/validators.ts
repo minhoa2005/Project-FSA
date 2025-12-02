@@ -1,31 +1,31 @@
 import commonValidator from "./commonValidator";
 
-export const validateEmail = (email) => {
+export const validateEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!email) {
-        return 'Email is required';
+        return 'Email không được để trống';
     }
     if (email.length > 254) {
-        return 'Email must not exceed 254 characters';
+        return 'Email không được vượt quá 254 ký tự';
     }
     if (!emailRegex.test(email)) {
-        return 'Please enter a valid email address';
+        return 'Vui lòng nhập địa chỉ email hợp lệ ';
     }
     return '';
 };
 
 
-export const validatePassword = (password) => {
+export const validatePassword = (password: string) => {
     if (!password) {
-        return 'Password is required';
+        return 'Cần có mật khẩu';
     }
     if (password.length < 8) {
-        return 'Password must be at least 8 characters long';
+        return 'Mật khẩu phải có ít nhất 8 ký tự';
     }
     return '';
 };
 
-export const validateConfirmPassword = (password, confirmPassword) => {
+export const validateConfirmPassword = (password: string, confirmPassword: string) => {
     if (!confirmPassword) {
         return 'Please confirm your password';
     }
@@ -35,25 +35,25 @@ export const validateConfirmPassword = (password, confirmPassword) => {
     return '';
 };
 
-export const validateFullName = (fullName) => {
+export const validateFullName = (fullName: string) => {
     // if (![...fullName].every((char) => /^[\p{L}\s]+$/u.test(char))) {
     //     return 'Full name must contain only letters';
     // }
     fullName = fullName.trim().replace(/\s+/g, ' ');
     if (!fullName) {
-        return 'Full name is required';
+        return 'Cần có họ và tên';
     }
     if (!/^[\p{L}\s]+$/u.test(fullName)) {
-        return 'Full name must contain only letters and spaces';
+        return 'Họ và tên chỉ được chứa chữ cái và khoảng trắng';
     }
     const validatedLength = commonValidator.validateStringLengthRange(fullName, 2, 50);
     if (!validatedLength) {
-        return 'Full name must be at least 2 characters long and not exceed 50 characters';
+        return 'Họ và tên phải có ít nhất 2 ký tự và không vượt quá 50 ký tự';
     }
     return '';
 };
 
-export const validatePhone = (phone) => {
+export const validatePhone = (phone: string) => {
     const phoneRegex = /^(0)\d{9}$/;
     if (!phone) {
         return 'Phone number is required';
@@ -65,7 +65,7 @@ export const validatePhone = (phone) => {
 };
 
 
-export const validateDateOfBirth = (dateOfBirth) => {
+export const validateDateOfBirth = (dateOfBirth: string) => {
     if (!dateOfBirth) {
         return '';
     }
@@ -85,8 +85,15 @@ export const validateDateOfBirth = (dateOfBirth) => {
 };
 
 
-export const validateRegisterForm = (formData) => {
-    const errors = {};
+export const validateRegisterForm = (formData: any) => {
+    const errors: {
+        fullName?: string;
+        email?: string;
+        password?: string;
+        confirmPassword?: string;
+        phone?: string;
+        dateOfBirth?: string;
+    } = {};
 
     errors.fullName = validateFullName(formData.full_name);
     errors.email = validateEmail(formData.email);
@@ -109,8 +116,11 @@ export const validateRegisterForm = (formData) => {
 };
 
 
-export const validateLoginForm = (formData) => {
-    const errors = {};
+export const validateLoginForm = (formData: any) => {
+    const errors: {
+        email?: string;
+        password?: string;
+    } = {};
 
     errors.email = validateEmail(formData.email);
     errors.password = validatePassword(formData.password);

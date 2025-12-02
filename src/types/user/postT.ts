@@ -9,6 +9,7 @@ type Post = {
     username: string;
     media: { id: number; url: string; mediaType: string }[];
     likeCount: number;
+    commentCount?: number;
     isLikedByCurrentUser: boolean;
 };
 
