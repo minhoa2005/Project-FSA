@@ -7,8 +7,8 @@ import {
   toggleLike,
   addComment,
   toggleCommentLike,
-  editComment, 
-  toggleHideComment, 
+  editComment,
+  toggleHideComment,
 } from "@/service/users/postActions";
 
 import {
@@ -39,7 +39,7 @@ import Image from "next/image";
 import ReportModal from "../report/ReportModal";
 import {
   usePostInteractions,
-  CommentData, 
+  CommentData,
 } from "@/components/post/Social_Interactions";
 import { CommentSection } from "@/components/post/CommentSection";
 import { ShareDialog } from "@/components/post/ShareDialog";
@@ -54,14 +54,14 @@ interface PostCardProps {
 
 // Helper: Tìm nội dung cũ để khôi phục (revert) nếu gọi server thất bại
 const findCommentContent = (comments: CommentData[], id: string): string | null => {
-    for (const c of comments) {
-        if (c.id === id) return c.content;
-        if (c.replies) {
-            const found = findCommentContent(c.replies, id);
-            if (found) return found;
-        }
+  for (const c of comments) {
+    if (c.id === id) return c.content;
+    if (c.replies) {
+      const found = findCommentContent(c.replies, id);
+      if (found) return found;
     }
-    return null;
+  }
+  return null;
 }
 
 export default function PostCard({
@@ -74,10 +74,10 @@ export default function PostCard({
   const [submitting, setSubmitting] = useState(false);
   const [removedMediaIds, setRemovedMediaIds] = useState<number[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  
-  const currentUserInfo = { 
-    name: "Bạn", 
-    avatar: "" 
+
+  const currentUserInfo = {
+    name: "Bạn",
+    avatar: ""
   };
 
   const {
@@ -151,51 +151,51 @@ export default function PostCard({
       toast.error("Không thể gửi phản hồi");
     }
   };
-  
+
   // === LOGIC SỬA COMMENT (ĐÃ KHẮC PHỤC LỖI) ===
   const onEditCommentClick = async (commentId: string, newText: string) => {
-      // 1. Lưu state cũ
-      const oldText = findCommentContent(localPostComments, commentId) || "";
-      
-      // 2. Cập nhật UI ngay lập tức
-      triggerEditCommentLocal(commentId, newText);
+    // 1. Lưu state cũ
+    const oldText = findCommentContent(localPostComments, commentId) || "";
 
-      // 3. Gọi Server
-      if (!commentId.startsWith("temp-")) {
-          try {
-              const res = await editComment(Number(commentId), currentUserId, newText);
-              
-              if (!res.success) {
-                  // Nếu lỗi: Hiện thông báo và Quay lại text cũ
-                  toast.error(res.message || "Sửa thất bại");
-                  console.error("Edit failed details:", res.message);
-                  triggerEditCommentLocal(commentId, oldText);
-              } else {
-                  toast.success("Đã cập nhật bình luận");
-              }
-          } catch (e) {
-              console.error(e);
-              toast.error("Lỗi kết nối");
-              triggerEditCommentLocal(commentId, oldText);
-          }
+    // 2. Cập nhật UI ngay lập tức
+    triggerEditCommentLocal(commentId, newText);
+
+    // 3. Gọi Server
+    if (!commentId.startsWith("temp-")) {
+      try {
+        const res = await editComment(Number(commentId), currentUserId, newText);
+
+        if (!res.success) {
+          // Nếu lỗi: Hiện thông báo và Quay lại text cũ
+          toast.error(res.message || "Sửa thất bại");
+          console.error("Edit failed details:", res.message);
+          triggerEditCommentLocal(commentId, oldText);
+        } else {
+          toast.success("Đã cập nhật bình luận");
+        }
+      } catch (e) {
+        console.error(e);
+        toast.error("Lỗi kết nối");
+        triggerEditCommentLocal(commentId, oldText);
       }
+    }
   };
 
   // === LOGIC ẨN/HIỆN COMMENT ===
   const onToggleHideCommentClick = async (commentId: string) => {
-      triggerToggleHideLocal(commentId);
-      if (!commentId.startsWith("temp-")) {
-          try {
-              const res = await toggleHideComment(Number(commentId), currentUserId);
-              if (!res.success) {
-                 toast.error(res.message || "Không thể thay đổi trạng thái");
-                 triggerToggleHideLocal(commentId); // Revert
-              }
-          } catch (e) {
-              console.error(e);
-              triggerToggleHideLocal(commentId); // Revert
-          }
+    triggerToggleHideLocal(commentId);
+    if (!commentId.startsWith("temp-")) {
+      try {
+        const res = await toggleHideComment(Number(commentId), currentUserId);
+        if (!res.success) {
+          toast.error(res.message || "Không thể thay đổi trạng thái");
+          triggerToggleHideLocal(commentId); // Revert
+        }
+      } catch (e) {
+        console.error(e);
+        triggerToggleHideLocal(commentId); // Revert
       }
+    }
   };
 
   const onLikeCommentClick = async (cmtId: string) => {
@@ -216,7 +216,7 @@ export default function PostCard({
   const videos = (post.media || []).filter((m: any) => m.type === "video" && !removedMediaIds.includes(m.id));
 
   const handleReportClick = (e: any) => setIsModalOpen(true);
-  
+
   const handleUpdate = async (formData: FormData) => {
     try {
       setSubmitting(true);
@@ -260,7 +260,7 @@ export default function PostCard({
       <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
         <div className="flex items-center gap-2">
           <Avatar className="h-10 w-10">
-            {avatarUrl ? <AvatarImage src={avatarUrl} alt={displayName} /> : null}
+            {avatarUrl ? <AvatarImage src={post.imgUrl} alt={displayName} /> : null}
             <AvatarFallback>{avatarFallback}</AvatarFallback>
           </Avatar>
           <div className="leading-tight">
