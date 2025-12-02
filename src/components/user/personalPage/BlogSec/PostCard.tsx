@@ -1,16 +1,14 @@
 import UserAvatar from '@/components/layout/UserAvatar';
-import { CommentSection } from '@/components/post/CommentSection';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Textarea } from '@/components/ui/textarea';
 import { Post } from '@/types/user/postT';
-import { Flag, MessageCircle, MoreHorizontal, Share2, ThumbsUp } from 'lucide-react';
+import { MoreHorizontal } from 'lucide-react';
 import Image from 'next/image';
 import ReportModal from './ReportModal';
+import PostCardFooter from './PostCardFooter';
 
 export default function PostCard({ post }: { post: Post }) {
-    console.log(post);
     const images = post?.media.filter((m: any) => m.mediaType === 'image') || [];
     const videos = post?.media.filter((m: any) => m.mediaType === 'video') || [];
     return (
@@ -56,26 +54,8 @@ export default function PostCard({ post }: { post: Post }) {
                         </div>
                     )}
                 </>
-
             </CardContent>
-
-            <CardFooter className="flex flex-col gap-4 border-t px-2 pb-2 pt-1">
-                <div className="flex items-center justify-between px-1 text-xs text-muted-foreground gap-5">
-                    <span>{post?.likeCount} lượt thích</span>
-                    <span>0 bình luận</span>
-                </div>
-                <div className="mt-1 grid grid-cols-3 gap-4 text-xs">
-                    <Button variant="ghost" size="sm" className={`flex items-center justify-center gap-1 rounded-md py-1 text-muted-foreground ${post?.isLikedByCurrentUser ? "text-blue-500 hover:bg-blue-100 hover:text-blue-500" : ""}`}>
-                        <ThumbsUp className="h-4 w-4" /> Thích
-                    </Button>
-                    <Button variant="ghost" size="sm" className="flex items-center justify-center gap-1 text-muted-foreground">
-                        <MessageCircle className="h-4 w-4" /> Bình luận
-                    </Button>
-                    <Button variant="ghost" size="sm" className="flex items-center justify-center gap-1 text-muted-foreground">
-                        <Share2 className="h-4 w-4" /> Chia sẻ
-                    </Button>
-                </div>
-            </CardFooter>
+            <PostCardFooter post={post} />
         </Card >
     );
 }

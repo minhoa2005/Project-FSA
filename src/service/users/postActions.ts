@@ -492,10 +492,11 @@ export async function toggleHideComment(commentId: number, userId: number) {
   }
 }
 
-export const getPersonalBlogs = async (userId: number) => {
+export const getPersonalBlogs = async (userId: number, page: number = 1) => {
   try {
     const pool = await connectDB();
-    const blogsResult = await pool.request().input("userId", userId).query(`
+    const offset = (page - 1) * 5
+    const blogsResult = await pool.request().input("userId", userId).input("offset", offset).query(`
               SELECT
             b.id AS blogId,
             b.text,
@@ -531,7 +532,8 @@ export const getPersonalBlogs = async (userId: number) => {
             b.creatorId = @userId
         ORDER BY
             b.createdAt DESC,
-            m.id ASC;
+            m.id ASC
+        OFFSET @offset ROWS FETCH NEXT 5 ROWS ONLY
       `);
     const blogMap = new Map<number, any>();
     blogsResult.recordset.forEach((row: any) => {
