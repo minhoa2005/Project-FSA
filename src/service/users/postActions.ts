@@ -8,6 +8,7 @@ import { removeVietnameseSigns } from "@/lib/formatter";
 import { verifyUser } from "./personalInfo";
 import { verifyToken } from "@/config/jwt";
 import { getCookie } from "@/config/cookie";
+import { getSharedBlogInfo } from "./shareActions";
 
 const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads");
 const FEED_PATH = "/(private)/(user)";
@@ -495,7 +496,9 @@ export const getPersonalBlogs = async (userId: number, page: number = 1) => {
             m.mediaUrl,
             m.mediaType,
             ISNULL(lc.likeCount, 0) AS likeCount,
-            ISNULL(cc.commentCount, 0) AS commentCount
+            ISNULL(cc.commentCount, 0) AS commentCount,
+            bs.originalBlogId,
+            bs.id AS shareId
         FROM
             Blogs b
         LEFT JOIN
@@ -524,6 +527,7 @@ export const getPersonalBlogs = async (userId: number, page: number = 1) => {
               GROUP BY 
                 blogId
             ) cc ON cc.blogId = b.id
+        LEFT JOIN BlogShares bs ON bs.blogId = b.id
         WHERE
             b.creatorId = @userId
         ORDER BY
@@ -532,7 +536,6 @@ export const getPersonalBlogs = async (userId: number, page: number = 1) => {
         OFFSET @offset ROWS FETCH NEXT 5 ROWS ONLY
       `);
     const blogMap = new Map<number, any>();
-    console.log(blogsResult.recordset);
     blogsResult.recordset.forEach((row: any) => {
       const blogId = row.blogId;
       if (!blogMap.has(blogId)) {
@@ -548,6 +551,8 @@ export const getPersonalBlogs = async (userId: number, page: number = 1) => {
           media: [],
           likeCount: row.likeCount,
           commentCount: row.commentCount,
+          isShared: row.shareId ? true : false,
+          originalBlogId: row.originalBlogId,
           shares: 0,
         });
       }
@@ -571,9 +576,15 @@ export const getPersonalBlogs = async (userId: number, page: number = 1) => {
         blog.isLikedByCurrentUser = true;
       }
     });
+    const blogArray = Array.from(blogMap.values());
+    for (const blog of blogArray) {
+      const shareInfo = await getSharedBlogInfo(blog.id);
+      blog.sharedData = shareInfo;
+    }
+    console.log(blogArray);
     return {
       success: true,
-      data: blogMap.size > 0 ? Array.from(blogMap.values()) : []
+      data: blogArray
     }
   }
   catch (error) {
@@ -743,20 +754,19 @@ export async function getBlogsWithShare(currentUserId?: number) {
         });
       }
       if (row.mediaId) {
-        blogMap.get(blogId).media.push({ 
-          id: row.mediaId, 
-          url: row.mediaUrl, 
-          type: row.mediaType 
+        blogMap.get(blogId).media.push({
+          id: row.mediaId,
+          url: row.mediaUrl,
+          type: row.mediaType
         });
       }
     }
 
     // Lấy thông tin bài viết gốc cho các bài share
     const blogs = Array.from(blogMap.values());
-    
+
     // Import getSharedBlogInfo từ shareActions
-    const { getSharedBlogInfo } = await import("./shareActions");
-    
+
     const blogsWithSharedData = await Promise.all(
       blogs.map(async (blog) => {
         if (blog.isShared && blog.originalBlogId) {

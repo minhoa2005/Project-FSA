@@ -8,10 +8,12 @@ import Image from 'next/image';
 import ReportModal from './ReportModal';
 import PostCardFooter from './PostCardFooter';
 import { getCommentsByBlogId } from '@/service/users/postActions';
+import SharedPostCard from '@/components/blog/SharedPostCard';
 
 export default function PostCard({ post }: { post: Post }) {
     const images = post?.media.filter((m: any) => m.mediaType === 'image') || [];
     const videos = post?.media.filter((m: any) => m.mediaType === 'video') || [];
+    console.log("Post media:", post);
     return (
         <Card className="overflow-hidden shadow-sm ">
             <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
@@ -53,6 +55,15 @@ export default function PostCard({ post }: { post: Post }) {
                                 <video key={m.id} src={m.url} controls className="max-h-[400px] w-full rounded-lg" />
                             ))}
                         </div>
+                    )}
+                    {post.isShared && post.sharedData && (
+                        <SharedPostCard
+                            originalBlogId={post.sharedData.originalBlogId}
+                            originalText={post.sharedData.originalText}
+                            originalAuthor={post.sharedData.originalAuthor}
+                            originalCreatedAt={post.sharedData.originalCreatedAt}
+                            media={post.sharedData.media}
+                        />
                     )}
                 </>
             </CardContent>

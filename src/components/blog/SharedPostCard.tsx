@@ -32,9 +32,9 @@ export default function SharedPostCard({
   const videos = media.filter((m) => m.type === "video");
 
   return (
-    <div className="border rounded-lg overflow-hidden bg-gray-50/50 mt-3">
+    <div className="border rounded-lg overflow-hidden mt-3">
       {/* Original Author Header */}
-      <div className="p-3 flex items-center gap-2 bg-white/80 border-b">
+      <div className="p-3 flex items-center gap-2 border-b">
         <Avatar className="h-8 w-8">
           {originalAuthor.avatar ? (
             <AvatarImage src={originalAuthor.avatar} alt={originalAuthor.name} />
@@ -50,7 +50,7 @@ export default function SharedPostCard({
       </div>
 
       {/* Original Content */}
-      <div className="p-3 space-y-2 bg-white">
+      <div className="p-3 space-y-2 ">
         {originalText && (
           <p className="text-sm whitespace-pre-wrap leading-relaxed">
             {originalText}
@@ -60,12 +60,11 @@ export default function SharedPostCard({
         {/* Images */}
         {images.length > 0 && (
           <div
-            className={`grid gap-1 overflow-hidden rounded-lg ${
-              images.length === 1 ? "grid-cols-1" : "grid-cols-2"
-            }`}
+            className={`grid gap-1 overflow-hidden rounded-lg ${images.length === 1 ? "grid-cols-1" : "grid-cols-2"
+              }`}
           >
             {images.map((m) => (
-              <div key={m.id} className="relative aspect-video bg-gray-200">
+              <div key={m.id} className="relative aspect-video ">
                 <Image
                   src={m.url}
                   alt=""
