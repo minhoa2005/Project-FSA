@@ -7,6 +7,8 @@ import { Label } from '../ui/label'
 import { useUser } from '@/context/AuthContext'
 import { toast } from 'sonner'
 import { handleLogin } from '@/service/public/auth/auth'
+import { validateEmail, validatePassword } from '@/lib/validators'
+
 
 export default function LoginForm() {
     const { setUser, setAuthen, setLoading, loading } = useUser();
@@ -17,6 +19,16 @@ export default function LoginForm() {
         try {
             e.preventDefault();
             const formData = new FormData(e.target as HTMLFormElement);
+            let emailCheck = validateEmail(formData.get('email') as string);
+            if (emailCheck) {
+                toast.error(emailCheck, { duration: 4000 });
+                return;
+            }
+            let passwordCheck = validatePassword(formData.get('password') as string);
+            if (passwordCheck) {
+                toast.error(passwordCheck, { duration: 4000 });
+                return;
+            }
             const response = await handleLogin(formData);
             if (response.success) {
                 setUser(response.user);

@@ -83,6 +83,48 @@ app.prepare().then(() => {
             io.emit("receive-message", msg);
         });
 
+        // --- THÊM ĐOẠN NÀY VÀO (Logic Comment) ---
+        
+        /// 1. Join Room bài viết
+        socket.on("join_post", (postId: any) => {
+            const roomName = `post_${postId}`;
+            socket.join(roomName);
+            // console.log(`Socket ${socket.id} joined ${roomName}`);
+        });
+
+        // 2. Broadcast Comment Mới
+        socket.on("new_comment_posted", (data: any) => {
+            const { room, comment } = data;
+            io.to(room).emit("receive_comment", comment);
+        });
+
+        // 3. Broadcast Like Bài Viết
+        socket.on("update_post_like_stats", (data: any) => {
+            // data: { room, likes }
+            // Gửi cho người khác (trừ người gửi)
+            socket.to(data.room).emit("sync_post_likes", { likes: data.likes });
+        });
+
+        // 4. Broadcast Like Comment
+        socket.on("update_comment_like_stats", (data: any) => {
+            // data: { room, commentId, likes }
+            socket.to(data.room).emit("sync_comment_likes", { 
+                commentId: data.commentId, 
+                likes: data.likes 
+            });
+        });
+
+        // 5. Xử lý Ẩn/Hiện Comment (Realtime)
+        socket.on("toggle_hide_comment", (data: any) => {
+            // data: { room, commentId }
+            // Báo cho mọi người trong phòng biết commentId này vừa thay đổi trạng thái ẩn/hiện
+            socket.to(data.room).emit("sync_hide_comment", { 
+                commentId: data.commentId 
+            });
+        });
+
+        // ------------------------------------------
+
         socket.on("disconnect", () => {
             // Xóa user mapping khi disconnect
             if (socket.userId) {

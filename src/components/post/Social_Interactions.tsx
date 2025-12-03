@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect } from "react";
 
 export interface CommentData {
@@ -16,6 +18,17 @@ export interface CommentData {
 }
 
 // --- Helpers ---
+const hasCommentId = (comments: CommentData[], id: string): boolean => {
+    for (const c of comments) {
+        if (String(c.id) === String(id)) return true;
+        if (c.replies && hasCommentId(c.replies, id)) return true;
+    }
+    return false;
+};
+
+const countAllComments = (comments: CommentData[]): number =>
+    comments.reduce((t, c) => t + 1 + (c.replies ? countAllComments(c.replies) : 0), 0);
+
 export const findRootCommentId = (comments: CommentData[], targetId: string): string | null => {
     const root = comments.find(c => c.id === targetId);
     if (root) return root.id;
@@ -25,27 +38,16 @@ export const findRootCommentId = (comments: CommentData[], targetId: string): st
     return null;
 };
 
-const hasCommentId = (comments: CommentData[], id: string): boolean => {
-    for (const c of comments) {
-        if (c.id === id) return true;
-        if (c.replies && hasCommentId(c.replies, id)) return true;
-    }
-    return false;
-};
-
 const findCommentAuthor = (comments: CommentData[], id: string): string | null => {
     for (const c of comments) {
         if (c.id === id) return c.author;
         if (c.replies) {
-            const f = findCommentAuthor(c.replies, id);
-            if (f) return f;
+            const found = findCommentAuthor(c.replies, id);
+            if (found) return found;
         }
     }
     return null;
 };
-
-const countAllComments = (comments: CommentData[]): number =>
-    comments.reduce((t, c) => t + 1 + (c.replies ? countAllComments(c.replies) : 0), 0);
 
 export interface InitialPostData {
     id: string;
@@ -56,104 +58,80 @@ export interface InitialPostData {
     isLiked?: boolean;
 }
 
-export function usePostInteractions(initialPost: InitialPostData, onInteractionUpdate: (updatedPost: InitialPostData) => void) {
+export function usePostInteractions(initialPost: InitialPostData) {
     const [localPost, setLocalPost] = useState(initialPost);
     const [isLiked, setIsLiked] = useState(initialPost.isLiked || false);
     const [showComments, setShowComments] = useState(false);
     const [showShareDialog, setShowShareDialog] = useState(false);
 
+    // Sync dữ liệu khi props thay đổi
     useEffect(() => {
+        setLocalPost(initialPost);
+        setIsLiked(initialPost.isLiked || false);
+    }, [initialPost.id]);
+
+    // ==================================================================
+    // 1. SOCKET HANDLERS (Xử lý dữ liệu nhận từ Server)
+    // ==================================================================
+    
+    // Nhận Comment mới từ người khác
+    const handleSocketAddComment = (newComment: CommentData) => {
         setLocalPost(prev => {
-            if (JSON.stringify(prev) === JSON.stringify(initialPost)) return prev;
-            return initialPost;
-        });
-        setIsLiked(prev => {
-            const newStatus = initialPost.isLiked || false;
-            if (prev === newStatus) return prev;
-            return newStatus;
-        });
-    }, [JSON.stringify(initialPost)]);
-
-    const handleLike = () => {
-        const newStatus = !isLiked;
-        setIsLiked(newStatus);
-        const newCount = newStatus ? localPost.likes + 1 : Math.max(0, localPost.likes - 1);
-        const updated = { ...localPost, likes: newCount, isLiked: newStatus };
-        setLocalPost(updated);
-        onInteractionUpdate(updated);
-    };
-
-    const handleAddComment = (text: string, tempId: string, currentUserInfo?: { name: string, avatar: string }) => {
-        const newC: CommentData = { 
-            id: tempId, 
-            author: currentUserInfo?.name || "Bạn", 
-            avatar: currentUserInfo?.avatar || "", 
-            content: text, 
-            timestamp: "Đang gửi...", 
-            likes: 0, 
-            replies: [],
-            isHidden: false
-        };
-        const updated = { ...localPost, comments: [...localPost.comments, newC] };
-        setLocalPost(updated);
-        onInteractionUpdate(updated);
-    };
-
-    const handleAddReply = (targetId: string, text: string, tempId: string, currentUserInfo?: { name: string, avatar: string }) => {
-        const rootParentId = findRootCommentId(localPost.comments, targetId);
-        const effectiveRootId = rootParentId || targetId;
-        const replyToAuthor = findCommentAuthor(localPost.comments, targetId);
-        const isReplyingToChild = targetId !== effectiveRootId;
-
-        const newR: CommentData = {
-            id: tempId,
-            author: currentUserInfo?.name || "Bạn",
-            avatar: currentUserInfo?.avatar || "",
-            content: text,
-            timestamp: "Đang gửi...",
-            likes: 0,
-            replyTo: isReplyingToChild ? (replyToAuthor || undefined) : undefined,
-            replies: [],
-            isHidden: false
-        };
-
-        const updatedComments = localPost.comments.map(c => {
-            if (c.id === effectiveRootId) {
-                return { ...c, replies: [...(c.replies || []), newR] };
+            // Tránh trùng lặp
+            if (hasCommentId(prev.comments, newComment.id)) return prev;
+            
+            const currentComments = [...prev.comments];
+            
+            // Nếu là comment gốc
+            if (!newComment.parentId) {
+                return { ...prev, comments: [...currentComments, newComment] };
             }
-            return c;
-        });
 
-        const updated = { ...localPost, comments: updatedComments };
-        setLocalPost(updated);
-        onInteractionUpdate(updated);
+            // Nếu là reply (đệ quy tìm cha)
+            const addReplyRecursive = (list: CommentData[]): CommentData[] => {
+                return list.map(c => {
+                    if (String(c.id) === String(newComment.parentId)) {
+                        const existingReplies = c.replies || [];
+                        if (existingReplies.some(r => String(r.id) === String(newComment.id))) return c;
+                        return { ...c, replies: [...existingReplies, newComment] };
+                    }
+                    if (c.replies && c.replies.length > 0) {
+                        return { ...c, replies: addReplyRecursive(c.replies) };
+                    }
+                    return c;
+                });
+            };
+            return { ...prev, comments: addReplyRecursive(currentComments) };
+        });
     };
 
-    const handleCommentSuccess = (tempId: string, realData: CommentData) => {
-        const replaceRecursive = (list: CommentData[]): CommentData[] => {
+    // Nhận số Like bài viết mới từ người khác
+    const handleSocketUpdatePostLikes = (newLikeCount: number) => {
+        setLocalPost(prev => ({ ...prev, likes: newLikeCount }));
+    };
+
+    // Nhận số Like comment mới từ người khác
+    const handleSocketUpdateCommentLikes = (commentId: string, newLikeCount: number) => {
+        const updateLikesRecursive = (list: CommentData[]): CommentData[] => {
             return list.map(c => {
-                if (c.id === tempId) {
-                    return { ...realData, replies: c.replies || [] }; 
+                if (String(c.id) === String(commentId)) {
+                    return { ...c, likes: newLikeCount };
                 }
                 if (c.replies && c.replies.length > 0) {
-                    return { ...c, replies: replaceRecursive(c.replies) };
+                    return { ...c, replies: updateLikesRecursive(c.replies) };
                 }
                 return c;
             });
         };
-        setLocalPost(prev => ({ ...prev, comments: replaceRecursive(prev.comments) }));
+        setLocalPost(prev => ({ ...prev, comments: updateLikesRecursive(prev.comments) }));
     };
 
-    const handleLikeComment = (cmtId: string) => {
+    // Nhận sự kiện Ẩn/Hiện comment từ người khác
+    const handleSocketToggleHideComment = (commentId: string) => {
         const toggleRecursive = (list: CommentData[]): CommentData[] => {
             return list.map(c => {
-                if (c.id === cmtId) {
-                    const newIsLiked = !c.isLiked;
-                    return {
-                        ...c,
-                        isLiked: newIsLiked,
-                        likes: newIsLiked ? c.likes + 1 : Math.max(0, c.likes - 1)
-                    };
+                if (String(c.id) === String(commentId)) {
+                    return { ...c, isHidden: !c.isHidden };
                 }
                 if (c.replies && c.replies.length > 0) {
                     return { ...c, replies: toggleRecursive(c.replies) };
@@ -161,12 +139,109 @@ export function usePostInteractions(initialPost: InitialPostData, onInteractionU
                 return c;
             });
         };
-        const updated = { ...localPost, comments: toggleRecursive(localPost.comments) };
-        setLocalPost(updated);
-        onInteractionUpdate(updated);
+        setLocalPost(prev => ({ ...prev, comments: toggleRecursive(prev.comments) }));
     };
 
-    // --- XỬ LÝ SỬA COMMENT ---
+    // ==================================================================
+    // 2. USER ACTIONS (Optimistic UI - Hiển thị ngay trên máy mình)
+    // ==================================================================
+
+    // Like Bài viết
+    const handleLike = () => {
+        const newStatus = !isLiked;
+        const newCount = newStatus ? localPost.likes + 1 : Math.max(0, localPost.likes - 1);
+        
+        setIsLiked(newStatus);
+        setLocalPost(prev => ({ ...prev, likes: newCount, isLiked: newStatus }));
+        
+        return newCount; // Trả về để gửi socket
+    };
+
+    // Like Comment
+    const handleLikeComment = (cmtId: string) => {
+        let newCountForSocket = 0;
+        const toggleRecursive = (list: CommentData[]): CommentData[] => {
+            return list.map(c => {
+                if (String(c.id) === String(cmtId)) {
+                    const newIsLiked = !c.isLiked;
+                    const newLikes = newIsLiked ? c.likes + 1 : Math.max(0, c.likes - 1);
+                    newCountForSocket = newLikes;
+                    return { ...c, isLiked: newIsLiked, likes: newLikes };
+                }
+                if (c.replies && c.replies.length > 0) {
+                    return { ...c, replies: toggleRecursive(c.replies) };
+                }
+                return c;
+            });
+        };
+        setLocalPost(prev => ({ ...prev, comments: toggleRecursive(prev.comments) }));
+        return newCountForSocket;
+    };
+
+    // Thêm Comment
+    const handleAddComment = (text: string, tempId: string, currentUserInfo: any) => {
+        const newC: CommentData = { 
+            id: tempId, 
+            userId: currentUserInfo.id,
+            author: currentUserInfo.name || "Bạn", 
+            avatar: currentUserInfo.avatar || "", 
+            content: text, 
+            timestamp: "Đang gửi...", 
+            likes: 0, 
+            replies: [],
+            isHidden: false
+        };
+        setLocalPost(prev => ({ ...prev, comments: [...prev.comments, newC] }));
+    };
+
+    // Thêm Reply
+    const handleAddReply = (targetId: string, text: string, tempId: string, currentUserInfo: any) => {
+        const rootParentId = findRootCommentId(localPost.comments, targetId);
+        const effectiveRootId = rootParentId || targetId;
+        const replyToAuthor = findCommentAuthor(localPost.comments, targetId);
+        const isReplyingToChild = targetId !== effectiveRootId;
+
+        const newR: CommentData = {
+            id: tempId,
+            userId: currentUserInfo.id,
+            author: currentUserInfo.name || "Bạn", 
+            avatar: currentUserInfo.avatar || "", 
+            content: text, 
+            timestamp: "Đang gửi...", 
+            likes: 0, 
+            replies: [],
+            replyTo: isReplyingToChild ? (replyToAuthor || undefined) : undefined,
+            isHidden: false,
+            parentId: targetId 
+        };
+
+        const insertReplyRecursive = (list: CommentData[]): CommentData[] => {
+            return list.map(c => {
+                if (String(c.id) === String(effectiveRootId)) {
+                    return { ...c, replies: [...(c.replies || []), newR] };
+                }
+                if (c.replies && c.replies.length > 0) {
+                     return { ...c, replies: insertReplyRecursive(c.replies) };
+                }
+                return c;
+            });
+        }
+        setLocalPost(prev => ({ ...prev, comments: insertReplyRecursive(prev.comments) }));
+    };
+
+    // Cập nhật Comment thật sau khi API trả về
+    const handleCommentSuccess = (tempId: string, realData: CommentData) => {
+        const replaceRecursive = (list: CommentData[]): CommentData[] => {
+            return list.map(c => {
+                if (c.id === tempId) return { ...realData, replies: c.replies || [] }; 
+                if (c.replies && c.replies.length > 0) return { ...c, replies: replaceRecursive(c.replies) };
+                return c;
+            });
+        };
+        setLocalPost(prev => ({ ...prev, comments: replaceRecursive(prev.comments) }));
+    };
+
+    // Sửa Comment
     const handleEditComment = (cmtId: string, newText: string) => {
         const editRecursive = (list: CommentData[]): CommentData[] => {
             return list.map(c => {
@@ -175,12 +250,10 @@ export function usePostInteractions(initialPost: InitialPostData, onInteractionU
                 return c;
             });
         };
-        const updated = { ...localPost, comments: editRecursive(localPost.comments) };
-        setLocalPost(updated);
-        onInteractionUpdate(updated);
-    }
+        setLocalPost(prev => ({ ...prev, comments: editRecursive(prev.comments) }));
+    };
 
-    // --- XỬ LÝ ẨN/HIỆN COMMENT ---
+    // Ẩn/Hiện Comment (Máy mình)
     const handleToggleHideComment = (cmtId: string) => {
         const toggleHideRecursive = (list: CommentData[]): CommentData[] => {
             return list.map(c => {
@@ -189,10 +262,8 @@ export function usePostInteractions(initialPost: InitialPostData, onInteractionU
                 return c;
             });
         };
-        const updated = { ...localPost, comments: toggleHideRecursive(localPost.comments) };
-        setLocalPost(updated);
-        onInteractionUpdate(updated);
-    }
+        setLocalPost(prev => ({ ...prev, comments: toggleHideRecursive(prev.comments) }));
+    };
 
     const handleShare = (type: string) => {
         setLocalPost(prev => ({ ...prev, shares: prev.shares + 1 }));
@@ -205,13 +276,13 @@ export function usePostInteractions(initialPost: InitialPostData, onInteractionU
         totalComments: countAllComments(localPost.comments),
         localPostComments: localPost.comments,
         handleLike, setShowComments, setShowShareDialog, 
-        handleAddComment, 
-        handleAddReply, 
-        handleCommentSuccess, 
-        handleLikeComment,
-        handleEditComment, 
-        handleToggleHideComment, 
-        handleShare,
-        setLocalPost
+        handleAddComment, handleAddReply, handleCommentSuccess,
+        handleLikeComment, handleEditComment, handleToggleHideComment, handleShare,
+        
+        // Export Socket Handlers
+        handleSocketAddComment,
+        handleSocketUpdatePostLikes,
+        handleSocketUpdateCommentLikes,
+        handleSocketToggleHideComment
     };
 }

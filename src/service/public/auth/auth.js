@@ -80,7 +80,7 @@ const handleRegister = async (data) => {
     const username = data.get('username');
     const transaction = new sql.Transaction(pool);
     if (password !== confirmPassword) {
-        return { success: false, message: "Passwords do not match" };
+        return { success: false, message: "Mật khẩu không khớp" };
     }
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
@@ -104,15 +104,15 @@ const handleRegister = async (data) => {
         );
         if (result.rowsAffected[0] > 0 && updateRoleResult.rowsAffected[0] > 0 && addUserProfileResult.rowsAffected[0] > 0) {
             await transaction.commit();
-            return { success: true, message: "Registration successful" };
+            return { success: true, message: "Đăng ký thành công" };
         } else {
             await transaction.rollback();
-            return { success: false, message: "Registration failed" };
+            return { success: false, message: "Đăng ký thất bại" };
         }
     } catch (error) {
         console.error(error);
         await transaction.rollback();
-        return { success: false, message: "Registration failed" };
+        return { success: false, message: "Đăng ký thất bại" };
     }
 }
 

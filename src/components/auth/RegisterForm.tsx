@@ -7,6 +7,7 @@ import { Label } from '../ui/label';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { handleRegister } from '@/service/public/auth/auth';
+import { validateEmail, validateFullName, validatePassword } from '@/lib/validators';
 
 export default function RegisterForm({ action }) {
     const router = useRouter();
@@ -14,6 +15,21 @@ export default function RegisterForm({ action }) {
         e.preventDefault();
         const formData = new FormData(e.target as HTMLFormElement);
         try {
+            const checkEmail = validateEmail(formData.get('email') as string);
+            if (checkEmail) {
+                toast.error(checkEmail, { duration: 4000 });
+                return;
+            }
+            const checkPassword = validatePassword(formData.get('password') as string);
+            if (checkPassword) {
+                toast.error(checkPassword, { duration: 4000 });
+                return;
+            }
+            const checkName = validateFullName(formData.get('fullName') as string);
+            if (checkName) {
+                toast.error(checkName, { duration: 4000 });
+                return;
+            }
             const response = await handleRegister(formData);
             if (response.success) {
                 toast.success('Registration successful! Please log in.', { duration: 4000 });
