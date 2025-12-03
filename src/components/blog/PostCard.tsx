@@ -44,26 +44,35 @@ import {
   CommentData,
 } from "@/components/post/Social_Interactions";
 import { CommentSection } from "@/components/post/CommentSection";
-import { ShareDialog } from "@/components/post/ShareDialog";
+import SharePostDialog from "@/components/blog/SharePostDialog";
+import SharedPostCard from "@/components/blog/SharedPostCard";
 import { toast } from "sonner";
 
 interface PostCardProps {
   post: any;
   isOwner: boolean;
   currentUserId: number;
+  currentUserInfo?: {
+    name: string;
+    avatar?: string;
+  };
   onChanged?: () => void;
+  sharedPostData?: any; // Dữ liệu bài viết gốc nếu đây là bài share
 }
 
 export default function PostCard({
   post,
   isOwner,
   currentUserId,
+  currentUserInfo,
   onChanged,
+  sharedPostData,
 }: PostCardProps) {
   const [editing, setEditing] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [removedMediaIds, setRemovedMediaIds] = useState<number[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showShareDialog, setShowShareDialog] = useState(false);
 
   // NEW: file mới khi chỉnh sửa
   const [newFiles, setNewFiles] = useState<File[]>([]);
@@ -71,29 +80,26 @@ export default function PostCard({
 
   const socketRef = useRef<Socket | null>(null);
 
-  const currentUserInfo = {
-    name: "Bạn",
-    avatar: "",
+  const defaultUserInfo = {
+    name: currentUserInfo?.name || "Bạn",
+    avatar: currentUserInfo?.avatar || "",
     id: currentUserId,
   };
 
   const {
     isLiked,
     showComments,
-    showShareDialog,
     localPostComments,
     currentLikes,
     totalComments,
     handleLike,
     setShowComments,
-    setShowShareDialog,
     handleAddComment,
     handleAddReply,
     handleCommentSuccess,
     handleLikeComment,
     handleEditComment,
     handleToggleHideComment,
-    handleShare,
     // Socket handlers
     handleSocketAddComment,
     handleSocketUpdatePostLikes,
@@ -111,26 +117,22 @@ export default function PostCard({
   // KẾT NỐI SOCKET
   // ===============================================
   useEffect(() => {
-    socketRef.current = io(); // Kết nối tới server hiện tại (port 3000)
-
+    socketRef.current = io();
     const socket = socketRef.current;
 
     socket.on("connect", () => {
       socket.emit("join_post", post.id);
     });
 
-    // 1. Nhận Comment mới
     socket.on("receive_comment", (newComment: CommentData) => {
       if (Number(newComment.userId) === currentUserId) return;
       handleSocketAddComment(newComment);
     });
 
-    // 2. Nhận Cập nhật Like Bài Viết (Realtime)
     socket.on("sync_post_likes", (data: { likes: number }) => {
       handleSocketUpdatePostLikes(data.likes);
     });
 
-    // 3. Nhận Cập nhật Like Comment (Realtime)
     socket.on(
       "sync_comment_likes",
       (data: { commentId: string; likes: number }) => {
@@ -147,7 +149,6 @@ export default function PostCard({
   // HANDLERS
   // ===============================================
 
-  // 1. Like Post
   const onLikeClick = async () => {
     const newCount = handleLike();
 
@@ -165,7 +166,6 @@ export default function PostCard({
     }
   };
 
-  // 2. Like Comment
   const onLikeCommentClick = async (cmtId: string) => {
     if (cmtId.startsWith("temp-")) return;
 
@@ -188,7 +188,7 @@ export default function PostCard({
 
   const onAddCommentClick = async (text: string) => {
     const tempId = `temp-${Date.now()}`;
-    handleAddComment(text, tempId, currentUserInfo);
+    handleAddComment(text, tempId, defaultUserInfo);
     try {
       const result = await addComment(post.id, currentUserId, text);
       if (result?.success && result.data) {
@@ -210,7 +210,7 @@ export default function PostCard({
   const onAddReplyClick = async (targetId: string, text: string) => {
     if (targetId.startsWith("temp-")) return;
     const tempId = `temp-${Date.now()}`;
-    handleAddReply(targetId, text, tempId, currentUserInfo);
+    handleAddReply(targetId, text, tempId, defaultUserInfo);
     try {
       const result = await addComment(
         post.id,
@@ -232,7 +232,6 @@ export default function PostCard({
     }
   };
 
-  // ====== CẬP NHẬT BÀI VIẾT ======
   const handleUpdate = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
@@ -255,7 +254,7 @@ export default function PostCard({
       setSubmitting(false);
     }
   };
-  // ====== XOÁ (soft delete bằng isDeleted ở backend) ======
+
   const handleDelete = async () => {
     try {
       const fd = new FormData();
@@ -267,7 +266,6 @@ export default function PostCard({
     }
   };
 
-  // ====== FILE MỚI KHI EDIT ======
   const handleNewFilesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const list = Array.from(e.target.files || []);
     setNewFiles(list);
@@ -340,6 +338,9 @@ export default function PostCard({
     (m: any) => m.type === "video" && !removedMediaIds.includes(m.id),
   );
 
+  // Check if this is a shared post
+  const isSharedPost = !!sharedPostData;
+
   return (
     <Card className="overflow-hidden shadow-sm mb-4">
       <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
@@ -408,34 +409,52 @@ export default function PostCard({
                 {post.text}
               </p>
             )}
-            {images.length > 0 && (
-              <div
-                className={`grid gap-1 overflow-hidden rounded-lg ${images.length === 1 ? "grid-cols-1" : "grid-cols-2"
-                  }`}
-              >
-                {images.map((m: any) => (
-                  <Image
-                    key={m.id}
-                    src={m.url}
-                    alt=""
-                    width={1200}
-                    height={800}
-                    className="aspect-[16/9] w-full object-cover"
-                  />
-                ))}
-              </div>
+
+            {/* Hiển thị bài viết gốc nếu đây là bài share */}
+            {isSharedPost && sharedPostData && (
+              <SharedPostCard
+                originalBlogId={sharedPostData.originalBlogId}
+                originalText={sharedPostData.originalText}
+                originalAuthor={sharedPostData.originalAuthor}
+                originalCreatedAt={sharedPostData.originalCreatedAt}
+                media={sharedPostData.media}
+              />
             )}
-            {videos.length > 0 && (
-              <div className="space-y-2">
-                {videos.map((m: any) => (
-                  <video
-                    key={m.id}
-                    src={m.url}
-                    controls
-                    className="max-h-[400px] w-full rounded-lg"
-                  />
-                ))}
-              </div>
+
+            {/* Chỉ hiển thị media của bài viết hiện tại nếu KHÔNG phải bài share */}
+            {!isSharedPost && (
+              <>
+                {images.length > 0 && (
+                  <div
+                    className={`grid gap-1 overflow-hidden rounded-lg ${
+                      images.length === 1 ? "grid-cols-1" : "grid-cols-2"
+                    }`}
+                  >
+                    {images.map((m: any) => (
+                      <Image
+                        key={m.id}
+                        src={m.url}
+                        alt=""
+                        width={1200}
+                        height={800}
+                        className="aspect-[16/9] w-full object-cover"
+                      />
+                    ))}
+                  </div>
+                )}
+                {videos.length > 0 && (
+                  <div className="space-y-2">
+                    {videos.map((m: any) => (
+                      <video
+                        key={m.id}
+                        src={m.url}
+                        controls
+                        className="max-h-[400px] w-full rounded-lg"
+                      />
+                    ))}
+                  </div>
+                )}
+              </>
             )}
           </>
         ) : (
@@ -451,7 +470,6 @@ export default function PostCard({
               value={removedMediaIds.join(",")}
             />
 
-            {/* input file ẩn cho media mới */}
             <input
               ref={fileInputRef}
               type="file"
@@ -468,7 +486,6 @@ export default function PostCard({
               className="min-h-[80px] text-sm"
             />
 
-            {/* Ảnh / video hiện tại */}
             {(images.length > 0 || videos.length > 0) && (
               <div className="space-y-2">
                 <div className="text-xs font-medium text-muted-foreground">
@@ -517,8 +534,7 @@ export default function PostCard({
               </div>
             )}
 
-            {/* Thêm ảnh / video mới */}
-            <div className="rounded-lg border  px-3 py-2">
+            <div className="rounded-lg border bg-gray-50 px-3 py-2">
               <div className="flex items-center justify-between">
                 <span className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
                   <ImageIcon className="h-4 w-4" />
@@ -607,8 +623,14 @@ export default function PostCard({
             currentUserId={currentUserId}
           />
         )}
+
         {showShareDialog && (
-          <ShareDialog onClose={() => setShowShareDialog(false)} onShare={handleShare} />
+          <SharePostDialog
+            originalPost={post}
+            currentUser={defaultUserInfo}
+            onClose={() => setShowShareDialog(false)}
+            onSuccess={onChanged}
+          />
         )}
       </CardFooter>
     </Card>

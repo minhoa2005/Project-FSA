@@ -123,6 +123,64 @@ app.prepare().then(() => {
             });
         });
 
+        // ==========================================
+        // 6. SHARE FUNCTIONALITY (NEW)
+        // ==========================================
+        
+        // Broadcast khi có bài viết mới được share
+        socket.on("post_shared", (data: any) => {
+            // data: { originalPostId, newPostId, sharerInfo }
+            const { originalPostId, newPostId, sharerInfo } = data;
+            
+            // Gửi notification cho người tạo bài viết gốc
+            if (sharerInfo.originalCreatorId && userSockets.has(sharerInfo.originalCreatorId)) {
+                io.to(userSockets.get(sharerInfo.originalCreatorId)).emit("share_notification", {
+                    type: "post_shared",
+                    sharerName: sharerInfo.sharerName,
+                    sharerAvatar: sharerInfo.sharerAvatar,
+                    originalPostId,
+                    newPostId,
+                    timestamp: new Date()
+                });
+            }
+
+            // Broadcast cập nhật số lượng share cho bài viết gốc
+            io.to(`post_${originalPostId}`).emit("sync_share_count", {
+                postId: originalPostId,
+                shareCount: sharerInfo.newShareCount
+            });
+
+            // Broadcast bài viết mới được share tới feed chung
+            io.emit("new_shared_post", {
+                postId: newPostId,
+                originalPostId,
+                sharerId: sharerInfo.sharerId
+            });
+        });
+
+        // Cập nhật số lượng share realtime
+        socket.on("update_share_count", (data: any) => {
+            // data: { postId, shareCount }
+            io.to(`post_${data.postId}`).emit("sync_share_count", {
+                postId: data.postId,
+                shareCount: data.shareCount
+            });
+        });
+
+        // Xóa bài share
+        socket.on("shared_post_deleted", (data: any) => {
+            // data: { sharedPostId, originalPostId, newShareCount }
+            io.to(`post_${data.originalPostId}`).emit("sync_share_count", {
+                postId: data.originalPostId,
+                shareCount: data.newShareCount
+            });
+
+            io.emit("post_deleted", { postId: data.sharedPostId });
+        });
+
+        
+        
+        
         // ------------------------------------------
 
         socket.on("disconnect", () => {

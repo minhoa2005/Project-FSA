@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { useUser } from "@/context/AuthContext";
-import { getBlogs } from "@/service/users/postActions";
+import { getBlogsWithShare } from "@/service/users/postActions";
 
 import CreatePost from "@/components/blog/CreatePost";
 import PostList from "@/components/blog/PostList";
@@ -22,6 +22,12 @@ export default function HomePage() {
   // Lấy ID an toàn từ object user
   const currentUserId = (user as any)?.id ?? (user as any)?.accountId ?? null;
 
+  // Thông tin user hiện tại để truyền vào PostList
+  const currentUserInfo = {
+    name: (user as any)?.fullName || (user as any)?.username || "Bạn",
+    avatar: (user as any)?.imgUrl || (user as any)?.avatarUrl || "",
+  };
+
   // 1. Kiểm tra Auth & Redirect
   useEffect(() => {
     if (!loading && !authen) {
@@ -31,9 +37,11 @@ export default function HomePage() {
 
   // Hàm load posts từ server action
   const loadPosts = async () => {
+    if (!currentUserId) return;
+    
     try {
       setLoadingPosts(true);
-      const data = await getBlogs(currentUserId);
+      const data = await getBlogsWithShare(currentUserId);
       setPosts(data);
     } catch (err) {
       console.error("Error loading blogs:", err);
@@ -43,14 +51,7 @@ export default function HomePage() {
     }
   };
 
-  // Khi đã xác thực xong thì load posts
-  useEffect(() => {
-    if (authen) {
-      void loadPosts();
-    }
-  }, [currentUserId]); // Bỏ 'posts.length' khỏi dependency để tránh loop, chỉ phụ thuộc ID
-
-  // 3. Gọi loadPosts khi đã có user ID
+  // 2. Gọi loadPosts khi đã có user ID
   useEffect(() => {
     if (authen && currentUserId) {
       loadPosts();
@@ -86,6 +87,7 @@ export default function HomePage() {
             <PostList
               posts={posts}
               currentUserId={currentUserId}
+              currentUserInfo={currentUserInfo}
               onPostsChanged={loadPosts}
             />
           )}

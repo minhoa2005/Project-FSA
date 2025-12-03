@@ -640,3 +640,139 @@ export const getCommentsByBlogId = async (blogId: number) => {
     return { success: false, message: "Xảy ra lỗi khi lấy bình luận" };
   }
 }
+
+// ==========================================
+// GET BLOGS WITH SHARE SUPPORT (Thêm vào cuối file)
+// ==========================================
+export async function getBlogsWithShare(currentUserId?: number) {
+  try {
+    const pool = await connectDB();
+
+    // Lấy tất cả blogs kèm thông tin share
+    const blogsResult = await pool.request().query(`
+      SELECT 
+        b.id AS blogId, 
+        b.text, 
+        b.creatorId, 
+        b.createdAt, 
+        b.updatedAt,
+        up.fullName, 
+        up.imgUrl, 
+        a.username, 
+        m.id AS mediaId, 
+        m.mediaUrl, 
+        m.mediaType,
+        bs.originalBlogId,
+        bs.id AS shareId
+      FROM Blogs b
+      LEFT JOIN UserProfile up ON up.accountId = b.creatorId
+      LEFT JOIN Account a ON a.id = b.creatorId
+      LEFT JOIN BlogMedia m ON m.blogId = b.id
+      LEFT JOIN BlogShares bs ON bs.blogId = b.id
+      WHERE b.isDeleted = 0
+      ORDER BY b.createdAt DESC, m.id ASC
+    `);
+
+    const likesCountResult = await pool.request().query(`
+      SELECT blogId, COUNT(*) as count 
+      FROM [Like] 
+      GROUP BY blogId
+    `);
+    const likesMap = new Map<number, number>();
+    likesCountResult.recordset.forEach((r: any) => likesMap.set(r.blogId, r.count));
+
+    const commentsResult = await pool.request().query(`
+      SELECT c.id, c.blogId, c.text, c.createdAt, c.parentId, c.isHidden, c.userId,
+             up.fullName, up.imgUrl, a.username
+      FROM Comments c
+      LEFT JOIN UserProfile up ON up.accountId = c.userId
+      LEFT JOIN Account a ON a.id = c.userId
+      ORDER BY c.createdAt ASC
+    `);
+
+    const commentLikesCountResult = await pool.request().query(`
+      SELECT commentId, COUNT(*) as count 
+      FROM CommentLikes 
+      GROUP BY commentId
+    `);
+    const commentLikesMap = new Map<number, number>();
+    commentLikesCountResult.recordset.forEach((r: any) => commentLikesMap.set(r.commentId, r.count));
+
+    const userLikedPostSet = new Set<number>();
+    const userLikedCommentSet = new Set<number>();
+
+    if (currentUserId) {
+      const userPostLikes = await pool.request().input("uid", sql.Int, currentUserId)
+        .query("SELECT blogId FROM [Like] WHERE userId = @uid");
+      userPostLikes.recordset.forEach((r: any) => userLikedPostSet.add(r.blogId));
+
+      const userCommentLikes = await pool.request().input("uid", sql.Int, currentUserId)
+        .query("SELECT commentId FROM CommentLikes WHERE userId = @uid");
+      userCommentLikes.recordset.forEach((r: any) => userLikedCommentSet.add(r.commentId));
+    }
+
+    const commentsByBlog = new Map<number, any[]>();
+    commentsResult.recordset.forEach((c: any) => {
+      if (!commentsByBlog.has(c.blogId)) commentsByBlog.set(c.blogId, []);
+      commentsByBlog.get(c.blogId).push(c);
+    });
+
+    const blogMap = new Map<number, any>();
+    const rows = blogsResult.recordset || [];
+
+    for (const row of rows) {
+      const blogId = row.blogId;
+      if (!blogMap.has(blogId)) {
+        const rawComments = commentsByBlog.get(blogId) || [];
+        blogMap.set(blogId, {
+          id: blogId,
+          text: row.text,
+          creatorId: row.creatorId,
+          createdAt: row.createdAt,
+          updatedAt: row.updatedAt,
+          fullName: row.fullName,
+          username: row.username,
+          imgUrl: row.imgUrl,
+          media: [],
+          likes: likesMap.get(blogId) || 0,
+          isLikedByCurrentUser: userLikedPostSet.has(blogId),
+          comments: buildCommentTree(rawComments, userLikedCommentSet, commentLikesMap),
+          shares: 0,
+          isShared: !!row.shareId,
+          originalBlogId: row.originalBlogId || null,
+        });
+      }
+      if (row.mediaId) {
+        blogMap.get(blogId).media.push({ 
+          id: row.mediaId, 
+          url: row.mediaUrl, 
+          type: row.mediaType 
+        });
+      }
+    }
+
+    // Lấy thông tin bài viết gốc cho các bài share
+    const blogs = Array.from(blogMap.values());
+    
+    // Import getSharedBlogInfo từ shareActions
+    const { getSharedBlogInfo } = await import("./shareActions");
+    
+    const blogsWithSharedData = await Promise.all(
+      blogs.map(async (blog) => {
+        if (blog.isShared && blog.originalBlogId) {
+          const sharedData = await getSharedBlogInfo(blog.id);
+          return {
+            ...blog,
+            sharedPostData: sharedData,
+          };
+        }
+        return blog;
+      })
+    );
+
+    return blogsWithSharedData;
+  } catch (error) {
+    console.error("[getBlogsWithShare] Error:", error);
+    return [];
+  }
+}
