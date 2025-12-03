@@ -9,8 +9,8 @@ import {
   deleteBlog,
   toggleLike,
   addComment,
-  editComment, 
-  toggleHideComment, 
+  editComment,
+  toggleHideComment,
   toggleCommentLike
 } from "@/service/users/postActions";
 
@@ -21,7 +21,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, ThumbsUp, MessageCircle, Share2, Flag } from "lucide-react";
+import { MoreHorizontal, ThumbsUp, MessageCircle, Share2, Flag, X } from "lucide-react";
 import Image from "next/image";
 import ReportModal from "../report/ReportModal";
 import { usePostInteractions, CommentData } from "@/components/post/Social_Interactions";
@@ -46,13 +46,13 @@ export default function PostCard({
   const [submitting, setSubmitting] = useState(false);
   const [removedMediaIds, setRemovedMediaIds] = useState<number[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  
+
   // Ref socket để giữ kết nối không bị reset khi re-render
   const socketRef = useRef<Socket | null>(null);
 
-  const currentUserInfo = { 
+  const currentUserInfo = {
     name: "Bạn", // Có thể lấy từ UserContext nếu có
-    avatar: "", 
+    avatar: "",
     id: currentUserId
   };
 
@@ -69,12 +69,12 @@ export default function PostCard({
     handleSocketUpdateCommentLikes,
     handleSocketToggleHideComment
   } = usePostInteractions({
-      id: String(post.id),
-      likes: post.likes || 0,
-      shares: post.shares || 0,
-      comments: post.comments || [],
-      text: post.text,
-      isLiked: post.isLikedByCurrentUser,
+    id: String(post.id),
+    likes: post.likes || 0,
+    shares: post.shares || 0,
+    comments: post.comments || [],
+    text: post.text,
+    isLiked: post.isLikedByCurrentUser,
   });
 
   // ===============================================
@@ -82,38 +82,38 @@ export default function PostCard({
   // ===============================================
   useEffect(() => {
     // Kết nối tới server hiện tại (cổng 3000)
-    socketRef.current = io(); 
+    socketRef.current = io();
 
     const socket = socketRef.current;
 
     socket.on("connect", () => {
-        // Tham gia vào phòng của bài viết này
-        socket.emit("join_post", post.id);
+      // Tham gia vào phòng của bài viết này
+      socket.emit("join_post", post.id);
     });
 
     // A. Lắng nghe comment mới
     socket.on("receive_comment", (newComment: CommentData) => {
-        if (Number(newComment.userId) === currentUserId) return; // Bỏ qua nếu là của mình
-        handleSocketAddComment(newComment);
+      if (Number(newComment.userId) === currentUserId) return; // Bỏ qua nếu là của mình
+      handleSocketAddComment(newComment);
     });
 
     // B. Lắng nghe cập nhật Like Bài viết
     socket.on("sync_post_likes", (data: { likes: number }) => {
-        handleSocketUpdatePostLikes(data.likes);
+      handleSocketUpdatePostLikes(data.likes);
     });
 
     // C. Lắng nghe cập nhật Like Comment
     socket.on("sync_comment_likes", (data: { commentId: string, likes: number }) => {
-        handleSocketUpdateCommentLikes(data.commentId, data.likes);
+      handleSocketUpdateCommentLikes(data.commentId, data.likes);
     });
 
     // D. Lắng nghe Ẩn/Hiện Comment
     socket.on("sync_hide_comment", (data: { commentId: string }) => {
-        handleSocketToggleHideComment(data.commentId);
+      handleSocketToggleHideComment(data.commentId);
     });
 
     return () => {
-        if (socket) socket.disconnect();
+      if (socket) socket.disconnect();
     };
   }, [post.id, currentUserId]);
 
@@ -121,18 +121,18 @@ export default function PostCard({
   // ===============================================
   // 2. XỬ LÝ SỰ KIỆN (USER CLICK)
   // ===============================================
-  
+
   // --- LIKE BÀI VIẾT ---
   const onLikeClick = async () => {
     // 1. UI cập nhật ngay
-    const newCount = handleLike(); 
-    
+    const newCount = handleLike();
+
     // 2. Bắn Socket báo người khác
     if (socketRef.current) {
-        socketRef.current.emit("update_post_like_stats", {
-            room: `post_${post.id}`,
-            likes: newCount 
-        });
+      socketRef.current.emit("update_post_like_stats", {
+        room: `post_${post.id}`,
+        likes: newCount
+      });
     }
 
     // 3. Gọi API lưu DB
@@ -150,11 +150,11 @@ export default function PostCard({
 
     // 2. Bắn Socket báo người khác
     if (socketRef.current) {
-        socketRef.current.emit("update_comment_like_stats", {
-            room: `post_${post.id}`,
-            commentId: cmtId,
-            likes: newCount
-        });
+      socketRef.current.emit("update_comment_like_stats", {
+        room: `post_${post.id}`,
+        commentId: cmtId,
+        likes: newCount
+      });
     }
 
     // 3. Gọi API
@@ -165,29 +165,29 @@ export default function PostCard({
 
   // --- ẨN/HIỆN COMMENT ---
   const onToggleHideCommentClick = async (commentId: string) => {
-      // 1. UI cập nhật ngay
-      handleToggleHideComment(commentId);
+    // 1. UI cập nhật ngay
+    handleToggleHideComment(commentId);
 
-      // 2. Bắn Socket
-      if (!commentId.startsWith("temp-") && socketRef.current) {
-          socketRef.current.emit("toggle_hide_comment", {
-              room: `post_${post.id}`,
-              commentId: commentId
-          });
-      }
+    // 2. Bắn Socket
+    if (!commentId.startsWith("temp-") && socketRef.current) {
+      socketRef.current.emit("toggle_hide_comment", {
+        room: `post_${post.id}`,
+        commentId: commentId
+      });
+    }
 
-      // 3. Gọi API
-      if (!commentId.startsWith("temp-")) {
-          try {
-              const res = await toggleHideComment(Number(commentId), currentUserId);
-              if (!res.success) {
-                 toast.error("Lỗi khi ẩn bình luận");
-                 handleToggleHideComment(commentId); // Revert nếu lỗi
-              }
-          } catch (e) {
-              handleToggleHideComment(commentId); // Revert nếu lỗi
-          }
+    // 3. Gọi API
+    if (!commentId.startsWith("temp-")) {
+      try {
+        const res = await toggleHideComment(Number(commentId), currentUserId);
+        if (!res.success) {
+          toast.error("Lỗi khi ẩn bình luận");
+          handleToggleHideComment(commentId); // Revert nếu lỗi
+        }
+      } catch (e) {
+        handleToggleHideComment(commentId); // Revert nếu lỗi
       }
+    }
   };
 
   // --- THÊM COMMENT ---
@@ -203,10 +203,10 @@ export default function PostCard({
         handleCommentSuccess(tempId, result.data);
         // Socket
         if (socketRef.current) {
-            socketRef.current.emit("new_comment_posted", {
-                room: `post_${post.id}`,
-                comment: result.data
-            });
+          socketRef.current.emit("new_comment_posted", {
+            room: `post_${post.id}`,
+            comment: result.data
+          });
         }
       } else { toast.error("Gửi bình luận thất bại"); }
     } catch (e) { toast.error("Không thể gửi bình luận"); }
@@ -226,10 +226,10 @@ export default function PostCard({
         handleCommentSuccess(tempId, result.data);
         // Socket
         if (socketRef.current) {
-            socketRef.current.emit("new_comment_posted", {
-                room: `post_${post.id}`,
-                comment: result.data
-            });
+          socketRef.current.emit("new_comment_posted", {
+            room: `post_${post.id}`,
+            comment: result.data
+          });
         }
       }
     } catch (e) { toast.error("Không thể gửi phản hồi"); }
@@ -244,7 +244,7 @@ export default function PostCard({
       setEditing(false);
       setRemovedMediaIds([]);
       onChanged?.();
-    } catch (err) { toast.error("Cập nhật thất bại"); } 
+    } catch (err) { toast.error("Cập nhật thất bại"); }
     finally { setSubmitting(false); }
   };
 
@@ -299,7 +299,7 @@ export default function PostCard({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-                <DropdownMenuItem onSelect={() => setIsModalOpen(true)}> <Flag className="mr-2 h-4 w-4"/> Báo cáo </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => setIsModalOpen(true)}> <Flag className="mr-2 h-4 w-4" /> Báo cáo </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         )}
@@ -317,7 +317,7 @@ export default function PostCard({
               </div>
             )}
             {videos.length > 0 && (
-               <div className="space-y-2">
+              <div className="space-y-2">
                 {videos.map((m: any) => (
                   <video key={m.id} src={m.url} controls className="max-h-[400px] w-full rounded-lg" />
                 ))}
@@ -327,10 +327,24 @@ export default function PostCard({
         ) : (
           <form action={handleUpdate} className="space-y-3">
             <input type="hidden" name="blogId" value={post.id} />
-            <Textarea name="text" defaultValue={post.text || ""} className="min-h-[80px] text-sm" />
+            <input type="hidden" name="removeMediaIds" value={removedMediaIds.join(",")} />
+            <Textarea name="text" defaultValue={post.text || ""} className="min-h-[80px] text-sm" placeholder="Bạn đang nghĩ gì?" />
+            {(images.length > 0 || videos.length > 0) && (
+              <div className="space-y-2">
+                <div className="text-xs font-medium text-muted-foreground">Ảnh / video hiện tại</div>
+                <div className="grid grid-cols-2 gap-2">
+                  {(post.media || []).filter((m: any) => !removedMediaIds.includes(m.id)).map((m: any) => (
+                    <div key={m.id} className="relative overflow-hidden rounded-lg border">
+                      {m.type === "image" ? <Image src={m.url} alt="" width={500} height={500} className="h-32 w-full object-cover" /> : <video src={m.url} controls className="h-32 w-full object-cover" />}
+                      <Button type="button" onClick={() => setRemovedMediaIds(prev => [...prev, m.id])} className="absolute right-1 top-1 h-6 w-6 rounded-full" variant="destructive" size="icon"><X className="h-3 w-3" /></Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
             <div className="flex justify-end gap-2 pt-1">
-              <Button type="button" variant="outline" size="sm" onClick={() => setEditing(false)}>Hủy</Button>
-              <Button type="submit" size="sm" disabled={submitting}>Lưu</Button>
+              <Button type="button" variant="outline" size="sm" onClick={() => { setEditing(false); setRemovedMediaIds([]); }} disabled={submitting}>Hủy</Button>
+              <Button type="submit" size="sm" disabled={submitting}>{submitting ? "Đang lưu..." : "Lưu"}</Button>
             </div>
           </form>
         )}
@@ -355,7 +369,7 @@ export default function PostCard({
             onAddComment={onAddCommentClick}
             onAddReply={onAddReplyClick}
             onLikeComment={onLikeCommentClick}
-            onEditComment={async (id, txt) => handleEditComment(id, txt)} 
+            onEditComment={async (id, txt) => handleEditComment(id, txt)}
             onToggleHideComment={onToggleHideCommentClick}
             currentUserId={currentUserId}
           />
