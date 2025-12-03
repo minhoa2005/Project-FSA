@@ -589,7 +589,7 @@ export const getCommentsByBlogId = async (blogId: number) => {
     const commentsResult = await pool.request().input("blogId", blogId).query(
       `
     SELECT
-    c.id,
+      c.id,
       c.blogId,
       c.text,
       c.createdAt,
@@ -601,26 +601,29 @@ export const getCommentsByBlogId = async (blogId: number) => {
       a.username,
       ISNULL(clc.likeCount, 0) AS likeCount
     FROM
-            Comments c
-        LEFT JOIN
-            UserProfile up ON up.accountId = c.userId
-        LEFT JOIN
-            Account a ON a.id = c.userId
-        LEFT JOIN
-      (
-        --Subquery to calculate the total likes for each comment
-                SELECT
-                    commentId,
-        COUNT(userId) AS likeCount
-    FROM
-    CommentLikes
-                GROUP BY
-    commentId
+              Comments c
+          LEFT JOIN
+              UserProfile up ON up.accountId = c.userId
+          LEFT JOIN
+              Account a ON a.id = c.userId
+          LEFT JOIN
+          (
+            --Subquery to calculate the total likes for each comment
+                  SELECT
+                      commentId,
+                      COUNT(userId) AS likeCount
+                FROM
+                CommentLikes
+                      GROUP BY
+                commentId
             ) clc ON clc.commentId = c.id
-        ORDER BY
-c.createdAt ASC;
+    WHERE
+      c.blogId = @blogId
+    ORDER BY
+      c.createdAt DESC;
 `
     );
+    console.log(commentsResult.recordset);
     const commentLikesMap = new Map<number, number>();
     const userLikedCommentSet = new Set<number>();
     commentsResult.recordset.forEach((r: any) => commentLikesMap.set(r.id, r.likeCount));
@@ -629,7 +632,7 @@ c.createdAt ASC;
     userCommentLikes.recordset.forEach((r: any) => userLikedCommentSet.add(r.commentId));
     const comments = buildCommentTree(commentsResult.recordset, userLikedCommentSet, commentLikesMap)
     return {
-      comments
+      data: comments,
     }
   }
   catch (error) {

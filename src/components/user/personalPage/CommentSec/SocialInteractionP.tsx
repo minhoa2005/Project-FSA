@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { getCommentsByBlogId } from "@/service/users/postActions";
+import { useState, useEffect, useCallback } from "react";
 
 export interface CommentData {
     id: string;
@@ -53,22 +54,74 @@ export interface InitialPostData {
     id: string;
     likes: number;
     shares: number;
-    comments: CommentData[];
     text?: string;
     isLiked?: boolean;
 }
 
-export function usePostInteractions(initialPost: InitialPostData) {
-    const [localPost, setLocalPost] = useState(initialPost);
+// Thêm type cho hàm fetch comments
+
+
+export function usePostInteractions(
+    initialPost: InitialPostData,
+) {
+    const [localPost, setLocalPost] = useState({
+        ...initialPost,
+        comments: [] as CommentData[]
+    });
     const [isLiked, setIsLiked] = useState(initialPost.isLiked || false);
     const [showComments, setShowComments] = useState(false);
     const [showShareDialog, setShowShareDialog] = useState(false);
+    const [commentsLoading, setCommentsLoading] = useState(false);
+    const [commentsLoaded, setCommentsLoaded] = useState(false);
 
     // Sync dữ liệu khi props thay đổi
     useEffect(() => {
-        setLocalPost(initialPost);
+        console.log("Syncing post data in usePostInteractions", initialPost);
+        setLocalPost({
+            ...initialPost,
+            comments: [] // RESET comments khi đổi bài viết
+        });
         setIsLiked(initialPost.isLiked || false);
+        setShowComments(false); // Đóng phần comments
+        setCommentsLoaded(false); // Reset trạng thái đã load
     }, [initialPost.id]);
+    // ==================================================================
+    // FETCH & CLEAR COMMENTS
+    // ==================================================================
+
+
+    const fetchComments = useCallback(async () => {
+
+        setCommentsLoading(true);
+        try {
+            console.log("Fetching comments for post", initialPost.id);
+            const response = await getCommentsByBlogId(Number(initialPost.id));
+            console.log("Fetched comments response:", response);
+            setLocalPost(prev => ({ ...prev, comments: response.data || [] }));
+            setCommentsLoaded(true);
+        } catch (e) {
+            console.error("Không thể tải bình luận", e);
+        } finally {
+            setCommentsLoading(false);
+        }
+    }, [initialPost.id]);
+
+    const clearComments = useCallback(() => {
+        setLocalPost(prev => ({ ...prev, comments: [] }));
+        setCommentsLoaded(false);
+    }, []);
+
+    // Toggle comments với auto-fetch
+    const toggleComments = useCallback(async () => {
+        const newShowComments = !showComments;
+        setShowComments(newShowComments);
+
+        if (newShowComments && !commentsLoaded) {
+            await fetchComments();
+        } else if (!newShowComments) {
+            clearComments();
+        }
+    }, [showComments, commentsLoaded, fetchComments, clearComments]);
 
     // ==================================================================
     // 1. SOCKET HANDLERS (Xử lý dữ liệu nhận từ Server)
@@ -152,7 +205,7 @@ export function usePostInteractions(initialPost: InitialPostData) {
         const newCount = newStatus ? localPost.likes + 1 : Math.max(0, localPost.likes - 1);
 
         setIsLiked(newStatus);
-        setLocalPost(prev => ({ ...prev, likes: newCount, isLiked: newStatus }));
+        setLocalPost(prev => ({ ...prev, likes: newCount }));
 
         return newCount; // Trả về để gửi socket
     };
@@ -271,13 +324,29 @@ export function usePostInteractions(initialPost: InitialPostData) {
     };
 
     return {
-        isLiked, showComments, showShareDialog,
+        isLiked,
+        showComments,
+        showShareDialog,
+        commentsLoading,
+        commentsLoaded,
         currentLikes: localPost.likes,
         totalComments: countAllComments(localPost.comments),
         localPostComments: localPost.comments,
-        handleLike, setShowComments, setShowShareDialog,
-        handleAddComment, handleAddReply, handleCommentSuccess,
-        handleLikeComment, handleEditComment, handleToggleHideComment, handleShare,
+
+        // Actions
+        handleLike,
+        setShowComments,
+        setShowShareDialog,
+        toggleComments,
+        fetchComments,
+        clearComments,
+        handleAddComment,
+        handleAddReply,
+        handleCommentSuccess,
+        handleLikeComment,
+        handleEditComment,
+        handleToggleHideComment,
+        handleShare,
 
         // Export Socket Handlers
         handleSocketAddComment,

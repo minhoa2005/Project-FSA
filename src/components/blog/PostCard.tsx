@@ -9,8 +9,6 @@ import {
   deleteBlog,
   toggleLike,
   addComment,
-  editComment,
-  toggleHideComment,
   toggleCommentLike,
 } from "@/service/users/postActions";
 
@@ -355,7 +353,7 @@ export default function PostCard({
           </Avatar>
           <div className="leading-tight">
             <div className="text-sm font-semibold">{displayName}</div>
-            <div className="text-xs text-muted-foreground">{createdAt}</div>
+            <div className="text-xs text-muted-foreground">{createdAt.split(' ')[1]}</div>
           </div>
         </div>
         {isOwner ? (
@@ -524,8 +522,8 @@ export default function PostCard({
                               prev.includes(m.id) ? prev : [...prev, m.id],
                             )
                           }
-                          className="absolute right-1 top-1 h-6 w-6 rounded-full"
-                          variant="destructive"
+                          className="absolute right-1 top-1 h-6 w-6 rounded-full bg-background/30"
+                          variant="ghost"
                           size="icon"
                         >
                           <X className="h-3 w-3" />
@@ -538,7 +536,7 @@ export default function PostCard({
 
             <div className="rounded-lg border bg-gray-50 px-3 py-2">
               <div className="flex items-center justify-between">
-                <span className="flex items-center gap-1 text-xs font-medium text-gray-600">
+                <span className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
                   <ImageIcon className="h-4 w-4" />
                   Thêm ảnh / video mới
                 </span>
@@ -591,9 +589,8 @@ export default function PostCard({
             variant="ghost"
             size="sm"
             onClick={onLikeClick}
-            className={`flex items-center justify-center gap-1 ${
-              isLiked ? "text-blue-600" : "text-muted-foreground"
-            }`}
+            className={`flex items-center justify-center gap-1 ${isLiked ? "text-blue-600" : "text-muted-foreground"
+              }`}
           >
             <ThumbsUp className="h-4 w-4" /> Thích
           </Button>

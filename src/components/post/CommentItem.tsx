@@ -3,7 +3,7 @@ import { ThumbsUp, Send, MoreHorizontal, Edit2, Eye, EyeOff } from "lucide-react
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
-import { getInitials } from "@/lib/formatter";
+import { extractDateAndTime, getInitials } from "@/lib/formatter";
 import {
     DropdownMenu,
     DropdownMenuTrigger,
@@ -13,14 +13,14 @@ import {
 
 export interface CommentData {
     id: string;
-    userId?: number; 
+    userId?: number;
     author: string;
     avatar: string;
     content: string;
     timestamp: string;
     likes: number;
-    replyTo?: string; 
-    replies?: CommentData[]; 
+    replyTo?: string;
+    replies?: CommentData[];
     isHidden?: boolean;
 }
 
@@ -32,7 +32,7 @@ interface CommentItemProps {
     onToggleHide: (commentId: string) => void;
     likedComments: Set<string>;
     currentUserId: number; // Để check quyền sở hữu
-    level?: number; 
+    level?: number;
 }
 
 export function CommentItem({
@@ -52,7 +52,7 @@ export function CommentItem({
 
     const isLiked = likedComments.has(comment.id);
     const isHidden = comment.isHidden;
-    
+
     // Check quyền: Chỉ chủ comment mới được sửa/ẩn
     const isOwner = Number(comment.userId) === Number(currentUserId);
 
@@ -108,9 +108,9 @@ export function CommentItem({
 
                                 {isEditing ? (
                                     <div className="flex flex-col gap-2 min-w-[200px]">
-                                        <Input 
-                                            value={editText} 
-                                            onChange={(e) => setEditText(e.target.value)} 
+                                        <Input
+                                            value={editText}
+                                            onChange={(e) => setEditText(e.target.value)}
                                             className="h-8 text-sm"
                                         />
                                         <div className="flex justify-end gap-2">
@@ -143,7 +143,7 @@ export function CommentItem({
                                 >
                                     Phản hồi
                                 </button>
-                                <span className="text-xs text-muted-foreground">{comment.timestamp}</span>
+                                <span className="text-xs text-muted-foreground">{extractDateAndTime(new Date(comment.timestamp).toISOString())}</span>
 
                                 {/* --- MENU ACTIONS (CHỈ HIỆN KHI LÀ CHỦ) --- */}
                                 {isOwner && (
@@ -178,10 +178,10 @@ export function CommentItem({
                             <span>Bình luận của {comment.author} đã bị ẩn</span>
                             {/* Nút hiện lại (Chỉ chủ mới thấy) */}
                             {isOwner && (
-                                <Button 
-                                    variant="ghost" 
-                                    size="sm" 
-                                    onClick={() => onToggleHide(comment.id)} 
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => onToggleHide(comment.id)}
                                     className="h-6 w-6 p-0 hover:bg-transparent"
                                 >
                                     <Eye className="w-4 h-4" />
