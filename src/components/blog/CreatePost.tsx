@@ -1,8 +1,9 @@
+// FILE: components/blog/CreatePost.tsx
 "use client";
 
 import { useRef, useState } from "react";
 import { createBlog } from "@/service/users/postActions";
-
+import type { FormEvent } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -64,16 +65,35 @@ export default function CreatePostBox({
     !submitting &&
     (content.trim().length > 0 || (files && files.length > 0));
 
+  //  Chọn file (cho phép chọn nhiều lần, cộng dồn giống phần chỉnh sửa)
   const handleFilesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const list = Array.from(e.target.files || []);
-    setFiles(list);
+    const selected = Array.from(e.target.files || []);
+    if (!selected.length) return;
+
+    setFiles((prev) => {
+      const merged = [...prev, ...selected];
+
+      // đồng bộ lại FileList của input thật
+      if (fileInputRef.current) {
+        const dt = new DataTransfer();
+        merged.forEach((f) => dt.items.add(f));
+        fileInputRef.current.files = dt.files;
+      }
+
+      return merged;
+    });
+
+    // để user có thể chọn tiếp cùng input đó
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
   };
 
+  //  Bỏ 1 file khi bấm X
   const handleRemoveFile = (index: number) => {
     setFiles((prev) => {
       const newFiles = prev.filter((_, i) => i !== index);
 
-      // cập nhật lại FileList của input thật
       if (fileInputRef.current) {
         const dt = new DataTransfer();
         newFiles.forEach((f) => dt.items.add(f));
@@ -84,29 +104,42 @@ export default function CreatePostBox({
     });
   };
 
-  const handleSubmit = async (formData: FormData) => {
-    try {
-      setSubmitting(true);
+  // Submit form: dùng state `files` làm nguồn, đảm bảo gửi đủ nhiều file
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+  e.preventDefault();
+  const formElem = e.currentTarget;
+  const formData = new FormData(formElem);
 
-      formData.set("creatorId", String(currentUser.id));
+  try {
+    setSubmitting(true);
 
-      await createBlog(formData);
+    formData.set("creatorId", String(currentUser.id));
 
-      toast.success("Đã tạo bài viết thành công!");
-      setContent("");
-      setFiles([]);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
-      setOpen(false);
-      onPostCreated?.();
-    } catch (err) {
-      console.error("Create post error:", err);
-    } finally {
-      setSubmitting(false);
+    // override media bằng state files
+    formData.delete("media");
+    files.forEach((file) => {
+      formData.append("media", file);
+    });
+
+    await createBlog(formData);
+
+    toast.success("Đã tạo bài viết thành công!");
+    setContent("");
+    setFiles([]);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
     }
-  };
+    setOpen(false);
+    onPostCreated?.();
+  } catch (err) {
+    console.error("Create post error:", err);
+    toast.error("Tạo bài viết thất bại");
+  } finally {
+    setSubmitting(false);
+  }
+}; 
 
+  // 👉 Hiển thị preview + nút X giống phần chỉnh sửa
   const renderPreviews = () => {
     if (!files.length) return null;
 
@@ -115,26 +148,25 @@ export default function CreatePostBox({
         {files.map((file, idx) => {
           const url = URL.createObjectURL(file);
 
-          const mediaPreview =
-            file.type.startsWith("image/") ? (
-              <Image
-                src={url}
-                alt={file.name}
-                className="h-40 w-full object-cover"
-                width={160}
-                height={160}
-              />
-            ) : file.type.startsWith("video/") ? (
-              <video
-                src={url}
-                controls
-                className="h-40 w-full object-cover"
-              />
-            ) : (
-              <div className="h-40 w-full px-2 py-1 text-xs">
-                {file.name}
-              </div>
-            );
+          const mediaPreview = file.type.startsWith("image/") ? (
+            <Image
+              src={url}
+              alt={file.name}
+              className="h-40 w-full object-cover"
+              width={160}
+              height={160}
+            />
+          ) : file.type.startsWith("video/") ? (
+            <video
+              src={url}
+              controls
+              className="h-40 w-full object-cover"
+            />
+          ) : (
+            <div className="h-40 w-full px-2 py-1 text-xs">
+              {file.name}
+            </div>
+          );
 
           return (
             <div
@@ -146,7 +178,7 @@ export default function CreatePostBox({
               <button
                 type="button"
                 onClick={() => handleRemoveFile(idx)}
-                className="absolute right-1 top-1 inline-flex h-6 w-6 items-center justify-center rounded-full"
+                className="absolute right-1 top-1 inline-flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/80"
               >
                 <X className="h-3 w-3" />
               </button>
@@ -158,7 +190,7 @@ export default function CreatePostBox({
   };
 
   return (
-    <Card className="mb-4 rounded-xl  shadow-sm">
+    <Card className="mb-4 rounded-xl shadow-sm">
       <CardContent className="space-y-3 pt-4">
         <Dialog
           open={open}
@@ -178,7 +210,7 @@ export default function CreatePostBox({
             <DialogTrigger asChild>
               <Button
                 type="button"
-                className="flex-1 rounded-full border px-4 py-2 text-left text-sm text-muted-foreground "
+                className="flex-1 rounded-full border px-4 py-2 text-left text-sm text-muted-foreground"
                 variant="outline"
               >
                 {displayName} ơi, bạn đang nghĩ gì thế?
@@ -186,7 +218,7 @@ export default function CreatePostBox({
             </DialogTrigger>
           </div>
 
-          {/* Hàng dưới: các nút kiểu FB */}
+          {/* Hàng dưới: nút Ảnh/Video kiểu FB */}
           <div className="mt-2 flex items-center justify-between border-t pt-2 text-xs text-muted-foreground">
             <DialogTrigger asChild>
               <Button
@@ -202,21 +234,7 @@ export default function CreatePostBox({
               </Button>
             </DialogTrigger>
 
-            {/* <div className="flex flex-1 items-center justify-end gap-1">
-              <Button
-                type="button"
-                className="flex items-center gap-1 rounded-md px-2 py-2"
-              >
-                <Users className="h-4 w-4" />
-                <span>Tag</span>
-              </Button>
-              <button
-                type="button"
-                className="flex items-center gap-1 rounded-md px-2 py-2 hover:bg-gray-100"
-              >
-                <Smile className="h-4 w-4" />
-              </button>
-            </div> */}
+            {/* Có thể thêm các nút khác sau này */}
           </div>
 
           {/* POPUP TẠO BÀI VIẾT */}
@@ -227,11 +245,8 @@ export default function CreatePostBox({
               </DialogTitle>
             </DialogHeader>
 
-            <form
-              action={handleSubmit}
-              className="space-y-4"
-            >
-              {/* input file ẩn – để click bằng nút "Ảnh/Video" */}
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {/* input file ẩn – click bằng nút "Ảnh/Video" hoặc nút chọn file trong khung */}
               <input
                 ref={fileInputRef}
                 type="file"
@@ -254,13 +269,6 @@ export default function CreatePostBox({
                   <span className="text-sm font-semibold">
                     {displayName}
                   </span>
-                  {/* <button
-                    type="button"
-                    className="mt-1 inline-flex items-center gap-1 bg-primary rounded-md px-2 py-0.5 text-[11px] font-medium text-background"
-                  >
-                    <Users className="h-3 w-3" />
-                    Bạn bè
-                  </button> */}
                 </div>
               </div>
 
@@ -270,13 +278,13 @@ export default function CreatePostBox({
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 placeholder={`${displayName} ơi, bạn đang nghĩ gì thế ?`}
-                className="min-h-[140px] resize-none text-lg "
+                className="min-h-[140px] resize-none text-lg"
               />
 
-              {/* thêm vào bài viết + nút chọn media */}
+              {/* Khung Thêm vào bài viết + nút chọn file giống phần chỉnh sửa */}
               <div className="rounded-xl border px-3 py-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium ">
+                  <span className="text-sm font-medium">
                     Thêm vào bài viết của bạn
                   </span>
                   <div className="flex items-center gap-2">
@@ -288,30 +296,10 @@ export default function CreatePostBox({
                     >
                       <ImageIcon className="h-4 w-4" />
                     </Button>
-                    {/* <Button
-                      type="button"
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-full cursor-pointer"
-                      variant="outline"
-                    >
-                      <Camera className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      type="button"
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-full cursor-pointer"
-                      variant="outline"
-                    >
-                      <Smile className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      type="button"
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-full cursor-pointer"
-                      variant="outline"
-                    >
-                      <MapPin className="h-4 w-4" />
-                    </Button> */}
                   </div>
                 </div>
 
+                {/* Preview ảnh/video + X */}
                 {renderPreviews()}
               </div>
 
