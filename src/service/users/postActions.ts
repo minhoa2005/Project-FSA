@@ -113,41 +113,25 @@ export async function updateBlog(formData: FormData) {
 // ==========================================
 export async function deleteBlog(formData: FormData) {
   const pool = await connectDB();
-  const transaction = new sql.Transaction(pool);
-  try {
-    const id = Number(formData.get("blogId"));
-    if (!id) {
-      return { success: false, message: "blogId is required" };
-    }
-    await transaction.begin();
 
-    await pool.request().input("blogId", sql.Int, id).query(`
-        DELETE CL FROM CommentLikes CL JOIN Comments C ON CL.commentId = C.id WHERE C.blogId = @blogId
-      `);
-    await pool.request().input("blogId", sql.Int, id).query(`
-        DELETE FROM Comments WHERE blogId = @blogId
-      `);
-    await pool.request().input("blogId", sql.Int, id).query(`
-        DELETE FROM [Like] WHERE blogId = @blogId
-      `);
-    await pool.request()
-      .input("blogId", sql.Int, id)
-      .query(`DELETE FROM BlogMedia WHERE blogId = @blogId`);
+  const blogId = Number(formData.get("blogId"));
+  if (!blogId) throw new Error("blogId is required");
 
-    await pool.request()
-      .input("id", sql.Int, id)
-      .query(`DELETE FROM Blogs WHERE id = @id`);
+  await pool
+    .request()
+    .input("id", sql.Int, blogId)
+    .query(`
+      UPDATE Blogs 
+      SET isDeleted = 1, updatedAt = GETDATE()
+      WHERE id = @id
+    `);
 
-    await transaction.commit();
+  // Nếu bạn đang dùng revalidatePath
+  // revalidatePath("/(private)/(user)");
 
-    revalidatePath(FEED_PATH);
-    return { success: true };
-  } catch (error) {
-    await transaction.rollback();
-    console.error("[deleteBlog] Error:", error);
-    return { success: false, message: "Failed" };
-  }
+  return { success: true };
 }
+
 
 // ==========================================
 // HELPER: BUILD TREE
@@ -227,6 +211,7 @@ export async function getBlogs(currentUserId?: number) {
       LEFT JOIN UserProfile up ON up.accountId = b.creatorId
       LEFT JOIN Account a ON a.id = b.creatorId
       LEFT JOIN BlogMedia m ON m.blogId = b.id
+      WHERE b.isDeleted = 0
       ORDER BY b.createdAt DESC, m.id ASC
     `);
 
