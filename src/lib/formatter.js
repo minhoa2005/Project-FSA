@@ -165,6 +165,23 @@ function removeVietnameseSigns(str) {
         .replace(/Đ/g, 'D'); // chuyển Đ -> D
 }
 
+function extractDateAndTime(datetimeString) {
+    if (!datetimeString || typeof datetimeString !== 'string') {
+        return null;
+    }
+    const parts = datetimeString.split('T');
+    if (parts.length !== 2) {
+        return null;
+    }
+    console.log("Extracted parts:", parts[1].split('.')[0]);
+    const date = parts[0];
+    const timeWithZulu = parts[1];
+    const time = timeWithZulu.split('.')[0];
+    const time1 = time.split(':');
+    const timeFinal = time1[0] + ':' + time1[1];
+    return timeFinal + ' ' + date;
+}
+
 export {
     getInitials,
     formatPrice,
@@ -177,4 +194,5 @@ export {
     formatName,
     formatDate,
     removeVietnameseSigns,
+    extractDateAndTime
 }

@@ -52,7 +52,7 @@ export default function PostList({ id }: { id: number }) {
         },
             {
                 root: null,
-                rootMargin: '0px 0px 100px 0px',
+                rootMargin: '100px 0px 0px 0px',
             })
 
         observer.observe(lastElement.current);

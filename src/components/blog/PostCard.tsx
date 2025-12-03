@@ -9,8 +9,6 @@ import {
   deleteBlog,
   toggleLike,
   addComment,
-  editComment,
-  toggleHideComment,
   toggleCommentLike,
 } from "@/service/users/postActions";
 
@@ -236,27 +234,27 @@ export default function PostCard({
 
   // ====== CẬP NHẬT BÀI VIẾT ======
   const handleUpdate = async (e: FormEvent<HTMLFormElement>) => {
-  e.preventDefault();
-  const formData = new FormData(e.currentTarget);
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
 
-  try {
-    setSubmitting(true);
+    try {
+      setSubmitting(true);
 
-    if (removedMediaIds.length > 0) {
-      formData.set("removeMediaIds", removedMediaIds.join(","));
+      if (removedMediaIds.length > 0) {
+        formData.set("removeMediaIds", removedMediaIds.join(","));
+      }
+
+      await updateBlog(formData);
+      setEditing(false);
+      setRemovedMediaIds([]);
+      setNewFiles([]);
+      onChanged?.();
+    } catch (err) {
+      toast.error("Cập nhật thất bại");
+    } finally {
+      setSubmitting(false);
     }
-
-    await updateBlog(formData);
-    setEditing(false);
-    setRemovedMediaIds([]);
-    setNewFiles([]);
-    onChanged?.();
-  } catch (err) {
-    toast.error("Cập nhật thất bại");
-  } finally {
-    setSubmitting(false);
-  }
-};
+  };
   // ====== XOÁ (soft delete bằng isDeleted ở backend) ======
   const handleDelete = async () => {
     try {
@@ -354,7 +352,7 @@ export default function PostCard({
           </Avatar>
           <div className="leading-tight">
             <div className="text-sm font-semibold">{displayName}</div>
-            <div className="text-xs text-muted-foreground">{createdAt}</div>
+            <div className="text-xs text-muted-foreground">{createdAt.split(' ')[1]}</div>
           </div>
         </div>
         {isOwner ? (
@@ -412,9 +410,8 @@ export default function PostCard({
             )}
             {images.length > 0 && (
               <div
-                className={`grid gap-1 overflow-hidden rounded-lg ${
-                  images.length === 1 ? "grid-cols-1" : "grid-cols-2"
-                }`}
+                className={`grid gap-1 overflow-hidden rounded-lg ${images.length === 1 ? "grid-cols-1" : "grid-cols-2"
+                  }`}
               >
                 {images.map((m: any) => (
                   <Image
@@ -445,7 +442,7 @@ export default function PostCard({
           <form
             onSubmit={handleUpdate}
             className="space-y-3"
-            encType="multipart/form-data" 
+            encType="multipart/form-data"
           >
             <input type="hidden" name="blogId" value={post.id} />
             <input
@@ -508,8 +505,8 @@ export default function PostCard({
                               prev.includes(m.id) ? prev : [...prev, m.id],
                             )
                           }
-                          className="absolute right-1 top-1 h-6 w-6 rounded-full"
-                          variant="destructive"
+                          className="absolute right-1 top-1 h-6 w-6 rounded-full bg-background/30"
+                          variant="ghost"
                           size="icon"
                         >
                           <X className="h-3 w-3" />
@@ -521,9 +518,9 @@ export default function PostCard({
             )}
 
             {/* Thêm ảnh / video mới */}
-            <div className="rounded-lg border bg-gray-50 px-3 py-2">
+            <div className="rounded-lg border  px-3 py-2">
               <div className="flex items-center justify-between">
-                <span className="flex items-center gap-1 text-xs font-medium text-gray-600">
+                <span className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
                   <ImageIcon className="h-4 w-4" />
                   Thêm ảnh / video mới
                 </span>
@@ -576,9 +573,8 @@ export default function PostCard({
             variant="ghost"
             size="sm"
             onClick={onLikeClick}
-            className={`flex items-center justify-center gap-1 ${
-              isLiked ? "text-blue-600" : "text-muted-foreground"
-            }`}
+            className={`flex items-center justify-center gap-1 ${isLiked ? "text-blue-600" : "text-muted-foreground"
+              }`}
           >
             <ThumbsUp className="h-4 w-4" /> Thích
           </Button>

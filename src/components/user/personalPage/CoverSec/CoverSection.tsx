@@ -10,7 +10,7 @@ export default function CoverSection({ className, user }: { className?: string, 
         <div className='grid grid-rows-2'>
             <div className={`flex justify-center mt-2 ${className}`}>
                 <div className='w-[70%] h-90 relative rounded' >
-                    <Image src={user?.coverImg || ''}
+                    <Image src={user?.coverImg || '/defaultCoverImg.jpg'}
                         alt="Personal Image"
                         layout="fill"
                         objectFit='cover'
