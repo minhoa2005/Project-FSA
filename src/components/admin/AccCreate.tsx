@@ -10,6 +10,7 @@ import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbP
 import Link from 'next/link'
 import { SlashIcon } from 'lucide-react'
 import BreadcrumbAdmin from './Breadcrumb'
+import { validateEmail, validateFullName, validatePassword } from '@/lib/validators'
 
 export default function AccCreate() {
 
@@ -24,36 +25,60 @@ export default function AccCreate() {
         const password = data.get('password') as string
         const confirmPassword = data.get('confirmPassword') as string
 
-        if (password !== confirmPassword) {
-            toast.error('Mật khẩu không khớp')
-            return;
-        }
-
-        const allEmail = await getAllEmail();
-        if (allEmail) {
-            // console.log(allEmail)
-            if (allEmail.some(em => em.email === email)) {
-                toast.error('Email đã tồn tại')
+        try {
+            if (password !== confirmPassword) {
+                toast.error('Mật khẩu không khớp')
                 return;
             }
-        }
 
-        const allUsername = await getAllUsername()
-        if (allUsername) {
-            if (allUsername.some(u => u.username === username)) {
-                toast.error('Tên đăng nhập đã tồn tại')
-                return;
+            const checkEmail = validateEmail(email) 
+            if (checkEmail) {
+                toast.error('Email không hợp lệ')
+                return
             }
+
+            const checkPassword = validatePassword(password)
+            if(checkPassword) {
+                toast.error('Mật khẩu không hợp lệ')
+                return
+            }
+
+            const checkFullname = validateFullName(fullName) 
+            if(checkFullname) {
+                toast.error('Tên không hợp lệ')
+                return
+            }
+
+            const allEmail = await getAllEmail();
+            if (allEmail) {
+                // console.log(allEmail)
+                if (allEmail.some(em => em.email === email)) {
+                    toast.error('Email đã tồn tại')
+                    return;
+                }
+            }
+
+            const allUsername = await getAllUsername()
+            if (allUsername) {
+                if (allUsername.some(u => u.username === username)) {
+                    toast.error('Tên đăng nhập đã tồn tại')
+                    return;
+                }
+            }
+
+            const addAccount = await addAccByAdmin(fullName, email, username, password)
+            if (addAccount.success) {
+                sendAccCreateByAdminToCus(email, password)
+                toast.success('Tạo tài khoản thành công và thông báo tới tài khoản email người dùng!')
+
+            } else {
+                toast.error("Lỗi tạo tài khoản!")
+            }
+        } catch (err) {
+            console.log('err create acc by admin', err)
         }
 
-        const addAccount = await addAccByAdmin(fullName, email, username, password)
-        if (addAccount.success) {
-            sendAccCreateByAdminToCus(email, password)
-            toast.success('Tạo tài khoản thành công và thông báo tới tài khoản email người dùng!')
 
-        } else {
-            toast.error("Lỗi tạo tài khoản!")
-        }
     }
 
     return (
