@@ -275,7 +275,7 @@ export default function PostCard({
           </Avatar>
           <div className="leading-tight">
             <div className="text-sm font-semibold">{displayName}</div>
-            <div className="text-xs text-muted-foreground">{createdAt}</div>
+            <div className="text-xs text-muted-foreground">{createdAt.split(' ')[1]}</div>
           </div>
         </div>
         {isOwner ? (

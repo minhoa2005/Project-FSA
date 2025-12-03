@@ -42,7 +42,7 @@ export default function PostCard({ post }: { post: Post }) {
                     {images.length > 0 && (
                         <div className={`grid gap-1 overflow-hidden rounded-lg ${images.length === 1 ? "grid-cols-1" : "grid-cols-2"}`}>
                             {images.map((m: any) => (
-                                <Image key={m.id} src={m.url} alt="" width={1200} height={800} className="aspect-[16/9] w-full object-cover" />
+                                <Image key={m.id} src={m.url} alt="" width={1000} height={600} className=" w-full object-fit" />
                             ))}
                         </div>
                     )}
