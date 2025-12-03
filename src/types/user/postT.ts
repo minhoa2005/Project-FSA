@@ -11,6 +11,7 @@ type Post = {
     likeCount: number;
     commentCount?: number;
     isLikedByCurrentUser: boolean;
+    shares?: number
 };
 
 export type { Post };

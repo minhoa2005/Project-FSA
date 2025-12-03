@@ -7,6 +7,7 @@ import { MoreHorizontal } from 'lucide-react';
 import Image from 'next/image';
 import ReportModal from './ReportModal';
 import PostCardFooter from './PostCardFooter';
+import { getCommentsByBlogId } from '@/service/users/postActions';
 
 export default function PostCard({ post }: { post: Post }) {
     const images = post?.media.filter((m: any) => m.mediaType === 'image') || [];
