@@ -8,6 +8,7 @@ import { payloadType } from "@/types/config/tokenTypes";
 import { get } from "http";
 import { upload } from "../image/imageService";
 import { url } from "inspector";
+import { revalidatePath } from "next/cache";
 
 const pool = await connectDB();
 
@@ -31,11 +32,24 @@ const getPersonalInfo = async () => {
         const role: string = decoded.role;
         const result = await pool.request().input('id', id).query(
             `
-            select a.email, p.fullName, p.phoneNumber, p.dob from Account a
-            join AccountRole ar on a.id = ar.accountId 
-            join Role r on ar.roleId = r.id 
-            join ${role}Profile p on a.id = p.accountId
-            where a.id = @id
+           SELECT
+            a.email,
+            a.username,
+            p.fullName,
+            p.phoneNumber,
+            p.dob,
+            p.imgUrl,
+            p.coverImg,
+            p.bio,
+            p.location,
+            p.homeTown,
+            p.workAt,
+            p.education
+        FROM Account a
+        JOIN ${role}Profile p ON a.id = p.accountId
+        JOIN AccountRole ar ON a.id = ar.accountId
+        JOIN Role r ON ar.roleId = r.id
+        WHERE a.id = @id
             `
         )
         if (result.recordset.length === 0) {
@@ -65,13 +79,27 @@ const getPersonalInfoById = async (id: number) => {
     try {
         const result = await pool.request().input('id', id).query(
             `
-            select a.email, p.fullName, p.phoneNumber, p.dob, p.imgUrl, a.username from Account a
-            join AccountRole ar on a.id = ar.accountId 
-            join Role r on ar.roleId = r.id 
-            join UserProfile p on a.id = p.accountId
-            where a.id = @id
+        SELECT
+            a.email,
+            a.username,
+            p.fullName,
+            p.phoneNumber,
+            p.dob,
+            p.imgUrl,
+            p.coverImg,
+            p.bio,
+            p.location,
+            p.homeTown,
+            p.workAt,
+            p.education
+        FROM Account a
+        JOIN UserProfile p ON a.id = p.accountId
+        JOIN AccountRole ar ON a.id = ar.accountId
+        JOIN Role r ON ar.roleId = r.id
+        WHERE a.id = @id
             `
         )
+        console.log(result);
         if (result.recordset.length === 0) {
             return {
                 success: false,
@@ -92,7 +120,7 @@ const getPersonalInfoById = async (id: number) => {
     }
 }
 
-const updateInfo = async (data: { fullName: string, phoneNumber: string, dob: string }) => {
+const updateInfo = async (data: { fullName: string, phoneNumber?: string, dob?: string }) => {
     if (!await verifyUser()) {
         unauthorized();
     }
@@ -109,7 +137,7 @@ const updateInfo = async (data: { fullName: string, phoneNumber: string, dob: st
         if (result.rowsAffected[0] === 0) {
             return {
                 success: false,
-                message: "User not found"
+                message: "Không tìm thấy người dùng"
             }
         }
         return {
@@ -121,6 +149,53 @@ const updateInfo = async (data: { fullName: string, phoneNumber: string, dob: st
         return {
             success: false,
             message: "Error updating personal info"
+        }
+    }
+}
+
+const updateBio = async (data: {
+    bio: string,
+    homeTown: string,
+    location: string,
+    workAt: string,
+    education: string
+}) => {
+    if (!await verifyUser()) {
+        unauthorized();
+    }
+    try {
+        const { bio, homeTown, location, workAt, education } = data;
+        const token = await getCookie();
+        const decoded = verifyToken(token);
+        const id = decoded.id;
+        const result = await pool.request()
+            .input('id', id)
+            .input('bio', bio)
+            .input('homeTown', homeTown)
+            .input('location', location)
+            .input('workAt', workAt)
+            .input('education', education)
+            .query(`
+                update UserProfile
+                set bio = @bio, homeTown = @homeTown, location = @location, workAt = @workAt, education = @education
+                where accountId = @id
+            `);
+        if (result.rowsAffected[0] === 0) {
+            return {
+                success: false,
+                message: "Không tìm thấy người dùng"
+            }
+        }
+        revalidatePath('/personal/info');
+        return {
+            success: true
+        }
+    }
+    catch (error) {
+        console.error('Error updating bio:', error);
+        return {
+            success: false,
+            message: "Lỗi cập nhật giới thiệu"
         }
     }
 }
@@ -203,4 +278,41 @@ const updateAvatar = async (avatarUrl: string) => {
         }
     }
 }
-export { getPersonalInfo, updateInfo, changePassword, verifyUser, updateAvatar, getPersonalInfoById };
+
+const updateCoverImage = async (coverImageUrl: string) => {
+    if (!await verifyUser()) {
+        unauthorized();
+    }
+    try {
+        const token: string = await getCookie();
+        const decoded = verifyToken(token);
+        const id: string = decoded.id;
+        const uploadResult = await upload(coverImageUrl, `user_cover_${id}.jpeg`);
+        if (uploadResult.success) {
+            const result = await pool.request().input('id', id).input('coverImgUrl', uploadResult.upload.url).query(`
+                    update UserProfile
+                    set coverImg = @coverImgUrl
+                    where accountId = @id
+                `);
+            if (result.rowsAffected[0] === 0) {
+                return {
+                    success: false,
+                    message: "User not found"
+                }
+            }
+            return { success: true, url: uploadResult.upload.url };
+        }
+        return {
+            success: false,
+            message: "Lỗi tải ảnh lên"
+        }
+    }
+    catch (error) {
+        console.error('Error updating avatar:', error);
+        return {
+            success: false,
+            message: "Lỗi câp nhật ảnh đại diện"
+        }
+    }
+}
+export { getPersonalInfo, updateInfo, changePassword, verifyUser, updateAvatar, getPersonalInfoById, updateCoverImage, updateBio };

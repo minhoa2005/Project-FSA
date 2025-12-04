@@ -42,11 +42,6 @@ const blog = [
     url: '/admin/blog',
     icon: FileText,
   },
-  {
-    title: "Quản lý Comments",
-    url: '/admin/comment',
-    icon: MessageSquare,
-  }
 ]
 
 const report = [

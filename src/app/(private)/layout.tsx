@@ -1,3 +1,4 @@
+import AutoScroll from '@/components/layout/AutoScroll';
 import { ThemeProvider } from '@/components/theme/ThemeProvider'
 import { getCookie } from '@/config/cookie';
 import { verifyToken } from '@/config/jwt';
@@ -15,7 +16,9 @@ export default async function layout({ children }) {
     }
     return (
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-            {children}
+            <AutoScroll>
+                {children}
+            </AutoScroll>
         </ThemeProvider>
     )
 }

@@ -37,7 +37,7 @@ const handleLogin = async (data) => {
         }
         const roleName = result.recordset[0].role;
         const profile = await pool.request().input('id', result.recordset[0].id).query(
-            `SELECT imgUrl FROM ${roleName}Profile WHERE accountId = @id`
+            `SELECT imgUrl, coverImg FROM ${roleName}Profile WHERE accountId = @id`
         )
         const user = {
             id: result.recordset[0].id,
@@ -45,7 +45,8 @@ const handleLogin = async (data) => {
             username: result.recordset[0].username,
             role: result.recordset[0].role,
             isActive: result.recordset[0].isActive,
-            imgUrl: profile.recordset[0]?.imgUrl || null
+            imgUrl: profile.recordset[0]?.imgUrl || null,
+            coverImg: profile.recordset[0]?.coverImg || null
         };
         const hashedPassword = result.recordset[0].password;
         const isMatch = await bcrypt.compare(password, hashedPassword);
@@ -79,7 +80,7 @@ const handleRegister = async (data) => {
     const username = data.get('username');
     const transaction = new sql.Transaction(pool);
     if (password !== confirmPassword) {
-        return { success: false, message: "Passwords do not match" };
+        return { success: false, message: "Mật khẩu không khớp" };
     }
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
@@ -103,15 +104,15 @@ const handleRegister = async (data) => {
         );
         if (result.rowsAffected[0] > 0 && updateRoleResult.rowsAffected[0] > 0 && addUserProfileResult.rowsAffected[0] > 0) {
             await transaction.commit();
-            return { success: true, message: "Registration successful" };
+            return { success: true, message: "Đăng ký thành công" };
         } else {
             await transaction.rollback();
-            return { success: false, message: "Registration failed" };
+            return { success: false, message: "Đăng ký thất bại" };
         }
     } catch (error) {
         console.error(error);
         await transaction.rollback();
-        return { success: false, message: "Registration failed" };
+        return { success: false, message: "Đăng ký thất bại" };
     }
 }
 
@@ -133,6 +134,7 @@ const authMe = async () => {
                 A.password,
                 A.isActive,
                 UP.imgUrl,
+                UP.coverImg,
                 R.roleName AS role
                 FROM
                     Account AS A
@@ -164,7 +166,8 @@ const authMe = async () => {
                 username: refresh.recordset[0].username,
                 role: refresh.recordset[0].role,
                 isActive: refresh.recordset[0].isActive,
-                imgUrl: refresh.recordset[0].imgUrl || null
+                imgUrl: refresh.recordset[0].imgUrl || null,
+                coverImg: refresh.recordset[0].coverImg || null
             }
         };
     } else {

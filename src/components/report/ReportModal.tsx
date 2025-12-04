@@ -20,7 +20,7 @@ const REPORT_REASONS = [
 
 const ReportModal = ({ blogId, isOpen, onClose }) => {
 
-  const [step, setStep] = useState(1); 
+  const [step, setStep] = useState(1);
   const [selectedReason, setSelectedReason] = useState(null);
   const handleBack = () => {
     setStep(1);
@@ -28,7 +28,7 @@ const ReportModal = ({ blogId, isOpen, onClose }) => {
   };
   const handleReasonSelect = (reason) => {
     setSelectedReason(reason);
-    setStep(2); 
+    setStep(2);
   };
   const handleFinalSubmit = async () => {
     if (!selectedReason) return;
@@ -38,10 +38,10 @@ const ReportModal = ({ blogId, isOpen, onClose }) => {
       reason: selectedReason,
     };
     try {
-      const res = await insertReport(reportData); 
-      if(res > 0){
+      const res = await insertReport(reportData);
+      if (res > 0) {
         toast.success("Báo cáo của bạn đã được gửi thành công.");
-      }else{
+      } else {
         toast.error("Đã có lỗi xảy ra khi gửi báo cáo.");
       }
     } catch (error) {

@@ -5,7 +5,7 @@ import { authMe, logout } from "@/service/public/auth/auth";
 
 export default async function Layout({ children }) {
     return (
-        <html suppressHydrationWarning={true} lang="en">
+        <html suppressHydrationWarning={true} lang="en" style={{ scrollBehavior: "smooth" }}>
             <body>
                 <AuthContext authMe={authMe} logout={logout}>
                     {children}

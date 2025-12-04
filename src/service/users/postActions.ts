@@ -5,6 +5,10 @@ import path from "path";
 import { connectDB, sql } from "@/config/db";
 import { revalidatePath } from "next/cache";
 import { removeVietnameseSigns } from "@/lib/formatter";
+import { verifyUser } from "./personalInfo";
+import { verifyToken } from "@/config/jwt";
+import { getCookie } from "@/config/cookie";
+import { getSharedBlogInfo } from "./shareActions";
 
 const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads");
 const FEED_PATH = "/(private)/(user)";
@@ -12,6 +16,7 @@ const FEED_PATH = "/(private)/(user)";
 // ==========================================
 // 1. CREATE BLOG
 // ==========================================
+
 export async function createBlog(formData: FormData) {
   try {
     const pool = await connectDB();
@@ -28,7 +33,7 @@ export async function createBlog(formData: FormData) {
 
     const blogId = result.recordset[0].id as number;
     const mediaFiles = formData.getAll("media") as File[];
-    
+
     if (mediaFiles.length > 0) {
       await fs.mkdir(UPLOAD_DIR, { recursive: true });
       for (const file of mediaFiles) {
@@ -109,41 +114,28 @@ export async function updateBlog(formData: FormData) {
 // ==========================================
 export async function deleteBlog(formData: FormData) {
   const pool = await connectDB();
-  const transaction = new sql.Transaction(pool);
   try {
-    const id = Number(formData.get("blogId"));
-    if (!id) {
-      return { success: false, message: "blogId is required" };
-    }
-    await transaction.begin();
+    const blogId = Number(formData.get("blogId"));
+    console.log("[deleteBlog] blogId:", blogId);
+    if (!blogId) throw new Error("blogId is required");
 
-    await pool.request().input("blogId", sql.Int, id).query(`
-        DELETE CL FROM CommentLikes CL JOIN Comments C ON CL.commentId = C.id WHERE C.blogId = @blogId
-      `);
-    await pool.request().input("blogId", sql.Int, id).query(`
-        DELETE FROM Comments WHERE blogId = @blogId
-      `);
-    await pool.request().input("blogId", sql.Int, id).query(`
-        DELETE FROM [Like] WHERE blogId = @blogId
-      `);
-    await pool.request()
-      .input("blogId", sql.Int, id)
-      .query(`DELETE FROM BlogMedia WHERE blogId = @blogId`);
-
-    await pool.request()
-      .input("id", sql.Int, id)
-      .query(`DELETE FROM Blogs WHERE id = @id`);
-
-    await transaction.commit();
-    
-    revalidatePath(FEED_PATH);
-    return { success: true };
+    await pool
+      .request()
+      .input("id", sql.Int, blogId)
+      .query(`
+      UPDATE Blogs 
+      SET isDeleted = 1, updatedAt = GETDATE()
+      WHERE id = @id
+    `);
   } catch (error) {
-    await transaction.rollback();
-    console.error("[deleteBlog] Error:", error);
-    return { success: false, message: "Failed" };
+    console.log("[deleteBlog] Error:", error);
   }
+  // Nếu bạn đang dùng revalidatePath
+  // revalidatePath("/(private)/(user)");
+
+  return { success: true };
 }
+
 
 // ==========================================
 // HELPER: BUILD TREE
@@ -223,6 +215,7 @@ export async function getBlogs(currentUserId?: number) {
       LEFT JOIN UserProfile up ON up.accountId = b.creatorId
       LEFT JOIN Account a ON a.id = b.creatorId
       LEFT JOIN BlogMedia m ON m.blogId = b.id
+      WHERE b.isDeleted = 0
       ORDER BY b.createdAt DESC, m.id ASC
     `);
 
@@ -349,7 +342,7 @@ export async function addComment(blogId: number, userId: number, text: string, p
 
     const validParentId = (parentId && !isNaN(parentId)) ? parentId : null;
     const pool = await connectDB();
-    
+
     const insertResult = await pool.request()
       .input("userId", sql.Int, userId)
       .input("blogId", sql.Int, blogId)
@@ -372,7 +365,7 @@ export async function addComment(blogId: number, userId: number, text: string, p
 
     const raw = fullCommentResult.recordset[0];
     revalidatePath(FEED_PATH);
-    revalidatePath("/"); 
+    revalidatePath("/");
 
     return {
       success: true,
@@ -402,49 +395,49 @@ export async function addComment(blogId: number, userId: number, text: string, p
 // 6. EDIT COMMENT (FINAL)
 // ==========================================
 export async function editComment(commentId: number, userId: number, newText: string) {
-    try {
-        console.log(`[editComment] Check - CommentID: ${commentId}, RequestUserID: ${userId}`);
+  try {
+    console.log(`[editComment] Check - CommentID: ${commentId}, RequestUserID: ${userId}`);
 
-        if (!userId) throw new Error("User ID required");
-        if (!newText || !newText.trim()) return { success: false, message: "Text empty" };
+    if (!userId) throw new Error("User ID required");
+    if (!newText || !newText.trim()) return { success: false, message: "Text empty" };
 
-        const pool = await connectDB();
+    const pool = await connectDB();
 
-        // 1. Check Owner
-        const checkOwner = await pool.request()
-            .input("id", sql.Int, commentId)
-            .query("SELECT userId FROM Comments WHERE id = @id");
-        
-        if (checkOwner.recordset.length === 0) return { success: false, message: "Comment not found" };
-        
-        const ownerId = checkOwner.recordset[0].userId;
-        
-        if (Number(ownerId) !== Number(userId)) {
-            console.error(`[editComment] Unauthorized: Owner ${ownerId} vs Request ${userId}`);
-            return { success: false, message: "Unauthorized" };
-        }
+    // 1. Check Owner
+    const checkOwner = await pool.request()
+      .input("id", sql.Int, commentId)
+      .query("SELECT userId FROM Comments WHERE id = @id");
 
-        // 2. Update (Try-catch riêng cho SQL để bắt lỗi thiếu cột)
-        try {
-            await pool.request()
-                .input("id", sql.Int, commentId)
-                .input("text", sql.NVarChar(sql.MAX), newText)
-                .query("UPDATE Comments SET text = @text, updatedAt = GETDATE() WHERE id = @id");
-        } catch (sqlError: any) {
-            console.error("[editComment] SQL Error:", sqlError);
-            if (sqlError.message.includes("Invalid column name 'updatedAt'")) {
-                 return { success: false, message: "Lỗi Server: Thiếu cột updatedAt trong DB" };
-            }
-            throw sqlError;
-        }
-        
-        revalidatePath(FEED_PATH);
-        revalidatePath("/");
-        return { success: true };
-    } catch (error) {
-        console.error("[editComment] System Error:", error);
-        return { success: false, message: "Failed to edit" };
+    if (checkOwner.recordset.length === 0) return { success: false, message: "Comment not found" };
+
+    const ownerId = checkOwner.recordset[0].userId;
+
+    if (Number(ownerId) !== Number(userId)) {
+      console.error(`[editComment] Unauthorized: Owner ${ownerId} vs Request ${userId}`);
+      return { success: false, message: "Unauthorized" };
     }
+
+    // 2. Update (Try-catch riêng cho SQL để bắt lỗi thiếu cột)
+    try {
+      await pool.request()
+        .input("id", sql.Int, commentId)
+        .input("text", sql.NVarChar(sql.MAX), newText)
+        .query("UPDATE Comments SET text = @text, updatedAt = GETDATE() WHERE id = @id");
+    } catch (sqlError: any) {
+      console.error("[editComment] SQL Error:", sqlError);
+      if (sqlError.message.includes("Invalid column name 'updatedAt'")) {
+        return { success: false, message: "Lỗi Server: Thiếu cột updatedAt trong DB" };
+      }
+      throw sqlError;
+    }
+
+    revalidatePath(FEED_PATH);
+    revalidatePath("/");
+    return { success: true };
+  } catch (error) {
+    console.error("[editComment] System Error:", error);
+    return { success: false, message: "Failed to edit" };
+  }
 }
 
 // ==========================================
@@ -456,34 +449,345 @@ export async function toggleHideComment(commentId: number, userId: number) {
     const pool = await connectDB();
 
     const checkOwner = await pool.request()
-        .input("id", sql.Int, commentId)
-        .query("SELECT userId, isHidden FROM Comments WHERE id = @id");
-    
+      .input("id", sql.Int, commentId)
+      .query("SELECT userId, isHidden FROM Comments WHERE id = @id");
+
     if (checkOwner.recordset.length === 0) return { success: false, message: "Comment not found" };
-    
+
     const commentData = checkOwner.recordset[0];
-    
+
     if (Number(commentData.userId) !== Number(userId)) {
-        return { success: false, message: "Unauthorized" };
+      return { success: false, message: "Unauthorized" };
     }
 
     const newStatus = !commentData.isHidden;
 
     try {
-        await pool.request()
-            .input("id", sql.Int, commentId)
-            .input("isHidden", sql.Bit, newStatus)
-            .query("UPDATE Comments SET isHidden = @isHidden WHERE id = @id");
+      await pool.request()
+        .input("id", sql.Int, commentId)
+        .input("isHidden", sql.Bit, newStatus)
+        .query("UPDATE Comments SET isHidden = @isHidden WHERE id = @id");
     } catch (sqlError: any) {
-        console.error("[toggleHide] SQL Error:", sqlError);
-        return { success: false, message: "Lỗi Server: Thiếu cột isHidden trong DB" };
+      console.error("[toggleHide] SQL Error:", sqlError);
+      return { success: false, message: "Lỗi Server: Thiếu cột isHidden trong DB" };
     }
-    
+
     revalidatePath(FEED_PATH);
     revalidatePath("/");
     return { success: true, isHidden: newStatus };
   } catch (error) {
     console.error("[toggleHideComment] Error:", error);
     return { success: false, message: "Failed to toggle hide" };
+  }
+}
+
+export const getPersonalBlogs = async (userId: number, watcherId: number, page: number = 1) => {
+  try {
+    console.log("[getPersonalBlogs] userId:", userId, "page:", page);
+    const pool = await connectDB();
+    const offset = (page - 1) * 5
+    const blogsResult = await pool.request().input("userId", userId).input("offset", offset).query(`
+              SELECT
+            b.id AS blogId,
+            b.text,
+            b.creatorId,
+            b.createdAt,
+            b.updatedAt,
+            up.fullName,
+            up.imgUrl,
+            a.username,
+            m.id AS mediaId,
+            m.mediaUrl,
+            m.mediaType,
+            ISNULL(lc.likeCount, 0) AS likeCount,
+            ISNULL(cc.commentCount, 0) AS commentCount,
+            bs.originalBlogId,
+            bs.id AS shareId
+        FROM
+            Blogs b
+        LEFT JOIN
+            UserProfile up ON up.accountId = b.creatorId
+        LEFT JOIN
+            Account a ON a.id = b.creatorId
+        LEFT JOIN
+            BlogMedia m ON m.blogId = b.id
+        LEFT JOIN
+            (
+                SELECT
+                    blogId,
+                    COUNT(userId) AS likeCount
+                FROM
+                    [Like]
+                GROUP BY
+                    blogId
+            ) lc ON lc.blogId = b.id
+        LEFT JOIN
+            (
+              SELECT 
+                blogId,
+                COUNT(id) AS commentCount
+              FROM 
+                Comments
+              GROUP BY 
+                blogId
+            ) cc ON cc.blogId = b.id
+        LEFT JOIN BlogShares bs ON bs.blogId = b.id
+        WHERE
+            b.creatorId = @userId AND b.isDeleted = 0
+        ORDER BY
+            b.createdAt DESC,
+            m.id ASC
+        OFFSET @offset ROWS FETCH NEXT 5 ROWS ONLY
+      `);
+    const blogMap = new Map<number, any>();
+    blogsResult.recordset.forEach((row: any) => {
+      const blogId = row.blogId;
+      if (!blogMap.has(blogId)) {
+        blogMap.set(blogId, {
+          id: blogId,
+          text: row.text,
+          creatorId: row.creatorId,
+          createdAt: row.createdAt,
+          updatedAt: row.updatedAt,
+          fullName: row.fullName,
+          username: row.username,
+          imgUrl: row.imgUrl,
+          media: [],
+          likeCount: row.likeCount,
+          commentCount: row.commentCount,
+          isShared: row.shareId ? true : false,
+          originalBlogId: row.originalBlogId,
+          shares: 0,
+        });
+      }
+      if (row.mediaId) {
+        if (!blogMap.get(blogId).media) {
+          blogMap.get(blogId).media = [];
+        }
+        blogMap.get(blogId).media.push({
+          id: row.mediaId,
+          url: row.mediaUrl,
+          mediaType: row.mediaType
+        });
+      }
+    })
+    if (watcherId) {
+      const likes = await pool.request().input("userId", watcherId).query(`
+        Select blogId from [Like] where userId = @userId
+      `);
+      likes.recordset.forEach((like: any) => {
+        const blog = blogMap.get(like.blogId);
+        if (blog) {
+          blog.isLikedByCurrentUser = true;
+        }
+      });
+    }
+    const blogArray = Array.from(blogMap.values());
+    for (const blog of blogArray) {
+      const shareInfo = await getSharedBlogInfo(blog.id);
+      blog.sharedData = shareInfo;
+    }
+    return {
+      success: true,
+      data: blogArray
+    }
+  }
+  catch (error) {
+    console.error("[getPersonalBlogs] Error:", error);
+    return { success: false, message: "Xảy ra lỗi khi lấy bài viết" };
+  }
+}
+
+export const getCommentsByBlogId = async (blogId: number) => {
+  try {
+    const pool = await connectDB();
+    const user = verifyToken(await getCookie());
+    const commentsResult = await pool.request().input("blogId", blogId).query(
+      `
+    SELECT
+      c.id,
+      c.blogId,
+      c.text,
+      c.createdAt,
+      c.parentId,
+      c.isHidden,
+      c.userId,
+      up.fullName,
+      up.imgUrl,
+      a.username,
+      ISNULL(clc.likeCount, 0) AS likeCount
+    FROM
+              Comments c
+          LEFT JOIN
+              UserProfile up ON up.accountId = c.userId
+          LEFT JOIN
+              Account a ON a.id = c.userId
+          LEFT JOIN
+          (
+            --Subquery to calculate the total likes for each comment
+                  SELECT
+                      commentId,
+                      COUNT(userId) AS likeCount
+                FROM
+                CommentLikes
+                      GROUP BY
+                commentId
+            ) clc ON clc.commentId = c.id
+    WHERE
+      c.blogId = @blogId
+    ORDER BY
+      c.createdAt DESC;
+`
+    );
+    console.log(commentsResult.recordset);
+    const commentLikesMap = new Map<number, number>();
+    const userLikedCommentSet = new Set<number>();
+    commentsResult.recordset.forEach((r: any) => commentLikesMap.set(r.id, r.likeCount));
+    const userCommentLikes = await pool.request().input("uid", sql.Int, user.id)
+      .query("SELECT commentId FROM CommentLikes WHERE userId = @uid");
+    userCommentLikes.recordset.forEach((r: any) => userLikedCommentSet.add(r.commentId));
+    const comments = buildCommentTree(commentsResult.recordset, userLikedCommentSet, commentLikesMap)
+    return {
+      data: comments,
+    }
+  }
+  catch (error) {
+    console.error("[getCommentsByBlogId] Error:", error);
+    return { success: false, message: "Xảy ra lỗi khi lấy bình luận" };
+  }
+}
+
+// ==========================================
+// GET BLOGS WITH SHARE SUPPORT (Thêm vào cuối file)
+// ==========================================
+export async function getBlogsWithShare(currentUserId?: number) {
+  try {
+    const pool = await connectDB();
+
+    // Lấy tất cả blogs kèm thông tin share
+    const blogsResult = await pool.request().query(`
+      SELECT 
+        b.id AS blogId, 
+        b.text, 
+        b.creatorId, 
+        b.createdAt, 
+        b.updatedAt,
+        up.fullName, 
+        up.imgUrl, 
+        a.username, 
+        m.id AS mediaId, 
+        m.mediaUrl, 
+        m.mediaType,
+        bs.originalBlogId,
+        bs.id AS shareId
+      FROM Blogs b
+      LEFT JOIN UserProfile up ON up.accountId = b.creatorId
+      LEFT JOIN Account a ON a.id = b.creatorId
+      LEFT JOIN BlogMedia m ON m.blogId = b.id
+      LEFT JOIN BlogShares bs ON bs.blogId = b.id
+      WHERE b.isDeleted = 0
+      ORDER BY b.createdAt DESC, m.id ASC
+    `);
+
+    const likesCountResult = await pool.request().query(`
+      SELECT blogId, COUNT(*) as count 
+      FROM [Like] 
+      GROUP BY blogId
+    `);
+    const likesMap = new Map<number, number>();
+    likesCountResult.recordset.forEach((r: any) => likesMap.set(r.blogId, r.count));
+
+    const commentsResult = await pool.request().query(`
+      SELECT c.id, c.blogId, c.text, c.createdAt, c.parentId, c.isHidden, c.userId,
+             up.fullName, up.imgUrl, a.username
+      FROM Comments c
+      LEFT JOIN UserProfile up ON up.accountId = c.userId
+      LEFT JOIN Account a ON a.id = c.userId
+      ORDER BY c.createdAt ASC
+    `);
+
+    const commentLikesCountResult = await pool.request().query(`
+      SELECT commentId, COUNT(*) as count 
+      FROM CommentLikes 
+      GROUP BY commentId
+    `);
+    const commentLikesMap = new Map<number, number>();
+    commentLikesCountResult.recordset.forEach((r: any) => commentLikesMap.set(r.commentId, r.count));
+
+    const userLikedPostSet = new Set<number>();
+    const userLikedCommentSet = new Set<number>();
+
+    if (currentUserId) {
+      const userPostLikes = await pool.request().input("uid", sql.Int, currentUserId)
+        .query("SELECT blogId FROM [Like] WHERE userId = @uid");
+      userPostLikes.recordset.forEach((r: any) => userLikedPostSet.add(r.blogId));
+
+      const userCommentLikes = await pool.request().input("uid", sql.Int, currentUserId)
+        .query("SELECT commentId FROM CommentLikes WHERE userId = @uid");
+      userCommentLikes.recordset.forEach((r: any) => userLikedCommentSet.add(r.commentId));
+    }
+
+    const commentsByBlog = new Map<number, any[]>();
+    commentsResult.recordset.forEach((c: any) => {
+      if (!commentsByBlog.has(c.blogId)) commentsByBlog.set(c.blogId, []);
+      commentsByBlog.get(c.blogId).push(c);
+    });
+
+    const blogMap = new Map<number, any>();
+    const rows = blogsResult.recordset || [];
+
+    for (const row of rows) {
+      const blogId = row.blogId;
+      if (!blogMap.has(blogId)) {
+        const rawComments = commentsByBlog.get(blogId) || [];
+        blogMap.set(blogId, {
+          id: blogId,
+          text: row.text,
+          creatorId: row.creatorId,
+          createdAt: row.createdAt,
+          updatedAt: row.updatedAt,
+          fullName: row.fullName,
+          username: row.username,
+          imgUrl: row.imgUrl,
+          media: [],
+          likes: likesMap.get(blogId) || 0,
+          isLikedByCurrentUser: userLikedPostSet.has(blogId),
+          comments: buildCommentTree(rawComments, userLikedCommentSet, commentLikesMap),
+          shares: 0,
+          isShared: !!row.shareId,
+          originalBlogId: row.originalBlogId || null,
+        });
+      }
+      if (row.mediaId) {
+        blogMap.get(blogId).media.push({
+          id: row.mediaId,
+          url: row.mediaUrl,
+          type: row.mediaType
+        });
+      }
+    }
+
+    // Lấy thông tin bài viết gốc cho các bài share
+    const blogs = Array.from(blogMap.values());
+
+    // Import getSharedBlogInfo từ shareActions
+
+    const blogsWithSharedData = await Promise.all(
+      blogs.map(async (blog) => {
+        if (blog.isShared && blog.originalBlogId) {
+          const sharedData = await getSharedBlogInfo(blog.id);
+          return {
+            ...blog,
+            sharedPostData: sharedData,
+          };
+        }
+        return blog;
+      })
+    );
+
+    return blogsWithSharedData;
+  } catch (error) {
+    console.error("[getBlogsWithShare] Error:", error);
+    return [];
   }
 }

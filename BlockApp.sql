@@ -63,6 +63,11 @@ CREATE TABLE UserProfile (
     dob DATE,
     imgUrl VARCHAR(255),
     coverImg VARCHAR(255),
+    bio NVARCHAR(255),
+    location NVARCHAR(100),
+    homeTown NVARCHAR(100),
+    workAt NVARCHAR(100),
+    education NVARCHAR(100),
     createdAt DATETIME DEFAULT GETDATE(),
     updatedAt DATETIME DEFAULT GETDATE()
 );
@@ -138,7 +143,7 @@ GO
 CREATE TABLE Reports (
     id INT IDENTITY(1,1) PRIMARY KEY,
     blogId INT NULL,
-    reason VARCHAR(255) NOT NULL,
+    reason NVARCHAR(255) NOT NULL,
     status VARCHAR(20) DEFAULT 'Pending',
     createdAt DATETIME DEFAULT GETDATE(),
     FOREIGN KEY (blogId) REFERENCES Blogs(id),
@@ -213,7 +218,41 @@ FOREIGN KEY (parentId) REFERENCES Comments(id);
 
 GO
 
+CREATE TABLE Groups (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    ownerId INT NOT NULL,
+    createdAt DATETIME DEFAULT GETDATE(),
+    FOREIGN KEY (ownerId) REFERENCES Account(id)
+);
 
+Go
+
+CREATE TABLE GroupMembers (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    groupId INT NOT NULL,
+    userId INT NOT NULL,
+    FOREIGN KEY (groupId) REFERENCES Groups(id),
+    FOREIGN KEY (userId) REFERENCES Account(id),
+    UNIQUE (groupId, userId)
+);
+
+GO
+
+CREATE TABLE GroupMessages (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    groupId INT NOT NULL,
+    senderId INT NOT NULL,
+    message NVARCHAR(MAX),
+    type VARCHAR(20) DEFAULT 'text',
+    fileUrl VARCHAR(255),
+    createdAt DATETIME DEFAULT GETDATE(),
+
+    FOREIGN KEY (groupId) REFERENCES Groups(id),
+    FOREIGN KEY (senderId) REFERENCES Account(id)
+);
+
+GO
 
 
 CREATE PROCEDURE CleanupExpiredOTP
@@ -228,3 +267,67 @@ GO
 -- update 27/11/2025 - trang thai table comment
 ALTER TABLE Comments ADD isHidden BIT DEFAULT 0;
 ALTER TABLE Comments ADD updatedAt DATETIME;
+
+
+-- Table để lưu thông tin share
+CREATE TABLE BlogShares (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    blogId INT NOT NULL, -- Bài viết mới (bài share)
+    originalBlogId INT NOT NULL, -- Bài viết gốc được share
+    userId INT NOT NULL, -- Người share
+    text NVARCHAR(MAX) NULL, -- Nội dung kèm theo khi share
+    createdAt DATETIME DEFAULT GETDATE(),
+    FOREIGN KEY (blogId) REFERENCES Blogs(id),
+    FOREIGN KEY (originalBlogId) REFERENCES Blogs(id),
+    FOREIGN KEY (userId) REFERENCES Account(id)
+);
+GO
+
+-- Thêm index để tối ưu query
+CREATE INDEX IX_BlogShares_BlogId ON BlogShares(blogId);
+CREATE INDEX IX_BlogShares_OriginalBlogId ON BlogShares(originalBlogId);
+CREATE INDEX IX_BlogShares_UserId ON BlogShares(userId);
+GO
+
+-- Thêm column shareCount vào bảng Blogs (optional, để đếm nhanh)
+ALTER TABLE Blogs ADD shareCount INT DEFAULT 0;
+GO
+
+-- Trigger để tự động tăng shareCount khi có share mới
+CREATE TRIGGER trg_IncrementShareCount
+ON BlogShares
+AFTER INSERT
+AS
+BEGIN
+    UPDATE Blogs
+    SET shareCount = shareCount + 1
+    FROM Blogs b
+    INNER JOIN inserted i ON b.id = i.originalBlogId;
+END;
+GO
+
+-- Trigger để giảm shareCount khi xóa share (nếu cần)
+CREATE TRIGGER trg_DecrementShareCount
+ON BlogShares
+AFTER DELETE
+AS
+BEGIN
+    UPDATE Blogs
+    SET shareCount = shareCount - 1
+    FROM Blogs b
+    INNER JOIN deleted d ON b.id = d.originalBlogId
+    WHERE b.shareCount > 0;
+END;
+GO
+
+CREATE TRIGGER update_updatedAt
+ON UserProfile
+FOR UPDATE
+AS
+BEGIN
+    UPDATE UserProfile
+    SET updatedAt = GETDATE()
+    FROM UserProfile u
+    INNER JOIN inserted i ON u.id = i.id;
+END
+GO
