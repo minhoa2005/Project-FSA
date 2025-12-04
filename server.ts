@@ -42,6 +42,28 @@ app.prepare().then(() => {
             socket.userId = userId;
         });
 
+        socket.on("join_group", (groupId) => {
+            const room = `group_${groupId}`;
+            socket.join(room);
+            console.log(`✅ Socket ${socket.id} joined GROUP ${room}`);
+        });
+
+        socket.on("send_group_message", (msg) => {
+            // msg: { groupId, senderId, senderName, text, type }
+
+            const room = `group_${msg.groupId}`;
+
+            // ✅ Gửi cho TẤT CẢ thành viên trong group (trừ người gửi)
+            socket.to(room).emit("receive_group_message", msg);
+
+            console.log("📨 Group message:", msg);
+        });
+
+        socket.on("delete_group_message", ({ messageId, groupId }) => {
+            const room = `group_${groupId}`;
+            socket.to(room).emit("group_message_deleted", messageId);
+        });
+
         // Join room để chat với người cụ thể
         socket.on("join_room", (roomId) => {
             socket.join(roomId);
@@ -52,7 +74,7 @@ app.prepare().then(() => {
         socket.on("send_message", (msg) => {
             if (msg.roomId) {
                 socket.broadcast.to(msg.roomId).emit("receive_message", msg);
-                
+
                 // Gửi notification cho receiver nếu không online ở room đó
                 if (msg.receiverId && userSockets.has(msg.receiverId)) {
                     io.to(userSockets.get(msg.receiverId)).emit("new_message_notification", {
@@ -84,7 +106,7 @@ app.prepare().then(() => {
         });
 
         // --- THÊM ĐOẠN NÀY VÀO (Logic Comment) ---
-        
+
         /// 1. Join Room bài viết
         socket.on("join_post", (postId: any) => {
             const roomName = `post_${postId}`;
@@ -108,9 +130,9 @@ app.prepare().then(() => {
         // 4. Broadcast Like Comment
         socket.on("update_comment_like_stats", (data: any) => {
             // data: { room, commentId, likes }
-            socket.to(data.room).emit("sync_comment_likes", { 
-                commentId: data.commentId, 
-                likes: data.likes 
+            socket.to(data.room).emit("sync_comment_likes", {
+                commentId: data.commentId,
+                likes: data.likes
             });
         });
 
@@ -118,20 +140,20 @@ app.prepare().then(() => {
         socket.on("toggle_hide_comment", (data: any) => {
             // data: { room, commentId }
             // Báo cho mọi người trong phòng biết commentId này vừa thay đổi trạng thái ẩn/hiện
-            socket.to(data.room).emit("sync_hide_comment", { 
-                commentId: data.commentId 
+            socket.to(data.room).emit("sync_hide_comment", {
+                commentId: data.commentId
             });
         });
 
         // ==========================================
         // 6. SHARE FUNCTIONALITY (NEW)
         // ==========================================
-        
+
         // Broadcast khi có bài viết mới được share
         socket.on("post_shared", (data: any) => {
             // data: { originalPostId, newPostId, sharerInfo }
             const { originalPostId, newPostId, sharerInfo } = data;
-            
+
             // Gửi notification cho người tạo bài viết gốc
             if (sharerInfo.originalCreatorId && userSockets.has(sharerInfo.originalCreatorId)) {
                 io.to(userSockets.get(sharerInfo.originalCreatorId)).emit("share_notification", {
@@ -178,9 +200,9 @@ app.prepare().then(() => {
             io.emit("post_deleted", { postId: data.sharedPostId });
         });
 
-        
-        
-        
+
+
+
         // ------------------------------------------
 
         socket.on("disconnect", () => {

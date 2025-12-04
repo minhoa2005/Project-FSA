@@ -29,8 +29,6 @@ export type MessageListResult = {
 };
 
 export async function getFollowingUsers(
-  offset: number,
-  limit: number
 ): Promise<FollowUser[]> {
   if (!(await verifyUser())) {
     throw new Error("Unauthorized");
@@ -43,8 +41,6 @@ export async function getFollowingUsers(
   const result = await pool
     .request()
     .input("userId", sql.Int, userId)
-    .input("offset", sql.Int, offset)
-    .input("limit", sql.Int, limit)
     .query(`
       SELECT a.id, a.username, a.email, u.imgUrl
       FROM Follow f
@@ -52,7 +48,6 @@ export async function getFollowingUsers(
       JOIN UserProfile u ON u.accountId = a.id
       WHERE f.followerId = @userId
       ORDER BY a.id
-      OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY
     `);
 
   return result.recordset as FollowUser[];
@@ -176,3 +171,5 @@ export async function deleteMessage(messageId: number): Promise<{ success: boole
     return { success: false };
   }
 }
+
+
