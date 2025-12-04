@@ -218,7 +218,41 @@ FOREIGN KEY (parentId) REFERENCES Comments(id);
 
 GO
 
+CREATE TABLE Groups (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    ownerId INT NOT NULL,
+    createdAt DATETIME DEFAULT GETDATE(),
+    FOREIGN KEY (ownerId) REFERENCES Account(id)
+);
 
+Go
+
+CREATE TABLE GroupMembers (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    groupId INT NOT NULL,
+    userId INT NOT NULL,
+    FOREIGN KEY (groupId) REFERENCES Groups(id),
+    FOREIGN KEY (userId) REFERENCES Account(id),
+    UNIQUE (groupId, userId)
+);
+
+GO
+
+CREATE TABLE GroupMessages (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    groupId INT NOT NULL,
+    senderId INT NOT NULL,
+    message NVARCHAR(MAX),
+    type VARCHAR(20) DEFAULT 'text',
+    fileUrl VARCHAR(255),
+    createdAt DATETIME DEFAULT GETDATE(),
+
+    FOREIGN KEY (groupId) REFERENCES Groups(id),
+    FOREIGN KEY (senderId) REFERENCES Account(id)
+);
+
+GO
 
 
 CREATE PROCEDURE CleanupExpiredOTP

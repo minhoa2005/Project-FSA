@@ -17,8 +17,7 @@ export default function Report() {
             setLoading(false)
         }
     }
-    useEffect(() => {
-
+    useEffect(() => { 
         fetchReports()
     }, [])
 
@@ -38,6 +37,7 @@ export default function Report() {
                                 <TableHead className="font-bold">Lý do</TableHead>
                                 <TableHead className="font-bold">Trạng thái</TableHead>
                                 <TableHead className="font-bold">Ngày tạo</TableHead>
+                                <TableHead className="font-bold">Link Bài Viết</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -53,6 +53,7 @@ export default function Report() {
                                         </span>
                                     </TableCell>
                                     <TableCell>{new Date(report.createdAt).toLocaleString('vi-VN')}</TableCell>
+                                    <TableCell>Link</TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>
