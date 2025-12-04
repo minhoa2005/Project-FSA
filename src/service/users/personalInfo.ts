@@ -31,7 +31,15 @@ const getPersonalInfo = async () => {
         const role: string = decoded.role;
         const result = await pool.request().input('id', id).query(
             `
-            select a.email, p.fullName, p.phoneNumber, p.dob from Account a
+            select 
+                a.email, 
+                p.fullName, 
+                p.phoneNumber, 
+                p.dob from Account a,
+                p.bio,
+                p.location,
+                p.homeTown,
+                p.workAt
             join AccountRole ar on a.id = ar.accountId 
             join Role r on ar.roleId = r.id 
             join ${role}Profile p on a.id = p.accountId
@@ -65,11 +73,23 @@ const getPersonalInfoById = async (id: number) => {
     try {
         const result = await pool.request().input('id', id).query(
             `
-            select a.email, p.fullName, p.phoneNumber, p.dob, p.imgUrl, p.coverImg, a.username from Account a
-            join AccountRole ar on a.id = ar.accountId 
-            join Role r on ar.roleId = r.id 
-            join UserProfile p on a.id = p.accountId
-            where a.id = @id
+        SELECT
+            a.email,
+            a.username,
+            p.fullName,
+            p.phoneNumber,
+            p.dob,
+            p.imgUrl,
+            p.coverImg,
+            p.bio,
+            p.location,
+            p.homeTown,
+            p.workAt
+        FROM Account a
+        JOIN UserProfile p ON a.id = p.accountId
+        JOIN AccountRole ar ON a.id = ar.accountId
+        JOIN Role r ON ar.roleId = r.id
+        WHERE a.id = @id
             `
         )
         if (result.recordset.length === 0) {

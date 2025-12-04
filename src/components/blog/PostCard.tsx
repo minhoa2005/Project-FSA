@@ -378,6 +378,7 @@ export default function PostCard({
                 onSelect={() =>
                   toast("Xoá?", {
                     action: { label: "Xoá", onClick: handleDelete },
+                    position: "top-center",
                   })
                 }
               >
@@ -426,9 +427,8 @@ export default function PostCard({
               <>
                 {images.length > 0 && (
                   <div
-                    className={`grid gap-1 overflow-hidden rounded-lg ${
-                      images.length === 1 ? "grid-cols-1" : "grid-cols-2"
-                    }`}
+                    className={`grid gap-1 overflow-hidden rounded-lg ${images.length === 1 ? "grid-cols-1" : "grid-cols-2"
+                      }`}
                   >
                     {images.map((m: any) => (
                       <Image
