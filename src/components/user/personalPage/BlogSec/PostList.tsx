@@ -5,7 +5,7 @@ import Link from 'next/link';
 import CreatePost from './CreatePost';
 import PostCard from './PostCard';
 
-export default function PostList({ id }: { id: number }) {
+export default function PostList({ id, watcherId }: { id: number, watcherId?: number }) {
     const [page, setPage] = useState(1);
     const [posts, setPosts] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -16,7 +16,7 @@ export default function PostList({ id }: { id: number }) {
         if (isLoading) return;
         setIsLoading(true);
         try {
-            const response = await getPersonalBlogs(id, pageNum);
+            const response = await getPersonalBlogs(id, watcherId, pageNum);
             if (response.data.length === 0) {
                 setEnd(true);
             }
@@ -65,8 +65,8 @@ export default function PostList({ id }: { id: number }) {
         <div className='flex flex-col gap-5 items-center'>
             <CreatePost refresh={refreshData} />
             {posts.map((post, i) => (
-                <div key={post.id} className='w-[50%]' id='posts'>
-                    <PostCard post={post} />
+                <div key={post.id} className='w-[70%]' id='posts'>
+                    <PostCard post={post} refresh={refreshData} userId={id} />
                 </div>
             ))}
             {end && <div className='text-muted-foreground mb-5'>Đã hết bài viết. <Link href="#top" className='text-blue-400'>Quay về đầu trang?</Link></div>}

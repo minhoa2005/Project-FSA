@@ -114,19 +114,22 @@ export async function updateBlog(formData: FormData) {
 // ==========================================
 export async function deleteBlog(formData: FormData) {
   const pool = await connectDB();
+  try {
+    const blogId = Number(formData.get("blogId"));
+    console.log("[deleteBlog] blogId:", blogId);
+    if (!blogId) throw new Error("blogId is required");
 
-  const blogId = Number(formData.get("blogId"));
-  if (!blogId) throw new Error("blogId is required");
-
-  await pool
-    .request()
-    .input("id", sql.Int, blogId)
-    .query(`
+    await pool
+      .request()
+      .input("id", sql.Int, blogId)
+      .query(`
       UPDATE Blogs 
       SET isDeleted = 1, updatedAt = GETDATE()
       WHERE id = @id
     `);
-
+  } catch (error) {
+    console.log("[deleteBlog] Error:", error);
+  }
   // Nếu bạn đang dùng revalidatePath
   // revalidatePath("/(private)/(user)");
 
@@ -478,8 +481,9 @@ export async function toggleHideComment(commentId: number, userId: number) {
   }
 }
 
-export const getPersonalBlogs = async (userId: number, page: number = 1) => {
+export const getPersonalBlogs = async (userId: number, watcherId: number, page: number = 1) => {
   try {
+    console.log("[getPersonalBlogs] userId:", userId, "page:", page);
     const pool = await connectDB();
     const offset = (page - 1) * 5
     const blogsResult = await pool.request().input("userId", userId).input("offset", offset).query(`
@@ -529,7 +533,7 @@ export const getPersonalBlogs = async (userId: number, page: number = 1) => {
             ) cc ON cc.blogId = b.id
         LEFT JOIN BlogShares bs ON bs.blogId = b.id
         WHERE
-            b.creatorId = @userId
+            b.creatorId = @userId AND b.isDeleted = 0
         ORDER BY
             b.createdAt DESC,
             m.id ASC
@@ -567,21 +571,22 @@ export const getPersonalBlogs = async (userId: number, page: number = 1) => {
         });
       }
     })
-    const likes = await pool.request().input("userId", userId).query(`
+    if (watcherId) {
+      const likes = await pool.request().input("userId", watcherId).query(`
         Select blogId from [Like] where userId = @userId
       `);
-    likes.recordset.forEach((like: any) => {
-      const blog = blogMap.get(like.blogId);
-      if (blog) {
-        blog.isLikedByCurrentUser = true;
-      }
-    });
+      likes.recordset.forEach((like: any) => {
+        const blog = blogMap.get(like.blogId);
+        if (blog) {
+          blog.isLikedByCurrentUser = true;
+        }
+      });
+    }
     const blogArray = Array.from(blogMap.values());
     for (const blog of blogArray) {
       const shareInfo = await getSharedBlogInfo(blog.id);
       blog.sharedData = shareInfo;
     }
-    console.log(blogArray);
     return {
       success: true,
       data: blogArray

@@ -9,8 +9,10 @@ import ReportModal from './ReportModal';
 import PostCardFooter from './PostCardFooter';
 import { getCommentsByBlogId } from '@/service/users/postActions';
 import SharedPostCard from '@/components/blog/SharedPostCard';
+import EditPost from './EditPost';
+import DeleteBlog from './DeleteBlog';
 
-export default function PostCard({ post }: { post: Post }) {
+export default function PostCard({ post, refresh, userId }: { post: Post, refresh: () => void, userId?: number }) {
     const images = post?.media.filter((m: any) => m.mediaType === 'image') || [];
     const videos = post?.media.filter((m: any) => m.mediaType === 'video') || [];
     console.log("Post media:", post);
@@ -31,10 +33,10 @@ export default function PostCard({ post }: { post: Post }) {
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-48 text-sm">
-                        <DropdownMenuItem>Chỉnh sửa bài viết</DropdownMenuItem>
+                        <EditPost post={post} refresh={refresh} />
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem className="text-destructive">Xóa bài viết</DropdownMenuItem>
-                        <ReportModal blogId={post.id} />
+                        <DeleteBlog post={post} refresh={refresh} />
+                        {userId !== post.creatorId && <ReportModal blogId={post.id} />}
                     </DropdownMenuContent>
                 </DropdownMenu>
             </CardHeader>

@@ -67,7 +67,6 @@ const ReportModal = ({ blogId }) => {
                 <DialogTitle></DialogTitle>
                 <DialogDescription></DialogDescription>
             </DialogHeader>
-
             <DialogContent className="rounded-lg w-full max-w-md p-6 shadow-lg">
                 <div className="flex justify-between items-center pb-4 border-b">
                     {step === 2 && (

@@ -155,7 +155,7 @@ export default function CreatePost({ refresh }: { refresh?: () => void }) {
     };
 
     return (
-        <Card className="mb-4 rounded-xl  shadow-sm w-[50%]">
+        <Card className="mb-4 rounded-xl  shadow-sm w-[70%]">
             <CardContent className="space-y-3 pt-4">
                 <Dialog
                     open={open}

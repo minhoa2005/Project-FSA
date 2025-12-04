@@ -63,6 +63,11 @@ CREATE TABLE UserProfile (
     dob DATE,
     imgUrl VARCHAR(255),
     coverImg VARCHAR(255),
+    bio NVARCHAR(255),
+    location NVARCHAR(100),
+    homeTown NVARCHAR(100),
+    workAt NVARCHAR(100),
+    education NVARCHAR(100),
     createdAt DATETIME DEFAULT GETDATE(),
     updatedAt DATETIME DEFAULT GETDATE()
 );
