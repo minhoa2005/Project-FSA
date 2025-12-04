@@ -32,19 +32,24 @@ const getPersonalInfo = async () => {
         const role: string = decoded.role;
         const result = await pool.request().input('id', id).query(
             `
-            select 
-                a.email, 
-                p.fullName, 
-                p.phoneNumber, 
-                p.dob from Account a,
-                p.bio,
-                p.location,
-                p.homeTown,
-                p.workAt
-            join AccountRole ar on a.id = ar.accountId 
-            join Role r on ar.roleId = r.id 
-            join ${role}Profile p on a.id = p.accountId
-            where a.id = @id
+           SELECT
+            a.email,
+            a.username,
+            p.fullName,
+            p.phoneNumber,
+            p.dob,
+            p.imgUrl,
+            p.coverImg,
+            p.bio,
+            p.location,
+            p.homeTown,
+            p.workAt,
+            p.education
+        FROM Account a
+        JOIN ${role}Profile p ON a.id = p.accountId
+        JOIN AccountRole ar ON a.id = ar.accountId
+        JOIN Role r ON ar.roleId = r.id
+        WHERE a.id = @id
             `
         )
         if (result.recordset.length === 0) {
@@ -85,7 +90,8 @@ const getPersonalInfoById = async (id: number) => {
             p.bio,
             p.location,
             p.homeTown,
-            p.workAt
+            p.workAt,
+            p.education
         FROM Account a
         JOIN UserProfile p ON a.id = p.accountId
         JOIN AccountRole ar ON a.id = ar.accountId
@@ -93,6 +99,7 @@ const getPersonalInfoById = async (id: number) => {
         WHERE a.id = @id
             `
         )
+        console.log(result);
         if (result.recordset.length === 0) {
             return {
                 success: false,
@@ -113,7 +120,7 @@ const getPersonalInfoById = async (id: number) => {
     }
 }
 
-const updateInfo = async (data: { fullName: string, phoneNumber: string, dob: string }) => {
+const updateInfo = async (data: { fullName: string, phoneNumber?: string, dob?: string }) => {
     if (!await verifyUser()) {
         unauthorized();
     }
@@ -130,7 +137,7 @@ const updateInfo = async (data: { fullName: string, phoneNumber: string, dob: st
         if (result.rowsAffected[0] === 0) {
             return {
                 success: false,
-                message: "User not found"
+                message: "Không tìm thấy người dùng"
             }
         }
         return {
@@ -176,7 +183,7 @@ const updateBio = async (data: {
         if (result.rowsAffected[0] === 0) {
             return {
                 success: false,
-                message: "User not found"
+                message: "Không tìm thấy người dùng"
             }
         }
         revalidatePath('/personal/info');
@@ -188,7 +195,7 @@ const updateBio = async (data: {
         console.error('Error updating bio:', error);
         return {
             success: false,
-            message: "Error updating bio"
+            message: "Lỗi cập nhật giới thiệu"
         }
     }
 }

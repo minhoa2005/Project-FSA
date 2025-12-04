@@ -7,7 +7,7 @@ import { getPersonalInfo } from '@/service/users/personalInfo'
 import InfoSectionSkeleton from './InfoSectionSkeleton'
 import BioSection from './BioSection'
 
-export default function PersonalInfo() {
+export default async function PersonalInfo() {
   const getData = getPersonalInfo();
   return (
     <div className='flex flex-col items-center ' >
@@ -18,7 +18,7 @@ export default function PersonalInfo() {
         </div>
         <div className='grid grid-cols-2 gap-3' >
           <Suspense fallback={<InfoSectionSkeleton />}>
-            <InfoSection fetchInfo={getData} className='cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:shadow-xl ease-in-out' />
+            <InfoSection className='cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:shadow-xl ease-in-out' />
           </Suspense>
           <PasswordSection className='cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:shadow-xl ease-in-out' />
         </div>
