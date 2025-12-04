@@ -24,11 +24,11 @@ export default function LoginForm() {
                 toast.error(emailCheck, { duration: 4000 });
                 return;
             }
-            let passwordCheck = validatePassword(formData.get('password') as string);
-            if (passwordCheck) {
-                toast.error(passwordCheck, { duration: 4000 });
-                return;
-            }
+            // let passwordCheck = validatePassword(formData.get('password') as string);
+            // if (passwordCheck) {
+            //     toast.error(passwordCheck, { duration: 4000 });
+            //     return;
+            // }
             const response = await handleLogin(formData);
             if (response.success) {
                 setUser(response.user);
