@@ -9,13 +9,14 @@ import { verifyUser } from "./personalInfo";
 import { verifyToken } from "@/config/jwt";
 import { getCookie } from "@/config/cookie";
 import { getSharedBlogInfo } from "./shareActions";
-
+import { createNotification } from "./notificationService";
 const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads");
 const FEED_PATH = "/(private)/(user)";
 
 // ==========================================
 // 1. CREATE BLOG
 // ==========================================
+
 
 export async function createBlog(formData: FormData) {
   try {
@@ -295,17 +296,56 @@ export async function getBlogs(currentUserId?: number) {
 export async function toggleLike(blogId: number, userId: number) {
   try {
     if (!userId) throw new Error("User ID required");
+    if (!blogId) throw new Error("Blog ID required");
+
     const pool = await connectDB();
-    const check = await pool.request().input("userId", sql.Int, userId).input("blogId", sql.Int, blogId)
-      .query("SELECT * FROM [Like] WHERE userId = @userId AND blogId = @blogId");
-    if (check.recordset.length > 0) {
-      await pool.request().input("userId", sql.Int, userId).input("blogId", sql.Int, blogId)
+
+    // 1. Kiểm tra đã like chưa
+    const checkResult = await pool.request()
+      .input("userId", sql.Int, userId)
+      .input("blogId", sql.Int, blogId)
+      .query("SELECT 1 FROM [Like] WHERE userId = @userId AND blogId = @blogId");
+
+    const alreadyLiked = checkResult.recordset.length > 0;
+
+    // 2. Lấy chủ bài viết để gửi thông báo (chỉ cần khi like lần đầu)
+    let blogCreatorId: number | null = null;
+    if (!alreadyLiked) {
+      const creatorResult = await pool.request()
+        .input("blogId", sql.Int, blogId)
+        .query("SELECT creatorId FROM Blogs WHERE id = @blogId AND isDeleted = 0");
+
+      if (creatorResult.recordset.length === 0) {
+        throw new Error("Bài viết không tồn tại hoặc đã bị xóa");
+      }
+      blogCreatorId = creatorResult.recordset[0].creatorId;
+    }
+
+    // 3. Thực hiện like / unlike
+    if (alreadyLiked) {
+      // Unlike → chỉ xóa, không gửi thông báo
+      await pool.request()
+        .input("userId", sql.Int, userId)
+        .input("blogId", sql.Int, blogId)
         .query("DELETE FROM [Like] WHERE userId = @userId AND blogId = @blogId");
     } else {
-      await pool.request().input("userId", sql.Int, userId).input("blogId", sql.Int, blogId)
+      // Like → thêm và gửi thông báo
+      await pool.request()
+        .input("userId", sql.Int, userId)
+        .input("blogId", sql.Int, blogId)
         .query("INSERT INTO [Like] (userId, blogId) VALUES (@userId, @blogId)");
+
+      // Gửi thông báo cho chủ bài viết (không gửi cho chính mình)
+      if (blogCreatorId && blogCreatorId !== userId) {
+        await createNotification(blogCreatorId, userId, "like", blogId);
+      }
     }
+
+    // Revalidate feed
     revalidatePath(FEED_PATH);
+    revalidatePath(`/post/${blogId}`);
+
+    return { success: true, isLiked: !alreadyLiked };
   } catch (error) {
     console.error("[toggleLike] Error:", error);
     throw error;
@@ -335,62 +375,121 @@ export async function toggleCommentLike(commentId: number, userId: number) {
 // ==========================================
 // 5. ADD COMMENT
 // ==========================================
-export async function addComment(blogId: number, userId: number, text: string, parentId?: number) {
+export async function addComment(
+  blogId: number,
+  userId: number,
+  text: string,
+  parentId?: number
+) {
   try {
     if (!userId) throw new Error("User ID required");
-    if (!text || !text.trim()) return null;
+    if (!blogId) throw new Error("Blog ID required");
+    if (!text?.trim()) return { success: false, message: "Nội dung không được để trống" };
 
-    const validParentId = (parentId && !isNaN(parentId)) ? parentId : null;
     const pool = await connectDB();
+    const trimmedText = text.trim();
 
+    // Kiểm tra bài viết có tồn tại và chưa bị xóa
+    const blogCheck = await pool.request()
+      .input("blogId", sql.Int, blogId)
+      .query("SELECT creatorId FROM Blogs WHERE id = @blogId AND isDeleted = 0");
+
+    if (blogCheck.recordset.length === 0) {
+      return { success: false, message: "Bài viết không tồn tại hoặc đã bị xóa" };
+    }
+
+    const blogCreatorId = blogCheck.recordset[0].creatorId;
+
+    // Nếu là reply → kiểm tra comment cha có tồn tại
+    let parentOwnerId: number | null = null;
+    if (parentId) {
+      const parentCheck = await pool.request()
+        .input("parentId", sql.Int, parentId)
+        .query("SELECT userId FROM Comments WHERE id = @parentId");
+
+      if (parentCheck.recordset.length === 0) {
+        return { success: false, message: "Bình luận cha không tồn tại" };
+      }
+      parentOwnerId = parentCheck.recordset[0].userId;
+    }
+
+    // Tạo bình luận mới
     const insertResult = await pool.request()
       .input("userId", sql.Int, userId)
       .input("blogId", sql.Int, blogId)
-      .input("text", sql.NVarChar(sql.MAX), text)
-      .input("parentId", sql.Int, validParentId)
-      .query(`INSERT INTO Comments (userId, blogId, text, parentId) OUTPUT inserted.id VALUES (@userId, @blogId, @text, @parentId)`);
+      .input("text", sql.NVarChar(sql.MAX), trimmedText)
+      .input("parentId", sql.Int, parentId ?? null)
+      .query(`
+        INSERT INTO Comments (userId, blogId, text, parentId)
+        OUTPUT INSERTED.id, INSERTED.createdAt
+        VALUES (@userId, @blogId, @text, @parentId)
+      `);
 
     const newCommentId = insertResult.recordset[0].id;
+    const createdAt = insertResult.recordset[0].createdAt;
 
-    const fullCommentResult = await pool.request()
+    // Lấy thông tin đầy đủ của comment mới (để trả về frontend)
+    const commentInfo = await pool.request()
       .input("id", sql.Int, newCommentId)
       .query(`
-        SELECT c.id, c.text, c.createdAt, c.parentId, c.isHidden, c.userId,
-               up.fullName, up.imgUrl, a.username
+        SELECT 
+          c.id, c.text, c.createdAt, c.parentId, c.isHidden,
+          a.username,
+          ISNULL(up.fullName, a.username) AS fullName,
+          up.imgUrl
         FROM Comments c
-        LEFT JOIN UserProfile up ON up.accountId = c.userId
-        LEFT JOIN Account a ON a.id = c.userId
+        JOIN Account a ON c.userId = a.id
+        LEFT JOIN UserProfile up ON a.id = up.accountId
         WHERE c.id = @id
       `);
 
-    const raw = fullCommentResult.recordset[0];
+    const raw = commentInfo.recordset[0];
+
+    // GỬI THÔNG BÁO
+    // 1. Thông báo cho chủ bài viết (nếu không phải chính mình)
+    if (blogCreatorId !== userId) {
+      await createNotification(
+        blogCreatorId,
+        userId,
+        parentId ? "reply" : "comment",
+        blogId,
+        parentId ? undefined : newCommentId
+      );
+    }
+
+    // 2. Nếu là reply → thông báo riêng cho chủ comment cha (nếu khác người viết và khác chủ bài)
+    if (parentId && parentOwnerId && parentOwnerId !== userId && parentOwnerId !== blogCreatorId) {
+      await createNotification(parentOwnerId, userId, "reply", blogId, parentId);
+    }
+
+    // Revalidate
     revalidatePath(FEED_PATH);
+    revalidatePath(`/post/${blogId}`);
     revalidatePath("/");
 
     return {
       success: true,
       data: {
         id: String(raw.id),
-        userId: raw.userId,
+        userId: userId,
         author: raw.fullName || raw.username || "Bạn",
         avatar: raw.imgUrl || "",
         content: raw.text,
-        timestamp: new Date(raw.createdAt).toLocaleString("vi-VN"),
-        createdAtRaw: raw.createdAt,
+        timestamp: new Date(createdAt).toLocaleString("vi-VN"),
+        createdAtRaw: createdAt,
         likes: 0,
         isLiked: false,
         replies: [],
         parentId: raw.parentId,
         replyTo: undefined,
-        isHidden: raw.isHidden || false
-      }
+        isHidden: raw.isHidden || false,
+      },
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error("[addComment] Error:", error);
-    return { success: false, error };
+    return { success: false, message: error.message || "Không thể gửi bình luận" };
   }
 }
-
 // ==========================================
 // 6. EDIT COMMENT (FINAL)
 // ==========================================

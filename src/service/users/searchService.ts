@@ -1,7 +1,6 @@
-// src/service/users/searchService.ts
-"use server";   // QUAN TRỌNG: phải có dòng này để Next.js cho phép gọi từ client
 
-import { connectDB } from '@/config/db'; // ← bạn đang export connectDB ở đây đúng không?
+"use server";  
+import { connectDB } from '@/config/db'; 
 
 export type UserResult = {
   id: number;
@@ -41,7 +40,6 @@ export async function searchEverything(query: string): Promise<SearchResult> {
 
     const request = pool.request();
 
-    // === TÌM NGƯỜI DÙNG – CHUỖI THUẦN ===
     const userSql = `
       SELECT TOP 8
         a.id,
@@ -57,7 +55,6 @@ export async function searchEverything(query: string): Promise<SearchResult> {
         a.username
     `;
 
-    // === TÌM BÀI VIẾT – CHUỖI THUẦN ===
     const postSql = `
       SELECT TOP 10
         b.id,
