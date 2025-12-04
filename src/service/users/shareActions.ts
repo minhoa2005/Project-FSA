@@ -2,6 +2,7 @@
 
 import { connectDB, sql } from "@/config/db";
 import { revalidatePath } from "next/cache";
+import { createNotification } from "./notificationService";
 
 const FEED_PATH = "/(private)/(user)";
 
@@ -11,61 +12,88 @@ const FEED_PATH = "/(private)/(user)";
 export async function shareBlog(formData: FormData) {
   try {
     const pool = await connectDB();
-    
+
     const originalBlogId = Number(formData.get("originalBlogId"));
     const userId = Number(formData.get("userId"));
     const textRaw = (formData.get("text") as string) || "";
     const text = textRaw.trim() || null;
 
-    if (!originalBlogId || !userId) {
-      return { success: false, message: "Missing required fields" };
+    // Validate đầu vào
+    if (!originalBlogId || isNaN(originalBlogId)) {
+      return { success: false, message: "Bài viết gốc không hợp lệ" };
+    }
+    if (!userId || isNaN(userId)) {
+      return { success: false, message: "Người dùng không hợp lệ" };
     }
 
-    // 1. Kiểm tra bài viết gốc có tồn tại không
-    const checkOriginal = await pool.request()
+    // 1. Kiểm tra bài viết gốc có tồn tại và chưa bị xóa
+    const originalBlogResult = await pool.request()
       .input("id", sql.Int, originalBlogId)
-      .query("SELECT id FROM Blogs WHERE id = @id AND isDeleted = 0");
+      .query(`
+        SELECT id, creatorId 
+        FROM Blogs 
+        WHERE id = @id AND isDeleted = 0
+      `);
 
-    if (checkOriginal.recordset.length === 0) {
-      return { success: false, message: "Original blog not found" };
+    if (originalBlogResult.recordset.length === 0) {
+      return { success: false, message: "Bài viết gốc không tồn tại hoặc đã bị xóa" };
     }
+
+    const originalCreatorId = originalBlogResult.recordset[0].creatorId;
 
     // 2. Tạo bài viết mới (bài share)
-    const createBlogResult = await pool.request()
+    const newBlogResult = await pool.request()
       .input("text", sql.NVarChar(sql.MAX), text)
       .input("creatorId", sql.Int, userId)
       .query(`
-        INSERT INTO Blogs(text, creatorId) 
-        OUTPUT inserted.id 
-        VALUES (@text, @creatorId)
+        INSERT INTO Blogs (text, creatorId, createdAt, updatedAt)
+        OUTPUT INSERTED.id
+        VALUES (@text, @creatorId, GETDATE(), GETDATE())
       `);
 
-    const newBlogId = createBlogResult.recordset[0].id as number;
+    const newBlogId = newBlogResult.recordset[0].id as number;
 
-    // 3. Tạo record trong BlogShares
+    // 3. Lưu vào bảng BlogShares
     await pool.request()
       .input("blogId", sql.Int, newBlogId)
       .input("originalBlogId", sql.Int, originalBlogId)
       .input("userId", sql.Int, userId)
       .input("text", sql.NVarChar(sql.MAX), text)
       .query(`
-        INSERT INTO BlogShares(blogId, originalBlogId, userId, text)
+        INSERT INTO BlogShares (blogId, originalBlogId, userId, text)
         VALUES (@blogId, @originalBlogId, @userId, @text)
       `);
 
+    // 4. GỬI THÔNG BÁO CHO CHỦ BÀI GỐC (nếu không phải chính mình)
+    if (originalCreatorId !== userId) {
+      await createNotification(
+        originalCreatorId,   // Người nhận: chủ bài viết gốc
+        userId,              // Người thực hiện: người share
+        "share",             // Loại thông báo
+        originalBlogId       // Gắn với bài viết gốc để click vào xem được
+      );
+    }
+
+    // 5. Revalidate các trang cần cập nhật
     revalidatePath(FEED_PATH);
+    revalidatePath(`/post/${originalBlogId}`);
+    revalidatePath(`/post/${newBlogId}`);
     revalidatePath("/");
-    
-    return { success: true, blogId: newBlogId };
-  } catch (error) {
+
+    return {
+      success: true,
+      blogId: newBlogId,
+      message: "Chia sẻ bài viết thành công!"
+    };
+
+  } catch (error: any) {
     console.error("[shareBlog] Error:", error);
-    return { 
-      success: false, 
-      message: error instanceof Error ? error.message : "Failed to share blog" 
+    return {
+      success: false,
+      message: error.message || "Không thể chia sẻ bài viết. Vui lòng thử lại!"
     };
   }
 }
-
 // ==========================================
 // GET SHARED BLOG INFO
 // ==========================================

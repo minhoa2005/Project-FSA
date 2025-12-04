@@ -143,7 +143,7 @@ export function CommentItem({
                                 >
                                     Phản hồi
                                 </button>
-                                <span className="text-xs text-muted-foreground">{extractDateAndTime(new Date(comment.timestamp).toISOString())}</span>
+                                <span className="text-xs text-muted-foreground">{comment.timestamp}</span>
 
                                 {/* --- MENU ACTIONS (CHỈ HIỆN KHI LÀ CHỦ) --- */}
                                 {isOwner && (

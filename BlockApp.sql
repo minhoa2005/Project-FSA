@@ -331,3 +331,25 @@ BEGIN
     INNER JOIN inserted i ON u.id = i.id;
 END
 GO
+
+CREATE TABLE Notifications (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    userId INT NOT NULL,                    
+    actorId INT NOT NULL,                 
+    type VARCHAR(50) NOT NULL,              
+    blogId INT NULL,
+    commentId INT NULL,
+    message NVARCHAR(255) NOT NULL,
+    isRead BIT DEFAULT 0,
+    createdAt DATETIME DEFAULT GETDATE(),
+
+    FOREIGN KEY (userId) REFERENCES Account(id),
+    FOREIGN KEY (actorId) REFERENCES Account(id),
+    FOREIGN KEY (blogId) REFERENCES Blogs(id),
+    FOREIGN KEY (commentId) REFERENCES Comments(id)
+);
+GO
+
+CREATE INDEX IX_Notifications_UserId_IsRead ON Notifications(userId, isRead) WHERE isRead = 0;
+CREATE INDEX IX_Notifications_CreatedAt ON Notifications(createdAt DESC);
+GO
