@@ -10,34 +10,32 @@ import InfoSectionSkeleton from './InfoSectionSkeleton'
 import { useRouter } from 'next/navigation'
 
 
-export default function InfoSection({ className, fetchInfo }: {
+export default function InfoSection({ className }: {
     className?: string,
-    fetchInfo: Promise<any>
 }) {
-    const fetch = use(fetchInfo);
     const router = useRouter()
     const [fetching, setFetching] = useState(false);
-    const [data, setData] = useState(fetch.data || {});
+    const [data, setData] = useState({} as { fullName: string, email: string, phoneNumber?: string, dob?: string });
     const [loading, setLoading] = useState(false);
-    // const fetchInfo = async () => {
-    //     setFetching(true);
-    //     try {
-    //         const response = await getPersonalInfo();
-    //         if (response.success) {
-    //             setData(response.data);
-    //         }
-    //         else {
-    //             toast.error(response.message || "Failed to fetch personal information.", { duration: 4000 });
-    //         }
-    //     }
-    //     catch (error) {
-    //         console.error("Error fetching personal info:", error);
-    //         toast.error("Failed to fetch personal information.", { duration: 4000 });
-    //     }
-    //     finally {
-    //         setFetching(false);
-    //     }
-    // }
+    const fetchInfo = async () => {
+        setFetching(true);
+        try {
+            const response = await getPersonalInfo();
+            if (response.success) {
+                setData(response.data);
+            }
+            else {
+                toast.error(response.message || "Failed to fetch personal information.", { duration: 4000 });
+            }
+        }
+        catch (error) {
+            console.error("Error fetching personal info:", error);
+            toast.error("Failed to fetch personal information.", { duration: 4000 });
+        }
+        finally {
+            setFetching(false);
+        }
+    }
     const handleUpdate = async () => {
         setLoading(true);
         try {
@@ -58,9 +56,9 @@ export default function InfoSection({ className, fetchInfo }: {
             setLoading(false);
         }
     }
-    // useEffect(() => {
-    //     fetchInfo();
-    // }, [])
+    useEffect(() => {
+        fetchInfo();
+    }, [])
 
     return (
         fetching ? (
