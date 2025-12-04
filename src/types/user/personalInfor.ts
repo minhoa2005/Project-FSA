@@ -9,6 +9,7 @@ type userInfo = {
     location?: string,
     homeTown?: string,
     workAt?: string,
+    education?: string
 }
 
 export type { userInfo };

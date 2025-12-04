@@ -285,3 +285,15 @@ BEGIN
     WHERE b.shareCount > 0;
 END;
 GO
+
+CREATE TRIGGER update_updatedAt
+ON UserProfile
+FOR UPDATE
+AS
+BEGIN
+    UPDATE UserProfile
+    SET updatedAt = GETDATE()
+    FROM UserProfile u
+    INNER JOIN inserted i ON u.id = i.id;
+END
+GO

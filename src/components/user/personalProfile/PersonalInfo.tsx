@@ -5,6 +5,7 @@ import PasswordSection from './PasswordSection'
 import CoverImageSection from './CoverImageSection'
 import { getPersonalInfo } from '@/service/users/personalInfo'
 import InfoSectionSkeleton from './InfoSectionSkeleton'
+import BioSection from './BioSection'
 
 export default function PersonalInfo() {
   const getData = getPersonalInfo();
@@ -12,14 +13,17 @@ export default function PersonalInfo() {
     <div className='flex flex-col items-center ' >
       <div className='w-[70%] flex gap-5 flex-col' >
         <div className='grid grid-cols-2 gap-3'>
-          <AvatarSection className={'mt-4'} />
-          <CoverImageSection className='mt-4' />
+          <AvatarSection className={'mt-4  cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:shadow-xl ease-in-out'} />
+          <CoverImageSection className='mt-4 cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:shadow-xl ease-in-out' />
         </div>
-        <div className='grid grid-cols-2 gap-3 items-start' >
+        <div className='grid grid-cols-2 gap-3' >
           <Suspense fallback={<InfoSectionSkeleton />}>
-            <InfoSection fetchInfo={getData} />
+            <InfoSection fetchInfo={getData} className='cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:shadow-xl ease-in-out' />
           </Suspense>
-          <PasswordSection />
+          <PasswordSection className='cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:shadow-xl ease-in-out' />
+        </div>
+        <div className='cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:shadow-xl ease-in-out'>
+          <BioSection />
         </div>
       </div>
     </div>

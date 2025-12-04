@@ -8,6 +8,7 @@ import { payloadType } from "@/types/config/tokenTypes";
 import { get } from "http";
 import { upload } from "../image/imageService";
 import { url } from "inspector";
+import { revalidatePath } from "next/cache";
 
 const pool = await connectDB();
 
@@ -145,6 +146,53 @@ const updateInfo = async (data: { fullName: string, phoneNumber: string, dob: st
     }
 }
 
+const updateBio = async (data: {
+    bio: string,
+    homeTown: string,
+    location: string,
+    workAt: string,
+    education: string
+}) => {
+    if (!await verifyUser()) {
+        unauthorized();
+    }
+    try {
+        const { bio, homeTown, location, workAt, education } = data;
+        const token = await getCookie();
+        const decoded = verifyToken(token);
+        const id = decoded.id;
+        const result = await pool.request()
+            .input('id', id)
+            .input('bio', bio)
+            .input('homeTown', homeTown)
+            .input('location', location)
+            .input('workAt', workAt)
+            .input('education', education)
+            .query(`
+                update UserProfile
+                set bio = @bio, homeTown = @homeTown, location = @location, workAt = @workAt, education = @education
+                where accountId = @id
+            `);
+        if (result.rowsAffected[0] === 0) {
+            return {
+                success: false,
+                message: "User not found"
+            }
+        }
+        revalidatePath('/personal/info');
+        return {
+            success: true
+        }
+    }
+    catch (error) {
+        console.error('Error updating bio:', error);
+        return {
+            success: false,
+            message: "Error updating bio"
+        }
+    }
+}
+
 const changePassword = async (oldPassword: string, newPassword: string) => {
     if (!await verifyUser()) {
         unauthorized();
@@ -260,4 +308,4 @@ const updateCoverImage = async (coverImageUrl: string) => {
         }
     }
 }
-export { getPersonalInfo, updateInfo, changePassword, verifyUser, updateAvatar, getPersonalInfoById, updateCoverImage };
+export { getPersonalInfo, updateInfo, changePassword, verifyUser, updateAvatar, getPersonalInfoById, updateCoverImage, updateBio };
