@@ -73,7 +73,7 @@ export default function BioSection() {
         <div>
             <Card>
                 <CardHeader>
-                    <CardTitle>Thông tin giới thiệu</CardTitle>
+                    <CardTitle className='text-2xl'>Thông tin giới thiệu</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <div className='grid grid-cols-2 gap-3'>
@@ -174,7 +174,6 @@ export default function BioSection() {
                                     <div className='flex flex-col gap-3'>
                                         {bio && (
                                             <div className='flex items-start gap-3 p-3  rounded-lg'>
-                                                <Quote className='w-5 h-5 ' />
                                                 <p className='text-center  flex-1'>{bio}</p>
                                             </div>
                                         )}
