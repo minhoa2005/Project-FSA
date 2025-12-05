@@ -4,11 +4,14 @@ import Link from "next/link";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Heart, MessageCircle, Share2, UserPlus, Bell } from "lucide-react";
 import { formatTimeAgo } from "@/lib/formatTimeAgo"; // Hàm thuần JS bạn vừa tạo
+import { acceptInvite } from "@/service/users/friend";
+import { toast } from "sonner";
 
 type Notification = {
   id: number;
   actorUsername: string;
   actorFullName: string;
+  actorId: number;
   actorAvatar: string | null;
   type: string;
   message: string;
@@ -17,8 +20,18 @@ type Notification = {
   createdAt: string;
 };
 
-export default function NotificationList({ notifications }: { notifications: Notification[] }) {
-  const getIcon = (type: string) => {
+export default function NotificationList({ notifications, userId }: { notifications: Notification[], userId: number }) {
+  const acceptFriend = async (actorId: number) => {
+    try {
+      await acceptInvite(userId, actorId);
+      toast.success("Đã chấp nhận lời mời kết bạn");
+    }
+    catch (error) {
+      toast.error("Lỗi khi chấp nhận lời mời kết bạn");
+    }
+  };
+
+  const getIcon = (type: string, actorId: number) => {
     switch (type) {
       case "like":
         return <Heart className="w-5 h-5 text-red-500 fill-red-500" />;
@@ -26,8 +39,15 @@ export default function NotificationList({ notifications }: { notifications: Not
       case "reply":
         return <MessageCircle className="w-5 h-5 text-blue-500" />;
       case "share":
-        return <Share2 className="w-5 h-5 text-purple-500" />;
+        return <Share2 className="w-5 h-5 text-purple-500 " />;
       case "follow":
+        return <UserPlus onClick={(e) => {
+          acceptFriend(actorId)
+          e.preventDefault();
+          e.stopPropagation();
+        }}
+          className="w-5 h-5 text-green-500 hover:text-purple-700" />;
+      case "acceptFriend":
         return <UserPlus className="w-5 h-5 text-green-500" />;
       default:
         return <Bell className="w-5 h-5 text-gray-500" />;
@@ -46,12 +66,11 @@ export default function NotificationList({ notifications }: { notifications: Not
         notifications.map((notif) => (
           <Link
             key={notif.id}
-            href={notif.blogId ? `/post/${notif.blogId}` : `/personal/${notif.actorUsername}`}
-            className={`flex items-start gap-4 p-4 rounded-xl border transition-all hover:bg-accent/70 group ${
-              !notif.isRead
-                ? "bg-blue-50/70 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800"
-                : "bg-card border-border"
-            }`}
+            href={notif.blogId ? `/post/${notif.blogId}` : `/personal/${notif.actorId}`}
+            className={`flex items-start gap-4 p-4 rounded-xl border transition-all hover:bg-accent/70 group ${!notif.isRead
+              ? "bg-blue-50/70 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800"
+              : "bg-card border-border"
+              }`}
           >
             {/* Avatar + Icon loại thông báo */}
             <div className="relative flex-shrink-0">
@@ -62,7 +81,7 @@ export default function NotificationList({ notifications }: { notifications: Not
                 </AvatarFallback>
               </Avatar>
               <div className="absolute -bottom-1 -right-1 bg-background rounded-full p-1.5 border-2 border-background shadow-md">
-                {getIcon(notif.type)}
+                {getIcon(notif.type, notif.actorId)}
               </div>
             </div>
 

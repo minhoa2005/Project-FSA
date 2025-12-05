@@ -5,7 +5,7 @@ import Image from 'next/image'
 import React, { use } from 'react'
 import FollowButton from './FollowButton'
 
-export default function CoverSection({ className, user }: { className?: string, user: any }) {
+export default function CoverSection({ className, user, watcherId, userId }: { className?: string, user: any, watcherId: number, userId: number }) {
     return (
         <div className='grid grid-rows-2'>
             <div className={`flex justify-center mt-2 ${className}`}>
@@ -28,9 +28,11 @@ export default function CoverSection({ className, user }: { className?: string, 
                     </div>
                 </div>
             </div>
-            <div className='h-50 w-[70%] justify-self-center flex justify-end' >
-                <FollowButton id={user?.id} className="ml-auto mr-10 mt-4" />
-            </div>
+            {userId !== watcherId && (
+                <div className='w-[70%] justify-self-center flex justify-end' >
+                    <FollowButton watcherId={watcherId} id={userId} className="mr-10 mt-6 cursor-pointer hover:scale-110 hover:shadow-xl ease-in-out duration-300 transition-all" />
+                </div>
+            )}
         </div>
     )
 }

@@ -12,7 +12,7 @@ import { toast } from 'sonner';
 
 export default function InfoCard({ user, id, watcherId }: { user: userInfo, id: number, watcherId: number }) {
     const [isEditingBio, setEditingBio] = useState(false);
-    const [bio, setBio] = useState(user.bio || '');
+    const [bio, setBio] = useState(user?.bio || '');
     const [countWords, setCountWords] = useState(100);
     const saveBio = async () => {
         try {
@@ -21,11 +21,11 @@ export default function InfoCard({ user, id, watcherId }: { user: userInfo, id: 
                 return;
             }
             const data = {
-                bio: bio,
-                homeTown: user.homeTown,
-                location: user.location,
-                education: user.education,
-                workAt: user.workAt
+                bio: bio || '',
+                homeTown: user?.homeTown || '',
+                location: user?.location || '',
+                education: user?.education || '',
+                workAt: user?.workAt || ''
             }
             const response = await updateBio(data);
             if (response.success) {
@@ -65,7 +65,7 @@ export default function InfoCard({ user, id, watcherId }: { user: userInfo, id: 
                                 <p className='text-right text-sm text-muted-foreground'>{countWords} ký tự còn lại</p>
                             </>
                         ) : (
-                            <p className='text-center'>{user.bio}</p>
+                            <p className='text-center'>{user?.bio || ''}</p>
                         )}
                         {watcherId === id && (
                             <div className='flex justify-center mt-2'>
@@ -77,36 +77,36 @@ export default function InfoCard({ user, id, watcherId }: { user: userInfo, id: 
                                         setEditingBio(true);
                                     }
                                 }}
-                                >{!user.bio ? isEditingBio ? `Lưu` : "Thêm giới thiệu" : "Cập nhập giới thiệu"}</Button>
+                                >{!user?.bio ? isEditingBio ? `Lưu` : "Thêm giới thiệu" : "Cập nhập giới thiệu"}</Button>
                             </div>
                         )}
                         <Separator className="my-4" />
                         <div className='flex flex-col gap-3'>
-                            {user.homeTown && (
+                            {user?.homeTown && (
                                 <div className='flex items-center gap-3'>
                                     <Home className='w-5 h-5 text-primary flex-shrink-0' />
                                     <p>Quê quán: <span className='font-medium'>{user.homeTown}</span></p>
                                 </div>
                             )}
-                            {user.location && (
+                            {user?.location && (
                                 <div className='flex items-center gap-3'>
                                     <MapPin className='w-5 h-5 text-primary flex-shrink-0' />
                                     <p>Hiện đang sống ở <span className='font-medium'>{user.location}</span></p>
                                 </div>
                             )}
-                            {user.workAt && (
+                            {user?.workAt && (
                                 <div className='flex items-center gap-3'>
                                     <Briefcase className='w-5 h-5 text-primary flex-shrink-0' />
                                     <p>Đang làm <span className='font-medium'>{user.workAt}</span></p>
                                 </div>
                             )}
-                            {user.education && (
+                            {user?.education && (
                                 <div className='flex items-center gap-3'>
                                     <GraduationCap className='w-5 h-5 text-primary flex-shrink-0' />
                                     <p>Trình độ <span className='font-medium'>{user.education}</span></p>
                                 </div>
                             )}
-                            {!user.homeTown && !user.location && !user.workAt && !user.education && (
+                            {!user?.homeTown && !user?.location && !user?.workAt && !user?.education && (
                                 <p className='text-muted-foreground text-center py-4'>Chưa có thông tin giới thiệu</p>
                             )}
                         </div>

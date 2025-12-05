@@ -77,6 +77,7 @@ CREATE TABLE Follow (
     followerId INT NOT NULL,
     followingId INT NOT NULL,
     followAt DATETIME DEFAULT GETDATE(),
+    isAccepted BIT DEFAULT 0,
     PRIMARY KEY (followerId, followingId),
     FOREIGN KEY (followerId) REFERENCES Account(id),
     FOREIGN KEY (followingId) REFERENCES Account(id)
