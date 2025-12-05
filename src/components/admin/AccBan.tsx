@@ -133,32 +133,6 @@ export default function AccBan() {
                     Không có tài khoản nào bị cấm
                 </div>)}
 
-            {acc.length === 0 ? '' :
-                <Pagination className='flex justify-end py-3'>
-                    <PaginationContent >
-                        <PaginationItem>
-                            <PaginationPrevious href="#" size="sm" />
-                        </PaginationItem>
-                        <PaginationItem>
-                            <PaginationLink href="#" size="sm" isActive>1</PaginationLink>
-                        </PaginationItem>
-                        <PaginationItem>
-                            <PaginationLink href="#" size="sm">
-                                2
-                            </PaginationLink>
-                        </PaginationItem>
-                        <PaginationItem>
-                            <PaginationLink href="#" size="sm">3</PaginationLink>
-                        </PaginationItem>
-                        <PaginationItem>
-                            <PaginationEllipsis />
-                        </PaginationItem>
-                        <PaginationItem>
-                            <PaginationNext href="#" size="sm" />
-                        </PaginationItem>
-                    </PaginationContent>
-                </Pagination>
-            }
         </div >
     )
 }

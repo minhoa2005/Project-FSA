@@ -40,3 +40,15 @@ export const publicBlog = async (id: number) => {
         console.log('err public blog fe', err)
     }
 }
+
+export const searchBlog = async (keyword: string) => {
+    const result = await pool.request()
+        .input('key', `%${keyword}%`)
+        .query(`select b.id, b.text, a.username ,b.isDeleted, b.createdAt, b.updatedAt  from Blogs b 
+join Account a on a.id = b.creatorId
+where b.id like @key`)
+    return {
+        success: true,
+        data: result.recordset
+    }
+}

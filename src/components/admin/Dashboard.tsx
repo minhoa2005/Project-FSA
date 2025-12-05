@@ -531,36 +531,40 @@ export default function Dashboard() {
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead className="w-[50px]">BlogId</TableHead>
+                            <TableHead className="w-[65px]">BlogId</TableHead>
                             <TableHead className="w-[200px]">Lý do</TableHead>
                             <TableHead className="w-[100px]">Trạng thái</TableHead>
                             <TableHead className="w-[300px]">Ngày tạo</TableHead>
                         </TableRow>
                     </TableHeader>
-                    <TableBody >
-                        {report.map((b) => (
+                    {report.length !== 0 ?
+                        <TableBody >
+                            {report.map((b) => (
 
-                            <TableRow key={b.id} >
-                                <TableCell className="font-medium"> {b.blogId}</TableCell>
-    
-                                <TableCell className='line-clamp-1'>
-                                    {b.reason}
-                                </TableCell>
+                                <TableRow key={b.id} >
+                                    <TableCell className="font-medium"> {b.blogId}</TableCell>
 
-                                <TableCell>
-                                    <div className={cn('inline-flex px-5 py-1 rounded-full text-sm font-medium items-center', b.status === 'Pending' ? " bg-orange-100 text-orange-700" : " bg-green-100 text-green-700")}>
-                                        {b.status === 'Pending' ? 'Chờ xử lý' : 'Đã giải quyết'}
-                                    </div>
-                                </TableCell>
+                                    <TableCell className='line-clamp-1'>
+                                        {b.reason}
+                                    </TableCell>
 
-                                <TableCell>
-                                    {new Date(b.createdAt).toLocaleString()}
-                                </TableCell>
-                            </TableRow>
+                                    <TableCell>
+                                        <div className={cn('inline-flex px-5 py-1 rounded-full text-sm font-medium items-center', b.status === 'Pending' ? " bg-orange-100 text-orange-700" : " bg-green-100 text-green-700")}>
+                                            {b.status === 'Pending' ? 'Chờ xử lý' : 'Đã giải quyết'}
+                                        </div>
+                                    </TableCell>
 
-                        ))}
-                    </TableBody>
+                                    <TableCell>
+                                        {new Date(b.createdAt).toLocaleString()}
+                                    </TableCell>
+                                </TableRow>
 
+                            ))}
+
+                        </TableBody>
+                        : <div className='italic'>
+                            Không có dữ liệu
+                        </div>}
                 </Table>
             </div>
         </div>
