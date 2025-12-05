@@ -22,7 +22,6 @@ export async function getNotifications(userId: number, limit = 20) {
         WHERE n.userId = @userId
         ORDER BY n.createdAt DESC
       `);
-
     const unread = await pool.request()
       .input("userId", sql.Int, userId)
       .query("SELECT COUNT(*) AS count FROM Notifications WHERE userId = @userId AND isRead = 0");

@@ -13,18 +13,18 @@ export const metadata = {
 };
 
 export default async function NotificationsPage() {
- const token = await getCookie();
-    const user = verifyToken(token);
+  const token = await getCookie();
+  const user = verifyToken(token);
   if (!user) {
     return <div className="p-8 text-center">Vui lòng đăng nhập để xem thông báo</div>;
   }
 
   // Lấy 50 thông báo đầu tiên (hoặc bạn có thể làm phân trang sau)
-  const { notifications, unreadCount } = await getNotifications(user.id, 50);
-
+  const { notifications, unreadCount } = await getNotifications(Number(user.id), 50);
+  console.log("Notifications:", notifications);
   // Đánh dấu tất cả đã đọc khi vào trang
   if (unreadCount > 0) {
-    await markNotificationsAsRead(user.id);
+    await markNotificationsAsRead(Number(user.id));
   }
 
   return (
@@ -37,7 +37,7 @@ export default async function NotificationsPage() {
             <p>Chưa có thông báo nào</p>
           </div>
         ) : (
-          <NotificationList notifications={notifications} />
+          <NotificationList userId={Number(user.id)} notifications={notifications} />
         )}
       </div>
     </div>

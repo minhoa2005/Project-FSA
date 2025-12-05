@@ -3,7 +3,7 @@
 
 import { connectDB, sql } from "@/config/db";
 
-type NotificationType = "like" | "comment" | "reply" | "share" | "follow";
+type NotificationType = "like" | "comment" | "reply" | "share" | "follow" | "acceptFriend";
 
 export async function createNotification(
   userId: number,      // Người nhận
@@ -20,11 +20,12 @@ export async function createNotification(
 
     let message = "";
     switch (type) {
-      case "like":    message = "đã thích bài viết của bạn"; break;
+      case "like": message = "đã thích bài viết của bạn"; break;
       case "comment": message = "đã bình luận về bài viết của bạn"; break;
-      case "reply":   message = "đã trả lời bình luận của bạn"; break;
-      case "share":   message = "đã chia sẻ bài viết của bạn"; break;
-      case "follow":  message = "đã theo dõi bạn"; break;
+      case "reply": message = "đã trả lời bình luận của bạn"; break;
+      case "share": message = "đã chia sẻ bài viết của bạn"; break;
+      case "follow": message = "đã gửi lời mời kết bạn"; break;
+      case "acceptFriend": message = "đã chấp nhận lời mời kết bạn của bạn"; break;
     }
 
     await pool.request()

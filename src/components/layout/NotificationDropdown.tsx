@@ -1,50 +1,94 @@
 // src/app/components/layout/NotificationDropdown.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { Bell, Heart, MessageCircle, Share2, UserPlus } from "lucide-react";
 
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { formatTimeAgo } from "@/lib/formatTimeAgo";
 import { getNotifications, markNotificationsAsRead } from "@/service/users/getNotifications";
+import { acceptInvite } from "@/service/users/friend";
+import { toast } from "sonner";
+import { Button } from "../ui/button";
+import FollowButton from "../user/personalPage/CoverSec/FollowButton";
+import { Card } from "../ui/card";
 
 export default function NotificationDropdown({ userId }: { userId: number }) {
+
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  // const acceptFriend = async (actorId: number) => {
+  //   try {
+  //     await acceptInvite(userId, actorId);
+  //     toast.success("Đã chấp nhận lời mời kết bạn");
+  //   }
+  //   catch (error) {
+  //     toast.error("Lỗi khi chấp nhận lời mời kết bạn");
+  //   }
+  // };
+
+  const fetchNotifications = useCallback(async () => {
+    if (!userId) return;
+    try {
+      const data = await getNotifications(userId, 10);
+      setNotifications(data.notifications);
+      setUnreadCount(data.unreadCount);
+    } catch (error) {
+      console.error("Lỗi khi lấy thông báo:", error);
+    }
+  }, [userId]);
 
   useEffect(() => {
-    if (open && userId) {
-      getNotifications(userId, 10).then(data => {
-        setNotifications(data.notifications);
-        setUnreadCount(data.unreadCount);
-      });
-      // Đánh dấu đã đọc khi mở dropdown
-      if (unreadCount > 0) {
-        markNotificationsAsRead(userId);
-        setUnreadCount(0);
-      }
+    if (!userId) return;
+
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 5000);
+    return () => clearInterval(interval);
+  }, [userId, fetchNotifications]);
+
+  useEffect(() => {
+    if (open && userId && unreadCount > 0) {
+      markNotificationsAsRead(userId);
+      setUnreadCount(0);
     }
   }, [open, userId, unreadCount]);
 
-  const getIcon = (type: string) => {
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    };
+
+    if (open) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [open]);
+
+  const getIcon = (type: string, actorId: number) => {
     switch (type) {
       case "like": return <Heart className="w-4 h-4 text-red-500 fill-red-500" />;
       case "comment":
       case "reply": return <MessageCircle className="w-4 h-4 text-blue-500" />;
       case "share": return <Share2 className="w-4 h-4 text-purple-500" />;
-      case "follow": return <UserPlus className="w-4 h-4 text-green-500" />;
       default: return <Bell className="w-4 h-4 text-gray-500" />;
     }
   };
 
   return (
-    <div className="relative">
+    <div className="relative" ref={dropdownRef}>
       {/* Nút chuông thông báo */}
-      <button
+      <Button
+        variant="ghost"
         onClick={() => setOpen(!open)}
-        className="relative p-2.5 hover:bg-accent rounded-full transition-all"
+        className="relative p-5 transition-all rounded-full"
       >
         <Bell className="w-6 h-6" />
         {unreadCount > 0 && (
@@ -52,11 +96,11 @@ export default function NotificationDropdown({ userId }: { userId: number }) {
             {unreadCount > 99 ? "99+" : unreadCount}
           </span>
         )}
-      </button>
+      </Button>
 
       {/* Dropdown */}
       {open && (
-        <div className="absolute right-0 mt-2 w-96 bg-card border rounded-xl shadow-2xl z-50 overflow-hidden">
+        <Card className="absolute right-0 mt-2 w-96 bg-card border rounded-xl shadow-2xl z-50 overflow-hidden" >
           {/* Header */}
           <div className="px-5 py-4 border-b bg-muted/50">
             <h3 className="text-lg font-bold">Thông báo</h3>
@@ -73,11 +117,10 @@ export default function NotificationDropdown({ userId }: { userId: number }) {
               notifications.map((notif) => (
                 <Link
                   key={notif.id}
-                  href={notif.blogId ? `/post/${notif.blogId}` : `/personal/${notif.actorUsername}`}
+                  href={notif.blogId ? `/post/${notif.blogId}` : `/personal/${notif.actorId}`}
                   onClick={() => setOpen(false)}
-                  className={`flex items-center gap-3 p-4 hover:bg-accent transition-all border-b last:border-0 ${
-                    !notif.isRead ? "bg-blue-50/60 dark:bg-blue-950/30" : ""
-                  }`}
+                  className={`flex items-center gap-3 p-4 hover:bg-accent transition-all border-b last:border-0 ${!notif.isRead ? "bg-blue-50/60 dark:bg-blue-950/30" : ""
+                    }`}
                 >
                   <Avatar className="w-11 h-11">
                     <AvatarImage src={notif.actorAvatar || undefined} />
@@ -95,7 +138,7 @@ export default function NotificationDropdown({ userId }: { userId: number }) {
                   </div>
 
                   <div className="flex items-center gap-2">
-                    {getIcon(notif.type)}
+                    {getIcon(notif.type, notif.actorId)}
                     {!notif.isRead && <div className="w-2.5 h-2.5 bg-primary rounded-full" />}
                   </div>
                 </Link>
@@ -113,8 +156,9 @@ export default function NotificationDropdown({ userId }: { userId: number }) {
               Xem tất cả thông báo
             </Link>
           </div>
-        </div>
-      )}
-    </div>
+        </Card>
+      )
+      }
+    </div >
   );
 }

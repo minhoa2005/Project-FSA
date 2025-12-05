@@ -63,13 +63,15 @@ export default function PostList({ id, watcherId }: { id: number, watcherId?: nu
 
     return (
         <div className='flex flex-col gap-5 items-center'>
-            <CreatePost refresh={refreshData} />
+            {id === watcherId && (
+                <CreatePost refresh={refreshData} />
+            )}
             {posts.map((post, i) => (
                 <div key={post.id} className='w-[70%]' id='posts'>
                     <PostCard post={post} refresh={refreshData} userId={id} />
                 </div>
             ))}
-            {end && <div className='text-muted-foreground mb-5'>Đã hết bài viết. <Link href="#top" className='text-blue-400'>Quay về đầu trang?</Link></div>}
+            {posts.length === 0 ? (<div className='text-muted-foreground mb-5'>Chưa có bài viết nào.</div>) : end ? <div className='text-muted-foreground mb-5'>Đã hết bài viết. <Link href="#top" className='text-blue-400'>Quay về đầu trang?</Link></div> : null}
             <div id='last' className='h-5' ref={lastElement}></div>
         </div>
     )
