@@ -412,13 +412,13 @@ export default function PostCard({
             )}
 
             {/* Hiển thị bài viết gốc nếu đây là bài share */}
-            {isSharedPost && sharedPostData && (
+            {post.isShared && post.sharedPostData && (
               <SharedPostCard
-                originalBlogId={sharedPostData.originalBlogId}
-                originalText={sharedPostData.originalText}
-                originalAuthor={sharedPostData.originalAuthor}
-                originalCreatedAt={sharedPostData.originalCreatedAt}
-                media={sharedPostData.media}
+                originalBlogId={post.sharedPostData.originalBlogId}
+                originalText={post.sharedPostData.originalText}
+                originalAuthor={post.sharedPostData.originalAuthor}
+                originalCreatedAt={post.sharedPostData.originalCreatedAt}
+                media={post.sharedPostData.media}
               />
             )}
 

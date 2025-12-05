@@ -1,6 +1,6 @@
 "use client"
 import { Button } from '@/components/ui/button'
-import { cancelInvite, getStatusFriend, removeFriend, sendInvite } from '@/service/users/friend'
+import { acceptInvite, cancelInvite, getStatusFriend, removeFriend, sendInvite } from '@/service/users/friend'
 import { Minus, Plus, X } from 'lucide-react';
 import React, { useEffect, useEffectEvent, useState } from 'react'
 
@@ -29,6 +29,10 @@ export default function FollowButton({ id, className, watcherId }: { id: number,
                 await removeFriend(id, watcherId);
                 setStatus(0);
             }
+            if (status === 3) {
+                await acceptInvite(watcherId, id);
+                setStatus(2)
+            }
         }
         catch (error) {
             console.log("handleSendRequest error", error);
@@ -46,7 +50,7 @@ export default function FollowButton({ id, className, watcherId }: { id: number,
             variant='outline'
             className={`${className} ${status === 0 ? 'bg-blue-500 text-white hover:bg-blue-600' : status === 1 ? null : 'bg-red-500 text-white hover:bg-red-600'}`}
         >
-            {status === 0 ? (<><Plus /> Kết bạn</>) : status === 1 ? (<><X /> Huỷ lời mời</>) : (<><Minus /> Huỷ Kết Bạn</>)}
+            {status === 0 ? (<><Plus /> Kết bạn</>) : status === 1 ? (<><X /> Huỷ lời mời</>) : status === 2 ? (<><Minus /> Huỷ Kết Bạn</>) : (<><Plus /> Chấp nhận</>)}
         </Button>
     )
 }

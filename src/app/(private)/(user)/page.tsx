@@ -38,10 +38,11 @@ export default function HomePage() {
   // Hàm load posts từ server action
   const loadPosts = async () => {
     if (!currentUserId) return;
-    
+
     try {
       setLoadingPosts(true);
       const data = await getBlogsWithShare(currentUserId);
+      console.log(data)
       setPosts(data);
     } catch (err) {
       console.error("Error loading blogs:", err);
