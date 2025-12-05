@@ -86,7 +86,7 @@ export default function PostList({
 
   if (!items || items.length === 0) {
     return (
-      <div className="rounded-xl bg-white p-4 text-sm text-center text-slate-500 shadow-sm">
+      <div className="rounded-xl  p-4 text-sm text-center  shadow-sm">
         Chưa có bài viết nào.
       </div>
     );
@@ -107,13 +107,13 @@ export default function PostList({
       {/* Loader cho infinite scroll */}
       <div
         ref={loaderRef}
-        className="py-4 text-center text-xs text-slate-500"
+        className="py-4 text-center text-xs "
       >
         {loadingMore
           ? "Đang tải thêm bài viết..."
           : hasMore
-          ? "Kéo xuống để xem thêm"
-          : "Đã hết bài viết"}
+            ? "Kéo xuống để xem thêm"
+            : "Đã hết bài viết"}
       </div>
     </div>
   );

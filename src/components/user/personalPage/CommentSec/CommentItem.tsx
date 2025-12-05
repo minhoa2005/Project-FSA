@@ -22,6 +22,7 @@ export interface CommentData {
     replyTo?: string;
     replies?: CommentData[];
     isHidden?: boolean;
+    username?: string;
 }
 
 interface CommentItemProps {
@@ -123,7 +124,7 @@ export function CommentItem({
                             {/* --- CONTENT AREA (HIỆN) --- */}
                             <div className="rounded-2xl px-3 py-2 border bg-gray-50/50 dark:bg-zinc-900/50 w-fit max-w-full">
                                 <div className="flex flex-row items-center mb-1 gap-2">
-                                    <span className="text-sm font-semibold">{comment.author}</span>
+                                    <span className="text-sm font-semibold">{comment?.username}</span>
                                 </div>
 
                                 {isEditing ? (

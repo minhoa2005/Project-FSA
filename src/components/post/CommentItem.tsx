@@ -15,6 +15,7 @@ export interface CommentData {
     id: string;
     userId?: number;
     author: string;
+    username?: string;
     avatar: string;
     content: string;
     timestamp: string;
@@ -94,7 +95,7 @@ export function CommentItem({
             <div className="flex gap-2 group">
                 <Avatar className="w-8 h-8 md:w-10 md:h-10">
                     <AvatarImage src={comment?.avatar} alt="A" />
-                    <AvatarFallback>{getInitials(comment?.author)}</AvatarFallback>
+                    <AvatarFallback>{getInitials(comment?.username)}</AvatarFallback>
                 </Avatar>
 
                 <div className="flex-1">
@@ -103,7 +104,7 @@ export function CommentItem({
                             {/* --- CONTENT AREA (HIỆN) --- */}
                             <div className="rounded-2xl px-3 py-2 border bg-gray-50/50 dark:bg-zinc-900/50 w-fit max-w-full">
                                 <div className="flex flex-row items-center mb-1 gap-2">
-                                    <span className="text-sm font-semibold">{comment.author}</span>
+                                    <span className="text-sm font-semibold">{comment?.username}</span>
                                 </div>
 
                                 {isEditing ? (

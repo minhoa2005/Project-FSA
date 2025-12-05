@@ -67,6 +67,7 @@ export function usePostInteractions(initialPost: InitialPostData) {
     // Sync dữ liệu khi props thay đổi
     useEffect(() => {
         setLocalPost(initialPost);
+        console.log(initialPost)
         setIsLiked(initialPost.isLiked || false);
     }, [initialPost.id]);
 

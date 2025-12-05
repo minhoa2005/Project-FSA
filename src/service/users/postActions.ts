@@ -150,7 +150,8 @@ function buildCommentTree(comments: any[], userLikedCommentIds: Set<number>, com
       map.set(c.id, {
         id: String(c.id),
         userId: c.userId, // Cần thiết để check quyền
-        author: c.fullName || c.username || "User",
+        author: c.fullName || "User",
+        username: c.username || "User",
         avatar: c.imgUrl || "",
         content: c.text,
         timestamp: new Date(c.createdAt).toLocaleString("vi-VN"),

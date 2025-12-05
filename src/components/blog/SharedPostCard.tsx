@@ -46,7 +46,7 @@ export default function SharedPostCard({
           <AvatarFallback className="text-xs">{avatarFallback}</AvatarFallback>
         </Avatar>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold truncate">{originalAuthor.name}</p>
+          <p className="text-sm font-semibold truncate">{originalAuthor.username}</p>
           <p className="text-xs text-muted-foreground">
             {new Date(originalCreatedAt).toLocaleString("vi-VN")}
           </p>
