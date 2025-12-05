@@ -759,11 +759,16 @@ export const getCommentsByBlogId = async (blogId: number) => {
 // ==========================================
 // GET BLOGS WITH SHARE SUPPORT (Thêm vào cuối file)
 // ==========================================
-export async function getBlogsWithShare(currentUserId?: number) {
+
+export async function getBlogsWithShare(
+  currentUserId?: number,
+  offset: number = 0,
+  limit: number = 5
+) {
   try {
     const pool = await connectDB();
 
-    // Lấy tất cả blogs kèm thông tin share
+    // Lấy TẤT CẢ blogs (vẫn như cũ – join share, media, user)
     const blogsResult = await pool.request().query(`
       SELECT 
         b.id AS blogId, 
@@ -788,6 +793,7 @@ export async function getBlogsWithShare(currentUserId?: number) {
       ORDER BY b.createdAt DESC, m.id ASC
     `);
 
+    // ===== PHẦN BÊN DƯỚI GIỮ Y NGUYÊN NHƯ CHỦ NHÂN ĐANG CÓ =====
     const likesCountResult = await pool.request().query(`
       SELECT blogId, COUNT(*) as count 
       FROM [Like] 
@@ -811,25 +817,35 @@ export async function getBlogsWithShare(currentUserId?: number) {
       GROUP BY commentId
     `);
     const commentLikesMap = new Map<number, number>();
-    commentLikesCountResult.recordset.forEach((r: any) => commentLikesMap.set(r.commentId, r.count));
+    commentLikesCountResult.recordset.forEach((r: any) =>
+      commentLikesMap.set(r.commentId, r.count)
+    );
 
     const userLikedPostSet = new Set<number>();
     const userLikedCommentSet = new Set<number>();
 
     if (currentUserId) {
-      const userPostLikes = await pool.request().input("uid", sql.Int, currentUserId)
+      const userPostLikes = await pool
+        .request()
+        .input("uid", sql.Int, currentUserId)
         .query("SELECT blogId FROM [Like] WHERE userId = @uid");
-      userPostLikes.recordset.forEach((r: any) => userLikedPostSet.add(r.blogId));
+      userPostLikes.recordset.forEach((r: any) =>
+        userLikedPostSet.add(r.blogId)
+      );
 
-      const userCommentLikes = await pool.request().input("uid", sql.Int, currentUserId)
+      const userCommentLikes = await pool
+        .request()
+        .input("uid", sql.Int, currentUserId)
         .query("SELECT commentId FROM CommentLikes WHERE userId = @uid");
-      userCommentLikes.recordset.forEach((r: any) => userLikedCommentSet.add(r.commentId));
+      userCommentLikes.recordset.forEach((r: any) =>
+        userLikedCommentSet.add(r.commentId)
+      );
     }
 
     const commentsByBlog = new Map<number, any[]>();
     commentsResult.recordset.forEach((c: any) => {
       if (!commentsByBlog.has(c.blogId)) commentsByBlog.set(c.blogId, []);
-      commentsByBlog.get(c.blogId).push(c);
+      commentsByBlog.get(c.blogId)!.push(c);
     });
 
     const blogMap = new Map<number, any>();
@@ -851,7 +867,11 @@ export async function getBlogsWithShare(currentUserId?: number) {
           media: [],
           likes: likesMap.get(blogId) || 0,
           isLikedByCurrentUser: userLikedPostSet.has(blogId),
-          comments: buildCommentTree(rawComments, userLikedCommentSet, commentLikesMap),
+          comments: buildCommentTree(
+            rawComments,
+            userLikedCommentSet,
+            commentLikesMap
+          ),
           shares: 0,
           isShared: !!row.shareId,
           originalBlogId: row.originalBlogId || null,
@@ -861,15 +881,12 @@ export async function getBlogsWithShare(currentUserId?: number) {
         blogMap.get(blogId).media.push({
           id: row.mediaId,
           url: row.mediaUrl,
-          type: row.mediaType
+          type: row.mediaType,
         });
       }
     }
 
-    // Lấy thông tin bài viết gốc cho các bài share
     const blogs = Array.from(blogMap.values());
-
-    // Import getSharedBlogInfo từ shareActions
 
     const blogsWithSharedData = await Promise.all(
       blogs.map(async (blog) => {
@@ -884,7 +901,10 @@ export async function getBlogsWithShare(currentUserId?: number) {
       })
     );
 
-    return blogsWithSharedData;
+    // PHÂN TRANG Ở ĐÂY – chỉ trả về 1 “page”
+    const safeOffset = Math.max(0, offset || 0);
+    const safeLimit = Math.max(1, limit || 5);
+    return blogsWithSharedData.slice(safeOffset, safeOffset + safeLimit);
   } catch (error) {
     console.error("[getBlogsWithShare] Error:", error);
     return [];
