@@ -122,6 +122,19 @@ const getStatusFriend = async (userId: number, friendId: number) => {
                 select isAccepted from Follow
                 where followerId = @userId and followingId = @friendId
             `);
+        const check = await pool.request().input("userId", userId)
+            .input("friendId", friendId)
+            .query(` 
+                select isAccepted from Follow
+                where followerId = @friendId and followingId = @userId
+            `);
+        console.log(check)
+        if (check.recordset.length !== 0 && !check.recordset[0].isAccepted) {
+            return {
+                success: true,
+                data: 3
+            }
+        }
         if (result.recordset.length === 0) {
             return {
                 success: true,
