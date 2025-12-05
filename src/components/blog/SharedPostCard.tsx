@@ -2,6 +2,7 @@
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Image from "next/image";
+import Link from "next/link";
 
 interface SharedPostCardProps {
   originalBlogId: number;
@@ -10,7 +11,9 @@ interface SharedPostCardProps {
     name: string;
     avatar?: string;
     username?: string;
+    id?: number;
   };
+  originalCreatorId?: number;
   originalCreatedAt: string;
   media?: Array<{ id: number; url: string; type: string }>;
 }
@@ -20,6 +23,7 @@ export default function SharedPostCard({
   originalText,
   originalAuthor,
   originalCreatedAt,
+  originalCreatorId,
   media = [],
 }: SharedPostCardProps) {
   const avatarFallback = originalAuthor.name
@@ -34,7 +38,7 @@ export default function SharedPostCard({
   return (
     <div className="border rounded-lg overflow-hidden mt-3">
       {/* Original Author Header */}
-      <div className="p-3 flex items-center gap-2 border-b">
+      <Link href={`/personal/${originalCreatorId}`} className="p-3 flex items-center gap-2 border-b">
         <Avatar className="h-8 w-8">
           {originalAuthor.avatar ? (
             <AvatarImage src={originalAuthor.avatar} alt={originalAuthor.name} />
@@ -47,7 +51,7 @@ export default function SharedPostCard({
             {new Date(originalCreatedAt).toLocaleString("vi-VN")}
           </p>
         </div>
-      </div>
+      </Link>
 
       {/* Original Content */}
       <div className="p-3 space-y-2 ">

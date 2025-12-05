@@ -47,6 +47,7 @@ import { CommentSection } from "@/components/post/CommentSection";
 import SharePostDialog from "@/components/blog/SharePostDialog";
 import SharedPostCard from "@/components/blog/SharedPostCard";
 import { toast } from "sonner";
+import Link from "next/link";
 
 interface PostCardProps {
   post: any;
@@ -344,7 +345,7 @@ export default function PostCard({
   return (
     <Card className="overflow-hidden shadow-sm mb-4">
       <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
-        <div className="flex items-center gap-2">
+        <Link href={`/personal/${post.creatorId}`} className="flex items-center gap-2">
           <Avatar className="h-10 w-10">
             {avatarUrl ? (
               <AvatarImage src={avatarUrl} alt={displayName} />
@@ -355,7 +356,7 @@ export default function PostCard({
             <div className="text-sm font-semibold">{displayName}</div>
             <div className="text-xs text-muted-foreground">{createdAt.split(' ')[1]}</div>
           </div>
-        </div>
+        </Link>
         {isOwner ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -419,6 +420,7 @@ export default function PostCard({
                 originalAuthor={post.sharedPostData.originalAuthor}
                 originalCreatedAt={post.sharedPostData.originalCreatedAt}
                 media={post.sharedPostData.media}
+                originalCreatorId={post.sharedPostData.originalCreatorId}
               />
             )}
 
