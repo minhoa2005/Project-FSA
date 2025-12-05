@@ -49,16 +49,6 @@ const report = [
     title: "Reports mới",
     url: '/admin/new-report',
     icon: AlertCircle,
-  },
-  {
-    title: "Đang xử lý",
-    url: '/admin/processing-report',
-    icon: Loader2,
-  },
-  {
-    title: "Đã giải quyết",
-    url: '/admin/done-report',
-    icon: CheckCircle2,
   }
 ]
 
