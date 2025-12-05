@@ -106,38 +106,38 @@ export default function CreatePostBox({
 
   // Submit form: dùng state `files` làm nguồn, đảm bảo gửi đủ nhiều file
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
-  e.preventDefault();
-  const formElem = e.currentTarget;
-  const formData = new FormData(formElem);
+    e.preventDefault();
+    const formElem = e.currentTarget;
+    const formData = new FormData(formElem);
 
-  try {
-    setSubmitting(true);
+    try {
+      setSubmitting(true);
 
-    formData.set("creatorId", String(currentUser.id));
+      formData.set("creatorId", String(currentUser.id));
 
-    // override media bằng state files
-    formData.delete("media");
-    files.forEach((file) => {
-      formData.append("media", file);
-    });
+      // override media bằng state files
+      formData.delete("media");
+      files.forEach((file) => {
+        formData.append("media", file);
+      });
 
-    await createBlog(formData);
+      await createBlog(formData);
 
-    toast.success("Đã tạo bài viết thành công!");
-    setContent("");
-    setFiles([]);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
+      toast.success("Đã tạo bài viết thành công!");
+      setContent("");
+      setFiles([]);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+      setOpen(false);
+      onPostCreated?.();
+    } catch (err) {
+      console.error("Create post error:", err);
+      toast.error("Tạo bài viết thất bại");
+    } finally {
+      setSubmitting(false);
     }
-    setOpen(false);
-    onPostCreated?.();
-  } catch (err) {
-    console.error("Create post error:", err);
-    toast.error("Tạo bài viết thất bại");
-  } finally {
-    setSubmitting(false);
-  }
-}; 
+  };
 
   // 👉 Hiển thị preview + nút X giống phần chỉnh sửa
   const renderPreviews = () => {
@@ -175,13 +175,13 @@ export default function CreatePostBox({
             >
               {mediaPreview}
               {/* nút X để bỏ media */}
-              <button
+              <Button
                 type="button"
                 onClick={() => handleRemoveFile(idx)}
-                className="absolute right-1 top-1 inline-flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/80"
+                className="absolute right-1 top-1 inline-flex h-6 w-6 items-center justify-center rounded-full "
               >
                 <X className="h-3 w-3" />
-              </button>
+              </Button>
             </div>
           );
         })}
@@ -317,15 +317,6 @@ export default function CreatePostBox({
             </form>
 
             {/* Nút đóng góc phải */}
-            <DialogClose asChild>
-              <Button
-                type="button"
-                variant="ghost"
-                className="absolute right-2 top-2 h-8 w-8 rounded-full p-0"
-              >
-                ✕
-              </Button>
-            </DialogClose>
           </DialogContent>
         </Dialog>
       </CardContent>
