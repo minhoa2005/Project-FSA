@@ -87,7 +87,6 @@ export default function HomePage() {
             <PostList
               posts={posts}
               currentUserId={currentUserId}
-              currentUserInfo={currentUserInfo}
               onPostsChanged={loadPosts}
             />
           )}
