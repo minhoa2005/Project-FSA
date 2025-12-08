@@ -61,7 +61,8 @@ app.prepare().then(() => {
 
         socket.on("delete_group_message", ({ messageId, groupId }) => {
             const room = `group_${groupId}`;
-            socket.to(room).emit("group_message_deleted", messageId);
+
+            io.to(room).emit("group_message_deleted", messageId);
         });
 
         // Join room để chat với người cụ thể

@@ -83,7 +83,7 @@ export default function ChatBox({ user, onClose, avatar, name }) {
   const handleImageUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
+    e.target.value = "";
     // Tạo tin nhắn tạm để hiển thị ngay
     const tempMsg = {
       id: "temp-" + Date.now(),
