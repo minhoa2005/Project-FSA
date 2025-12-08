@@ -31,6 +31,8 @@ export default function LoginForm() {
             }
             const response = await handleLogin(formData);
             if (response.success) {
+                localStorage.setItem("userId", String(response.user.id));
+                console.log("cc" + response.user.id)
                 setUser(response.user);
                 setAuthen(true);
             } else {

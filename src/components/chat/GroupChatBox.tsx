@@ -28,8 +28,7 @@ export default function GroupChatBox({ group, onClose }) {
   const [members, setMembers] = useState<any[]>([]);
   const [text, setText] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
-
-  const currentUserId = group?.currentUserId;
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const roomId = `group_${group?.id}`;
 
   // ✅ Auto scroll
@@ -39,6 +38,15 @@ export default function GroupChatBox({ group, onClose }) {
       behavior: "smooth",
     });
   }, [messages]);
+
+  useEffect(() => {
+    const userId = localStorage.getItem("userId");
+
+    if (userId) {
+      setCurrentUserId(Number(userId));
+    }
+
+  }, []);
 
   // ✅ Load members + messages
   useEffect(() => {
@@ -108,18 +116,22 @@ export default function GroupChatBox({ group, onClose }) {
     setText("");
   };
 
-  // ✅ DELETE
   const handleDeleteMessage = async (msgId) => {
-    setMessages((prev) => prev.filter((m) => m.id !== msgId));
-    socket.emit("delete_group_message", msgId);
-    deleteGroupMessage(msgId);
+    setMessages(prev => prev.filter(m => m.id !== msgId));
+
+    socket.emit("delete_group_message", {
+      messageId: msgId,
+      groupId: group.id,
+    });
+
+    await deleteGroupMessage(msgId);
   };
 
   // ✅ UPLOAD IMAGE (FIX THEO DB: message)
   const handleImageUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
+    e.target.value = "";
     const tempMsg = {
       id: "temp-" + Date.now(),
       message: URL.createObjectURL(file), // ✅ FIX text -> message
@@ -180,16 +192,17 @@ export default function GroupChatBox({ group, onClose }) {
         className="h-[380px] p-4 overflow-y-auto flex flex-col gap-4"
       >
         {messages.map((msg, idx) => {
-          const isMe = msg.senderId === currentUserId;
+          const isMe =
+            currentUserId !== null &&
+            Number(msg.senderId) === Number(currentUserId);
           const avatar = getSenderAvatar(msg.senderId);
           const name = getSenderName(msg.senderId);
 
           return (
             <div
               key={idx}
-              className={`flex items-end gap-2 ${
-                isMe ? "justify-end" : "justify-start"
-              } group`}
+              className={`flex items-end gap-2 ${isMe ? "justify-end" : "justify-start"
+                } group`}
             >
               {!isMe && (
                 <Avatar className="h-8 w-8">
@@ -249,10 +262,9 @@ export default function GroupChatBox({ group, onClose }) {
                     /* ✅ TEXT (FIX QUAN TRỌNG) */
                     <div
                       className={`px-4 py-2 rounded-2xl text-sm shadow
-                        ${
-                          isMe
-                            ? "bg-blue-500 text-white"
-                            : "bg-white border text-gray-800"
+                        ${isMe
+                          ? "bg-blue-500 text-white"
+                          : "bg-white border text-gray-800"
                         }`}
                     >
                       {msg.message || "[Tin nhắn rỗng]"}
@@ -261,11 +273,7 @@ export default function GroupChatBox({ group, onClose }) {
                 </div>
               </div>
 
-              {isMe && (
-                <Avatar className="h-8 w-8">
-                  <AvatarFallback>Me</AvatarFallback>
-                </Avatar>
-              )}
+
             </div>
           );
         })}
