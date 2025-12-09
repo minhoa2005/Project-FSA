@@ -95,6 +95,7 @@ export default function PostList({
   return (
     <div className="space-y-4">
       {items.map((post) => (
+
         <PostCard
           key={post.id}
           post={post}

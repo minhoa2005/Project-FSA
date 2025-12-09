@@ -64,6 +64,7 @@ export default function PostCard({ post, refresh, userId }: { post: Post, refres
                             originalText={post.sharedData.originalText}
                             originalAuthor={post.sharedData.originalAuthor}
                             originalCreatedAt={post.sharedData.originalCreatedAt}
+                            originalCreatorId={post.sharedData.originalCreatorId}
                             media={post.sharedData.media}
                         />
                     )}
