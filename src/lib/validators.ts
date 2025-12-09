@@ -55,11 +55,11 @@ export const validateFullName = (fullName: string) => {
 
 export const validatePhone = (phone: string) => {
     const phoneRegex = /^(0)\d{9}$/;
-    if (!phone) {
-        return 'Phone number is required';
-    }
+    // if (!phone) {
+    //     return 'Phone number is required';
+    // }
     if (!phoneRegex.test(phone.replace(/\s+/g, ''))) {
-        return 'Please enter a valid phone number (10-11 digits)';
+        return 'Vui lòng nhâp số điện thoại hợp lệ (10 chữ số)';
     }
     return '';
 };
@@ -74,12 +74,12 @@ export const validateDateOfBirth = (dateOfBirth: string) => {
     const today = new Date();
     const age = today.getFullYear() - birthDate.getFullYear();
 
-    if (age < 18) {
-        return 'You must be at least 18 years old';
+    if (age < 1 || age > 120) {
+        return 'Vui lòng nhập ngày sinh hợp lệ';
     }
-    if (age > 120) {
-        return 'Please enter a valid date of birth';
-    }
+    // if (age > 120) {
+    //     return 'Please enter a valid date of birth';
+    // }
 
     return '';
 };

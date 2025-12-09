@@ -43,7 +43,6 @@ export default function NotificationDropdown({ userId }: { userId: number }) {
 
   useEffect(() => {
     if (!userId) return;
-
     fetchNotifications();
     const interval = setInterval(fetchNotifications, 5000);
     return () => clearInterval(interval);
@@ -83,7 +82,7 @@ export default function NotificationDropdown({ userId }: { userId: number }) {
   };
 
   return (
-    <div className="relative" ref={dropdownRef}>
+    <div className="relative " ref={dropdownRef}>
       {/* Nút chuông thông báo */}
       <Button
         variant="ghost"

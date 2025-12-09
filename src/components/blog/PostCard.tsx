@@ -290,7 +290,7 @@ export default function PostCard({
                   alt={file.name}
                   width={500}
                   height={500}
-                  className="h-32 w-full object-cover"
+                  className="h-32 w-full object-contain"
                 />
               )}
               {isVideo && (
@@ -437,9 +437,9 @@ export default function PostCard({
                         key={m.id}
                         src={m.url}
                         alt=""
-                        width={1200}
-                        height={800}
-                        className="aspect-[16/9] w-full object-cover"
+                        width={1000}
+                        height={600}
+                        className="w-full object-contain"
                       />
                     ))}
                   </div>
@@ -507,7 +507,7 @@ export default function PostCard({
                             alt=""
                             width={500}
                             height={500}
-                            className="h-32 w-full object-cover"
+                            className="h-32 w-full object-contain"
                           />
                         ) : (
                           <video

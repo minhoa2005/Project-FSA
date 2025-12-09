@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { validatePassword } from '@/lib/validators'
 import { changePassword } from '@/service/users/personalInfo'
 import React, { useState } from 'react'
 import { toast } from 'sonner'
@@ -15,6 +16,12 @@ export default function PasswordSection({ className }: { className?: string }) {
     const handleUpdatePassword = async () => {
         try {
             setLoading(true);
+            const checkPassword = validatePassword(newPassword);
+            if (checkPassword) {
+                toast.error(checkPassword);
+                setLoading(false);
+                return;
+            }
             if (confirmPassword !== newPassword) {
                 toast.error('Mật khẩu xác nhận không khớp');
                 setLoading(false);
@@ -22,7 +29,6 @@ export default function PasswordSection({ className }: { className?: string }) {
             }
             const response = await changePassword(oldPassword, newPassword);
             if (response.success) {
-
                 toast.success('Cập nhật mật khẩu thành công');
             }
             else {

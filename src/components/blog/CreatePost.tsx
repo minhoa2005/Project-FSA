@@ -152,7 +152,7 @@ export default function CreatePostBox({
             <Image
               src={url}
               alt={file.name}
-              className="h-40 w-full object-cover"
+              className="h-40 w-full object-contain"
               width={160}
               height={160}
             />

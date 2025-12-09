@@ -73,7 +73,7 @@ export default function SharedPostCard({
                   src={m.url}
                   alt=""
                   fill
-                  className="object-cover"
+                  className="object-contain"
                 />
               </div>
             ))}

@@ -8,6 +8,7 @@ import React, { use, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import InfoSectionSkeleton from './InfoSectionSkeleton'
 import { useRouter } from 'next/navigation'
+import { validateDateOfBirth, validateEmail, validateFullName, validatePhone } from '@/lib/validators'
 
 
 export default function InfoSection({ className }: {
@@ -39,6 +40,30 @@ export default function InfoSection({ className }: {
     const handleUpdate = async () => {
         setLoading(true);
         try {
+            const checkName = validateFullName(data.fullName);
+            if (checkName) {
+                toast.error(checkName, { duration: 4000 });
+                setLoading(false);
+                return;
+            }
+            const checkEmail = validateEmail(data.email);
+            if (checkEmail) {
+                toast.error(checkEmail, { duration: 4000 });
+                setLoading(false);
+                return;
+            }
+            const checkPhone = validatePhone(data.phoneNumber || '');
+            if (checkPhone) {
+                toast.error(checkPhone, { duration: 4000 });
+                setLoading(false);
+                return;
+            }
+            const dob = validateDateOfBirth(data.dob || '');
+            if (dob) {
+                toast.error(dob, { duration: 4000 });
+                setLoading(false);
+                return;
+            }
             const response = await updateInfo(data);
             if (response.success) {
                 toast.success("Personal information updated successfully.", { duration: 4000 });
