@@ -58,14 +58,14 @@ export default function PostCard({ post, refresh, userId }: { post: Post, refres
                             ))}
                         </div>
                     )}
-                    {post.isShared && post.sharedData && (
+                    {post.isShared && (
                         <SharedPostCard
-                            originalBlogId={post.sharedData.originalBlogId}
-                            originalText={post.sharedData.originalText}
-                            originalAuthor={post.sharedData.originalAuthor}
-                            originalCreatedAt={post.sharedData.originalCreatedAt}
-                            originalCreatorId={post.sharedData.originalCreatorId}
-                            media={post.sharedData.media}
+                            originalBlogId={post.sharedData?.originalBlogId}
+                            originalText={post.sharedData?.originalText}
+                            originalAuthor={post.sharedData?.originalAuthor}
+                            originalCreatedAt={post.sharedData?.originalCreatedAt}
+                            originalCreatorId={post.sharedData?.originalCreatorId}
+                            media={post.sharedData?.media}
                         />
                     )}
                 </>

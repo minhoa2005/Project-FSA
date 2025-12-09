@@ -52,11 +52,13 @@ export default function InfoSection({ className }: {
                 setLoading(false);
                 return;
             }
-            const checkPhone = validatePhone(data.phoneNumber || '');
-            if (checkPhone) {
-                toast.error(checkPhone, { duration: 4000 });
-                setLoading(false);
-                return;
+            if (data.phoneNumber) {
+                const checkPhone = validatePhone(data.phoneNumber || '');
+                if (checkPhone) {
+                    toast.error(checkPhone, { duration: 4000 });
+                    setLoading(false);
+                    return;
+                }
             }
             const dob = validateDateOfBirth(data.dob || '');
             if (dob) {

@@ -3,7 +3,7 @@ import Image from 'next/image'
 import { useTheme } from 'next-themes'
 import { Input } from '../ui/input'
 import { Button } from '../ui/button'
-import { HomeIcon, User, Sun, Moon, Monitor, Contrast, LogOut, Search } from 'lucide-react'
+import { HomeIcon, User, Sun, Moon, Monitor, Contrast, LogOut, Search, Users } from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuPortal, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from '../ui/dropdown-menu'
 import { useUser } from '@/context/AuthContext'
@@ -33,6 +33,9 @@ export default function Header() {
                     </Button>
                     <Button variant="ghost" className="p-6 w-[20%] cursor-pointer" onClick={() => router.push(`/personal/${user?.id}`)}>
                         <User className="h-10 w-10" />
+                    </Button>
+                    <Button variant="ghost" className="p-6 w-[20%] cursor-pointer" onClick={() => router.push(`/friends/find`)}>
+                        <Users className="h-10 w-10" />
                     </Button>
                 </div>
 
