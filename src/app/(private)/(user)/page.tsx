@@ -94,7 +94,7 @@ export default function HomePage() {
         </div>
 
         {/* Cột phải - sidebar (bạn bè đang online, gợi ý...) */}
-        <div className="col-span-1 sticky top-0 h-screen overflow-auto">
+        <div className="col-span-1 sticky top-[9%] h-screen overflow-auto">
           <ContactsSidebar />
         </div>
       </div>
